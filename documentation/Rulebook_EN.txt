@@ -1,0 +1,445 @@
+                           RULEBOOK
+
+In Echoes of Emperors, no two games are alike. This 1v1 strategy game by
+Volcaban Studio combines deck-building and a dynamic, shifting battlefield,
+letting players become medieval rulers who must build their empires while
+countering their opponents. Unique maps and civilization-specific abilities
+
+    make each game an unpredictable clash of tactics, forcing you to adapt.
+
+Contents                              2
+Game Setup                            2
+Game Overview                         3
+Start of Turn                         3
+         Exhaust/Unexhaust            3
+         Temporary Resources          3
+Mobilization Phase                    4
+         Movement                     4
+         Scouting                     4
+         Obstacles                    4
+         Actions                      4
+         Building                     4
+         Resources                    4
+         Combat                       5
+Deployment Phase                      6
+         Deploying Units              6
+         Technology and Tactic Cards  6
+End of Turn                           6
+Win Conditions                        6
+Game Modes                            7
+Credits                               7
+Keywords                              8
+Card Vocabulary                       8
+CONTENTS
+
+ Set of colored game pieces for each player:
+            6 pawns with bases, 8 Camp tokens, 3 Barracks tokens, 1 Capital token
+
+ 1 Unit Field for each player
+ Map tiles:
+
+            1 starting tile per player
+            7 Highland tiles, 7 Constantinople tiles
+            4-player game: 7 additional Highland tiles
+ 6 Civilization Decks (36 cards each): Norsemen, Scots, Mongol Empire, Byzantine Empire, Ottoman Empire, Holy Roman Empire
+ Colored Life Point Counter for each player (D20)
+ 8 Damage Counters for each player (D6)
+ Resource tokens: for each player 5 Food, 5 Wood, 5 Gold, 3 Wild resource
+
+GAME SETUP                                                     
+                                                               
+Board : Each player takes a starting tile. Choose
+a map (Highland or Constantinople) and shuffle the                     
+corresponding map tiles. Place both starting tiles face-
+up, with your Capital square in the bottom left from
+your viewpoint. Fill in the remaining spaces with the
+shuffled map tiles face-down to create a 3x3 grid. Each
+player receives a Unit Field  to organize their unit
+cards.
+
+   For first-time players, we recommend playing on the
+Highland map with easier civilizations like the Norsemen,
+
+                  Byzantine Empire or Scots.
+
+Civilization setup: Each player rolls a die, whoever
+has the highest roll decides whether to choose their
+civilization first or allow the other player to pick first.
+Each player then selects their Civilization Deck and
+takes the game pieces in their chosen color. Place your
+Civilization card on your Unit Field, and the Starting
+Scout on the first card space . Then, shuffle your deck.
+
+Player setup: Place your deck face-down. Put all your                                                                       
+unit pawns  on their designated spaces on your Unit
+Field. Place your Capital on your starting square and
+the Starting Scout pawn on your Capital. Set your Life
+Point Counter  to 10 and place it on your Unit Field.
+Each player takes 1 Food and 1 Wood resource token
+ and draws 5 cards from their deck. If you are more
+familiar with the game, you may attempt to improve
+your opening hand once by resupplying (see page 5).
+Place all Damage Counters  and resources  as a
+supply next to the board.
+
+   Starting Scout                                            
+
+                                                                         Civilization card
+
+2
+Check the bottom of             GAME OVERVIEW
+the tile to see if it is for a
+3x3 or 4x4 map.                 The objective of Echoes of Emperors is to reduce the life points of your
+                                opponent's Capital to 0 or eliminate all their deployed units on the map. The
+                                game is played in turns, with each turn divided into 4 phases. You can use your
+                                Life Point Counter to track your current phase:
+
+                                Start of turn: Unexhaust resources and units.
+                                Mobilization: Focus on the board. Move units and perform actions with them.
+                                Deployment: Focus on cards. Spend resources to deploy units and technologies.
+                                End of turn: Draw up to 5 cards.
+
+
+
+                                                                                     Exhaust/Unexhaust: Exhausted units and
+                                                                                     resources cannot be used again until unexhausted.
+                                                                                     To indicate an exhausted resource or unit, flip the
+                                                                                     token or slide the card down on the Unit Field.
+                                                                                     When unexhausted, reset them to their original
+                                                                                     positions.
+
+                                START OF TURN
+
+                                First turn: The player with the highest roll begins
+                                the game. The second player receives 1 Temporary
+                                Wild resource, which can be used once as any
+                                resource before being returned to the bank.
+
+                                At the start of each turn, unexhaust all used Main
+                                resources and units, making them available again.
+                                This phase is skipped on the first turn.
+
+                                Temporary resources can be used once and must
+                                be returned to the bank after use. Unlike Main
+                                resources from Camps, which are exhausted when
+                                used, Temporary resources are placed on the
+                                card that provides them or on your Civilization
+                                card. Some cards have a maximum capacity for
+                                holding resources, indicated by `Max. X.' If the card
+                                providing the resources is removed, any remaining
+                                resources on it are lost.
+
+                                                                             3
+                                         MOBILIZATION PHASE
+
+The Mobilization phase focuses on board movement and actions. The order of this phase is flexible: You may move all units then perform
+actions with all your units or move one unit, perform its actions, and then move another.
+
+Orthogonal                Movement: You may move each unexhausted unit once per turn, up to the number of squares
+                          indicated by its movement stat on the left side of the unit card. The movement stat indicates, how far
+Diagonal                  (movement points) and in which direction (direction arrows) a unit can move. Units must move in
+Multi                     straight parallel or diagonal lines (as their movement stats allow) and cannot change direction while
+directional               moving. Each movement over a square costs 1 movement point.
+
+                          Scouting: Face-down map tiles are undiscovered. When a unit enters an undiscovered tile, its
+                          movement stops on the first square it enters. Reveal and rotate the new tile as you choose. If the first
+                          square is water, move your unit back to the first available square. Scouting does not count as an action
+                          or exhaust the unit.
+
+    Obstacles:
+    -Only 1 unit may occupy each square.
+    -Units cannot move over or on enemy units, or enemy Fortified
+    buildings. Except for Melee combat.
+    -Units cannot move over or on water squares.
+    -Units can move on enemy Camps and allied buildings.
+    -Units can move over, but not land on, the same tile as allied units.
+    -Moving onto a mountain square ends the unit's movement.
+
+Actions
+
+Each unit can perform 1 action per turn, becoming exhausted afterward. Actions include Building,
+Attacking, and using unique Action Abilities.
+
+Building: Units can construct buildings, which must be placed on the same square as the unit. Only one
+
+building can be placed per square. The unit becomes exhausted after building.
+
+                                  Camps: Used to gather resources, Camps can be built only once per turn at no cost. Camps provide a
+                                  resource token based on the terrain. When built, the Camp grants 1 unexhausted resource immediately,
+                                  which remains with you as long as the Camp stands.
+
+                                  Barracks: You can deploy units on the square occupied by these Fortified buildings. To build a Barracks,
+                                  exhaust 2 Wood and 2 Gold resources. Barracks cannot be built on water or on a square surrounding
+                                  any Capital. If built on mountains, the Barracks neutralize the mountain's movement effect, making the
+                                  square freely traversable. Barracks don't provide a resource.
+
+Relocating: If all your buildings are already placed, you may destroy an existing building and rebuild it on a square occupied by one of
+your units. The unit becomes exhausted in the process. Relocating a Camp to a different terrain means you must switch the associated
+resource. Relocating a Barracks requires paying the resource cost.
+
+                                  Resources
+
+                                                           Wild resource
+
+                                                           (Can be used as any resource)
+
+      Farmland            Forest               Mine  Gold
+                    Food          Wood
+
+4                                 The center tile of the Constantinople map has two squares marked with a
+                                  double gold symbol, granting double resources when a Camp is built there. This
+                                  tile starts unscouted and must be explored before use. Its back indicates it must
+                                  be placed at the map's center.
+Mountain Squares end the unit's        Village Squares can be traversed freely.
+movement when entered.                 When you have a unit standing on a village
+                                       square, you can use its action to resupply or
+Water Squares cannot be moved          draw 1 card, exhausting the unit.
+over unless your unit has the Naval
+or Ship effects.                       Resupply: Set aside any number of cards from
+                                       your hand. Draw an equal number of cards
+River Squares can be moved             from your deck to your hand, then shuffle the
+over by all unit types and count as    set-aside cards back into your deck.
+water for effects that refer to water
+squares.
+
+Combat                                                                                                 Health
+
+When a unit performs an attack, both the attacking and targeted units are in combat. Units may attack
+
+in Melee or Ranged mode. Both players place damage counters (D6) onto their unit card equal to the
+
+amount of health the unit has left. After attacking, your unit becomes exhausted.
+
+Changing attack mode: Units can switch attack modes while unexhausted during your Mobilization phase. Vertical card placement
+signifies Melee mode, while horizontal indicates Ranged mode.
+
+Melee mode: Do damage equal to your unit's Melee attack stat. To attack, the
+unit must move onto the target's square, triggering combat immediately. If the
+target unit is also in Melee mode, both units deal damage simultaneously based
+on their Melee attack stats. This means your unit takes counter damage even
+if it destroys the target. If the target square is still occupied after the attack,
+move your unit back to the first available square in the direction from which
+it came. If the target is destroyed, and the square is unoccupied, occupy it with
+your attacking unit.
+
+Minimum damage: Units with an attack value higher than 0 always
+deal at least 1 damage, even when more damage would be negated.
+
+                                Ranged mode: Do damage equal to your unit's Ranged attack stat. To attack
+                                an enemy target, your unit has to stand in a square surrounding (includes
+                                diagonal) the target's square. Units performing a Ranged attack, don't take
+                                any counter damage. Units in Ranged mode do not deal counter damage when
+                                targeted.
+
+                                        Garrisoned units / Fortified buildings: Barracks and Capitals are
+                                        Fortified buildings. Units inside Fortified buildings can't be targeted by
+                                        enemy units or card effects, unless the effect refers directly to garrisoned
+                                        units; the building has to be targeted first.
+
+Attacking buildings: All buildings have 4 Ranged Armor, known as Building Armor, which reduces incoming damage from
+Ranged attacks. To attack a building in melee, move your unit onto its square. If the building survives, move your unit back
+to the nearest available square. If the building is destroyed but an enemy unit remains on its square, also move your unit back.
+Buildings have the following health: Camps have 4, Barracks have 5, and Capitals have 10 health. Track damage by placing damage
+counters on the squares for Camps and Barracks, and use the Life Point Counter for Capitals.
+
+Losses: When a unit is lost, discard its card face-up next to your deck to form a discard pile and return the pawn to the Unit Field.
+Buildings removed from the board can be reused when constructing new ones. If a Camp is lost, remove its corresponding resources,
+starting with unexhausted tokens, then exhausted ones.
+
+          During the Mobilization phase, players may also play Tactic cards by exhausting the required resources.
+
+                                                                                                                   5
+                       DEPLOYMENT PHASE
+
+During the Deployment phase, players can play cards, provided they have enough resources. To play a card, exhaust the corresponding
+amount of resources displayed on the card cost. During this phase, you cannot move units.
+
+Name and civilization  Deploying units:
+Card cost              To deploy a unit card from your hand, pay the required resources
+                       and place the unit on your Unit Field, attaching it to a pawn of your
+Class                  choice. Position the pawn on one of your unoccupied Barracks or
+Movement               your Capital. If none are free, you can't deploy any new units.
+Card effect
+Stat bar               Unit pawns are just visual representations of your unit card on the
+                       board. They are all the same except for the King and Queen pawns,
+                       which can only be used once, but provide a small boost to the attached
+                       unit. When they are killed, remove these pawns from the game.
+
+                       Queen +2          King +1
+
+                       If your Unit Field is full , you may discard a deployed unit (excluding
+                       the King and Queen pawns), including its attached upgrades and
+                       damage counters, to free up a space.
+
+Flavor text            Some cards have a flexible resource cost, shown by
+Rarity symbol          a greyed-out resource symbol. You can choose any
+                       resource to pay this cost.
+
+Technology             Technology and Tactic cards: Technologies and Tactics are indicated by the icon next to the technology
+Tactic                 type. There are 4 different technology types. Technologies have to be played in the Deployment phase,
+                       while Tactics can be played during both the Mobilization and Deployment phases.
+                       Some cards have two effects, but you can only use one.
+
+ Upgrade
+ Upgrades can be attached to any deployed unit, but they only provide their effect if attached
+ to the correct unit class. If an upgrade does not specify a class, it can be used with any unit.
+ Upgrades remain active as long as the unit is on the map. Multiple upgrades can be applied to
+ a single unit, but you cannot attach the same upgrade to a unit more than once.
+ Action
+ Action cards are one-time use and are discarded immediately after performing the action.
+ Action cards providing Temporary resources are discarded once all resources are used,
+ allowing you to keep them for multiple turns.
+ Reaction
+ Reactions must be played during an opponent's turn and are discarded immediately after.
+ Event
+ Events remain active throughout the entire game once activated. You can have a maximum of 3
+ active event cards simultaneously. You may discard your active event cards whenever you want.
+
+END OF TURN
+
+At the end of your turn, if you have fewer than 5 cards, draw up to 5. If you already have 5 or more, draw 1 card. If your hand exceeds 7
+cards, discard down to 7. The next player then begins their turn.
+Attention: If your deck runs out of cards, you cannot draw any more (do not shuffle your discard pile!). You must continue playing with
+the cards in your hand and any cards already in play.
+
+WIN CONDITION
+
+Your objective is to defeat your opponent by reducing their Capital's life points to 0 or by eliminating all their deployed units, leaving
+them with no units on the map. The game ends immediately if either of these conditions is met. The last surviving player achieves
+victory!
+
+6
+                                                GAME MODES
+
+                                     Base game:
+
+                                             This is the best way to learn and experience the core mechanics of Echoes of Emperors. It offers a
+                                             balanced mix of strategy and game length, making it ideal for new players and seasoned strategists
+                                             alike. Follow the core rules outlined in this rulebook, with each player starting at 10 Capital life
+                                             points on a 3x3 map.
+
+                                     Long game:
+
+                                             Looking for a more in-depth experience? The long game gives you extra time to build your empire
+                                             and deploy advanced strategies. Players start with 20 Capital life points, playing on a larger 4x4
+                                             map with your starting tile placed in the second space from your left. You need to use both 3x3
+                                             and 4x4 map tiles to create the 4x4 map.
+
+4-player team game:
+
+Join forces in this 2v2 mode, where strategy and teamwork are key!
+Map setup: The game is played on a 4x4 Highland map, providing plenty of
+space for each player.
+Team setup: Each team starts on the same side of the map, with each player's
+starting tile placed on one of the middle spaces.
+Turn order: Turns alternate between teams (e.g., Player 1, Opponent 1, Player
+2, Opponent 2). Roll a die to determine the starting team, and that team chooses
+which player goes first. The opposing team receives 1 Temporary Wild resource
+that can be used by either player on their team during their turns.
+Shared resources: You can use your teammate's unexhausted resources.
+Civilization synergy: Each player selects 1 Civilization Deck to play with.
+Choose civilizations that complement each other's strengths, as many cards have
+abilities affecting `allied units', which include your teammate's units.
+`Opponent' card effects: If a card says `your opponent', you can choose which
+one of your opponents will be affected by the card.
+Victory conditions: If one player loses their Capital or all active units, their
+entire team is defeated immediately.
+Work together to outmaneuver your opponents, balancing offense, defense, and
+resource management to claim victory!
+
+Deck-building: (Armies and Warmaps Expansion needed)
+
+When creating your deck, follow these simple guidelines:
+Choose 1 civilization: Your deck may only include cards from that civilization.
+Deck composition: Each deck consists of exactly 35 cards plus 1 Civilization card.
+Required cards: Your deck must include: 1 Civilization card, 1 Conqueror card and at least 1 Starting Scout.
+Card limits: Each card has a rarity symbol on the bottom right, indicating the maximum number of copies allowed in your deck. For
+example, a card with the symbol III can be included up to 3 times.
+
+                                           CREDITS
+
+                                          Made by Volcaban Studio
+
+                                   Graphic design and illustrations by Volcaban Studio
+
+                                  Translations and copy-editing by Boardgame Circus
+
+             We would like to thank the following individuals for their valuable historical insights:
+  Norsemen: Hurstwic - Mongol Empire: Jack R. Wilson (the Jackmeister), Maurice van Til - Scots: History
+  of Scotland Podcast, Gianluca Raccagni - History and Games lab - Byzantine Empire: Alessandro Carabia,
+Nikolaos Thessalos - Ottoman Empire: Osman Said, Joshua Michael White - Holy Roman Empire: Gianluca
+
+                                               Raccagni - History and Games lab
+
+  A huge thank you to all our playtesters. There are too many of you to name, but your contributions were
+                                                            invaluable!
+
+   And last but not least, to our incredible Kickstarter backers, this project would not have been possible
+                without you. We truly hope you enjoy the game as much as we enjoyed creating it!
+
+  Our aim is to present history as accurately as possible while making it engaging and accessible. We work with historical experts to
+ ensure authenticity, but the evolving nature of historical research means interpretations can change over time. Our goal is to inspire
+
+                                 curiosity and appreciation for the diverse cultures that have shaped our world.
+
+                                                                                                                    7
+KEYWORDS & VOCABULARY
+
+Keywords                                                                                            Charge
+
+Here is a list of the common effects you might find while playing Echoes of               Charge damage
+Emperors.                                                                               No Charge damage
+
++X : This unit has +X health. If this unit has taken damage, its current                         Long-Range
+health increases by X as well (without removing existing damage).                 Squares that can be attacked
+Anti [Class] X: The unit has +X or +X against a specific class of units,
+such as Cavalry, Infantry, or buildings.                                                using Long-Range
+Armor Piercing: This unit's attack ignores Armor, Ranged Armor, and                       Damage -1
+Building Armor.
+Armor X: The unit or building takes X less damage during combat (applied to
+Melee and Ranged attacks). If a unit or building receives armor from multiple
+sources, the values are added together.
+Battering X: The unit has +X or +X against buildings and Siege units.
+If this unit attacks a building or Siege unit, it ignores armor.
+Charge X: After moving 2 or more squares this turn, the unit has +X
+against units.
+Fatigue: After performing an attack, this unit remains exhausted next turn.
+Front-Line: Can stand on squares with 1 other allied unit. Front-line units
+must be targeted first.
+Heavy Ship: Can only move on water. Allied units may move over water
+squares this unit occupies. Deploy this unit onto a water square surrounding
+one of your units.
+Intimidation: The unit does not take counter damage when attacking.
+Light Ship: Can only move on water and surrounding squares. Deploy this
+unit onto a water square surrounding one of your units.
+Long-Range: The unit can attack from 2 squares away with Ranged attacks,
+dealing -1 ).
+Naval: The unit can move over water tiles.
+Ranged Armor X: The unit or building takes X less damage when attacked
+with Ranged attacks. If a unit or building receives armor from multiple sources,
+the values are added together.
+Recruit: Action: Draw 1 card, exhausting this unit.
+Regenerate: The unit heals 1 damage at the start of your turn.
+Riposte X: When targeted, you do +X counter damage.
+Short-Range: Cannot attack diagonally with Ranged attacks.
+War Cry: All allied units on surrounding squares have +1
+
+                       Card vocabulary
+
+                           When attacking: When one of your units attacks an enemy unit.
+                           When targeted: When your unit is being attacked.
+                           Adjacent: Squares directly next to a unit, including up, down, left, right, and the center
+                           square (not diagonal).
+                           Surrounding: All squares around a unit, including diagonal, adjacent, and the center square.
+                           True damage: The unit takes damage to its health points ignoring any protection provided
+                           by armor and effects that lower the amount of damage a unit takes.
+                           Tiles / Squares: Tiles make the map, each tile contains 4 squares.
+                           Unoccupied square: A square open for movement and unit placement, free of obstacles such
+                           as other units, enemy Fortified buildings, or water.
+                           Wild resource: A Wild resource token can be used as any resource.
+                           Resource of choice: When a card says `resource of choice', you have to choose 1 of the 3 main
+                           resources.
+                           Allied: Your units and buildings, as well as those of your teammate in 2v2 games.
+
+8
+

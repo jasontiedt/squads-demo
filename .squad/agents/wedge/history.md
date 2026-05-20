@@ -49,3 +49,17 @@
 - **Tooling:** ESLint (eslint:recommended + @typescript-eslint/recommended), Prettier (single quotes, semis, 100 col, trailing commas), `.editorconfig` (LF, 2-space).
 - **`.gitignore`:** added `node_modules/`, `dist/`, `.wrangler/`, `coverage/`, `*.local`, `.env`/`.env.*` (with `!.env.example`), `.DS_Store`. Existing `.squad/` runtime ignores preserved.
 - **Did NOT run:** `pnpm install`. User runs first.
+
+### 2026-05-20 — Rulebook synthesis & MVP-1 backlog refinement
+
+- **Rulebook extracted:** `documentation/Rulebook_EN.pdf` had embedded text — full extraction to `Rulebook_EN.txt` (444 lines). `English_Base_EN.pdf` partial extract confirms card data shape (cost, movement, melee, ranged, health, class, keywords, flavor). Byzantines/StartingTiles/Constantinople PDFs are image-only — no extractable text. Did NOT invent content for those.
+- **Turn structure is 4 phases (not 3):** Start → Mobilization → Deployment → End. Tactics play in either Mob or Dep; Technologies only in Dep; Reactions on opponent's turn; Events persist.
+- **Card categories richer than original sketch:** Unit, Technology (4 sub-types), Tactic, Upgrade, Action, Reaction, Event. Buildings (Camp/Barracks/Capital) are NOT cards — they're tokens placed by unit actions.
+- **Map model:** 3×3 grid of TILES, each tile = 2×2 squares → effectively 6×6 playable squares. Tiles have orientation (revealed via Scouting). Engine speaks `(x, y)` squares + terrain; tile rotation is render metadata. Square terrains: plain, mountain, water, river, village, farmland, forest, mine, gold-double.
+- **Win conditions:** capital→0 OR all-units-eliminated. Both must be checked.
+- **Resource model is per-token, not just counts:** Main resources from Camps have exhausted/unexhausted state and a source camp; Temporary resources sit on specific cards with optional max capacity. This affects Zod schema design.
+- **Hand cap = 7, draw to 5 (or +1 if ≥5). Deck does NOT reshuffle when empty.**
+- **King/Queen pawns** are unique per game, give +1/+2, removable on death.
+- **10 ambiguities pinned for `needs-confirmation` tests** — Reaction timing windows, "two-effect" cards, King/Queen-attached unit discard, Camp resource regeneration, Scouting-onto-water cost, upgrade stacking across units, "surrounding Capital" diagonal read, melee mutual-kill square ownership, Long-Range diagonal interaction with Short-Range, deck-empty discard interactions.
+- **MVP-1 backlog refined:** original 9-issue plan replaced with ~14 smaller issues (preview only — issues NOT filed). Critical path: schema → applyAction skeleton → first card kind (unit deploy) → handoff demo. Card content beyond unit deploy is post-MVP-1.
+- **Architecture refinements written** to `.squad/decisions/inbox/wedge-rulebook-synthesis.md`. Stack stays locked. Schema additions are additive, no breaking changes to the locked architecture.

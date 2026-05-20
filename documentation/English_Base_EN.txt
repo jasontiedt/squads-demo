@@ -1,0 +1,235 @@
+                    English                                                                         Watchman                                                       Billman
+
+                         Anglo-Normans                                                                  STARTING SCOUT                                     1
+                                You can revive your king or queen pawn at any time.                                                                        1
+                                   (excluding the attached card) When doing so, you lose 2  1                                                              1
+                                       Capital lifepoints.                                  1
+
+                                                                                            2                   INFANTRY                                   2                   INFANTRY
+
+                                                                                            1 Action: Replace a surrounding camp of                        2
+                                                                                            4 yours with a barracks.
+                                                                                                                                                                   Melee Armor 1 (Takes 1 less damage from
+
+                                                                                                                                                           4  Melee attacks.)
+
+                                                                                            0  In 13th-century England, strict curfews gave rise to the    0  A bill was an agricultural tool used for trimming trees,
+
+                                                                                               Night Watch. Under the `Nightwalker' statutes, they            later adapted into a weapon by adding spikes. While
+
+                                                                                               patrolled the streets, arresting anyone found after sunset     much of Europe adopted the pike, the English kept the
+
+                                                                                               and holding them until dawn.                                   bill as their primary polearm.
+
+        Billman                                                                                     Billman                                                         Welsh Infantry
+
+1                                                                                           1                                                              2
+1                                                                                           1                                                              1
+1                                                                                           1
+
+2                   INFANTRY                                                                2                   INFANTRY                                   2  INFANTRY - ARCHER
+
+2                                                                                           2                                                              3
+
+        Melee Armor 1 (Takes 1 less damage from                                                     Melee Armor 1 (Takes 1 less damage from
+
+4  Melee attacks.)                                                                          4  Melee attacks.)                                             3
+
+0  A bill was an agricultural tool used for trimming trees,                                 0  A bill was an agricultural tool used for trimming trees,    2  Welsh infantry became a vital pillar of the English army.
+
+   later adapted into a weapon by adding spikes. While                                         later adapted into a weapon by adding spikes. While            Primarily recruited as spearmen and foot-archers,
+
+   much of Europe adopted the pike, the English kept the                                       much of Europe adopted the pike, the English kept the          thousands of these skilled warriors were drafted to fight
+
+   bill as their primary polearm.                                                              bill as their primary polearm.                                 the king's wars in Scotland and France.
+
+         Welsh Infantry                                                                             Longbowman                                                     Longbowman
+
+2                                                                                           2                                                              2
+1                                                                                           2                                                              2
+
+2  INFANTRY - ARCHER                                                                        2                   ARCHER                                     2                   ARCHER
+
+3                                                                                           0                                                              0
+
+                                                                                               Long-Range (Attack from 2 squares away                         Long-Range (Attack from 2 squares away
+
+3                                                                                           2  with Ranged attack, dealing -1 .)                           2  with Ranged attack, dealing -1 .)
+
+2  Welsh infantry became a vital pillar of the English army.                                3                                                              3
+
+   Primarily recruited as spearmen and foot-archers,                                                  Longbows were a common weapon throughout history,              Longbows were a common weapon throughout history,
+                                                                                                      most famously the yew longbows. Made from one piece            most famously the yew longbows. Made from one piece
+   thousands of these skilled warriors were drafted to fight                                          of wood, they were quick and easy to craft.                    of wood, they were quick and easy to craft.
+
+   the king's wars in Scotland and France.
+        Longbowman                                                              Yeoman                                                             Yeoman
+
+2                                                                       3                                                                  3
+2                                                                       2                                                                  2
+                                                                        1                                                                  1
+
+2                ARCHER                                                 2                ARCHER                                            2               ARCHER
+
+0                                                                       0   Long-Range (Attack from 2 squares away                         0  Long-Range (Attack from 2 squares away
+
+   Long-Range (Attack from 2 squares away                                   with Ranged attack, dealing -1 .)                                 with Ranged attack, dealing -1 .)
+
+2  with Ranged attack, dealing -1 .)                                    3   Ignore other unit's Armor effects.                             3  Ignore other unit's Armor effects.
+
+3                                                                       3                                                                  3
+
+          Longbows were a common weapon throughout history,                       Yeomen were middle-ranking free men, often associated              Yeomen were middle-ranking free men, often associated
+          most famously the yew longbows. Made from one piece                     with English and Welsh longbowmen. Their bows had                  with English and Welsh longbowmen. Their bows had
+          of wood, they were quick and easy to craft.                             immense power, capable of piercing armor.                          immense power, capable of piercing armor.
+
+        Archer on Horse                                                         Esquire                                                             English Knight
+
+3                                                                       2                                                                  3
+2                                                                       1                                                                  4
+2
+
+3  ARCHER - CAVALRY                                                     2                CAVALRY                                           2               CAVALRY
+
+3                                                                       2                                                                  4  Charge 2 (+2 against units after moving
+
+   Long-Range (Attack from 2 squares away                                   Charge 2 (+2 against units after moving                           2 or more squares this turn.)
+
+3  with Ranged attack, dealing -1 .)                                    5   2 or more squares this turn.)                                  7  Armor 2 (Take 2 less damage during combat.)
+
+3                                                                       0                                                                  0
+
+          Some archers could afford a horse and better equip-                     Esquire was a title of respect for men of higher social            Knighthood was considered a rank of minor nobility. A
+          ment. Mounted archers usually dismounted to shoot,                      rank. They were employed by nobles of higher rank, such            knight was often a vassal who served as an elite warrior
+          but used their horses to reposition or join a charge.                   as knights.                                                        or bodyguard to a lord in return for payment.
+
+        Sherrif                                                                 Earl                                                               Trebuchet
+
+3                                                                       3                                                                  2
+3                                                                       4                                                                  1
+2                                                                       1                                                                  1
+
+2                INFANTRY                                               2                CAVALRY                                           1  SIEGE - CATAPULT
+
+3  Recruit (Action: Draw 1 card.)                                                If this unit is deployed onto the King or                 0 Action: Deal 3 true damage to an
+
+                                                                        3 Queen, you lose 2 lifepoints, but this unit                              enemy building up to 2 squares away
+
+   When this unit is on a camp of yours,                                         and all surrounding units of yours, have                     from this unit.
+   this unit has +3 and Armor 3.                                                                                                              Ranged Armor 2 (Takes 2 less damage
+6                                                                       10  +2 .                                                           2
+                                                                            If not deployed onto the King or Queen, all
+
+1                                                                       0   surrounding units of yours have Armor 1.                                 from Ranged attacks.)
+
+          A reeve responsible for managing a shire, also known as a                                                                        1
+          shire reeve. The duties of a shire rees included keeping the
+          peace, providing men at arms and collecting taxes.                An earl was a high-ranking noble who governed a specific          The counterweight trebuchet was the ultimate siege engine
+                                                                            territory. During the Barons' Wars, some revolted against         starting in the 13th century, until gunpowder rendered it
+                                                                            the crown to challenge the king's power.                          obsolete in the late 15th century.
+        Trebuchet                                                                   Warwolf                                                                     Edward I Longshanks
+
+2                                                                           4                                                                           4
+1                                                                           3                                                                           5
+1                                                                           1
+
+1  SIEGE - CATAPULT                                                         1  SIEGE - CATAPULT                                                            2  CONQUEROR - CAVALRY
+
+                                                                               One-time action: Deal 7 true damage                                              At the end of your turn, gain 1
+
+0 Action: Deal 3 true damage to an                                          0  to an enemy building up to 2 squares                                     3 temporary wild resource. (max. 2)
+                                                                               away from this unit.
+        enemy building up to 2 squares away                                                                                                                     For each wild resource on Edward,
+
+2  from this unit.                                                          4  Ranged Armor 2 (Takes 2 less damage                                      10 all your units have +1 Armor. At the
+   Ranged Armor 2 (Takes 2 less damage
+                                                                               from Ranged attacks.)                                                            end of your turn, if Edward has 2 wild
+
+          from Ranged attacks.)                                             1  War Cry 2 (All surrounding allied units have                             1 resources, you lose 2 lifepoints.
+
+1                                                                              +2 .)                                                                              Standing at an imposing 6'2", Edward I was known as
+                                                                                                                                                                  `Longshanks.' He restored royal authority through relentless
+   The counterweight trebuchet was the ultimate siege engine                   The largest trebuchet known, the War Wolf, required 30                             wars, leaving a legacy both feared and admired.
+   starting in the 13th century, until gunpowder rendered it                   wagons to transport. It was built for the siege of Stirling
+   obsolete in the late 15th century.                                          Castle, but the Scots surrendered before it could be used.
+
+        Arrowslits                                                                  Arrowslits                                                                  Marcher Lord
+
+1                                                                           1                                                                           1
+1                                                                           1                                                                           1
+
+   UPGRADE Archer                                                              UPGRADE Archer                                                                 UPGR A DE
+
++1 When on a building of yours.                                             +1 When on a building of yours.                                             After attacking with this unit, it can still build in
+                                                                                                                                                        the same turn.
+
+Forgotten for centuries, the arrowslit was a defensive masterpiece.         Forgotten for centuries, the arrowslit was a defensive masterpiece.         Marcher Lords guarded the Welsh Marches, the border between England
+Originally used by Greeks and Romans, it was reintroduced in 12th-          Originally used by Greeks and Romans, it was reintroduced in 12th-          and Wales. These nobles held unique powers to build castles and wage
+century England, turning castle walls into sniper nests.                    century England, turning castle walls into sniper nests.                    war.
+
+   Royal Forest                                                                Royal Forest                                                                   Pontoon Bridge
+
+                                  ACTION                                                                      ACTION                                          ACTION
+
+Destroy camps of yours on forest squares. For                               Destroy camps of yours on forest squares. For                                     Relocate any amount of units of yours
+each camp you destroy, you gain 2 temporary food                            each camp you destroy, you gain 2 temporary food
+resources.                                                                  resources.                                                                  1     surrounding water, to another square
+                                                                                                                                                              surrounding the water square. Each unit
+                                  ACTION                                                                      ACTION                                    1 after the first takes 1 damage.
+
+1 Gain 1 temporary Wood resource                                            1 Gain 1 temporary Wood resource                                            Floating bridges were vital but risky. In 1282, a bridge of boats collapsed at
+                                                                                                                                                        Moel-y-don under retreating English knights.
+Royal forests were hunting grounds reserved for the aristocracy. Hunting    Royal forests were hunting grounds reserved for the aristocracy. Hunting
+or cutting wood was forbidden. Nobles could pay for limited rights to hunt  or cutting wood was forbidden. Nobles could pay for limited rights to hunt
+or cut wood.                                                                or cut wood.
+   Pontoon Bridge                                                               Wool Export                                                                      Eyre
+
+                 ACTION                                                         ACTION                                                                                       ACTION
+
+   Relocate any amount of units of yours                                        Take up to 3 temporary gold resources, for                                          For each of your Camps occupied by one of
+                                                                                each resource you take, your opponent gets 1                                  4 your units, you gain one temporary resource
+1  surrounding water, to another square                                         temporary food resource.
+   surrounding the water square. Each unit                                                                                                                          of the corresponding type.
+1 after the first takes 1 damage.                                               Wool formed the backbone of the English economy. Prized as the finest in
+                                                                                Europe, it primarily exported to Flanders and Italy. These exports greatly    An eyre was a circuit of royal judges sent to inspect vassals and oversee
+Floating bridges were vital but risky. In 1282, a bridge of boats collapsed at  funded England's wars.                                                        local legal cases. These visits were feared for their heavy fines, in 1233 locals
+Moel-y-don under retreating English knights.                                                                                                                  reportadly fled into the woods to escape the law.
+
+   Model Parliament                                                             Ring of Iron                                                                     Hammer of the Scots
+
+                                  ACTION                                                                          ACTION                                                     REACTION
+
+      For each of your units that costs 4 or fewer                              3 Place up to two Barracks on squares adjacent                                   At the first attack of your opponents turn. Your
+      resources, draw 1 card. For each of your                                  4 to enemy buildings.
+2 units that costs 5 or more resources, gain                                                                                                                     opponent either chooses to not attack anymore,
+2 1 temporary wild resource. If you have                                        The Ring of Iron was a chain of fortifications built across Wales during the
+      no units in one of these categories, lose 2                               reign of Edward I. Its purpose was to control the native Welsh population     2  giving them one temporary resource of choice,
+      lifepoints.                                                               and suppress uprisings.                                                          and healing all your units 1 damage. Or they
+
+The parliament of England under King Edward I. It included clergy, aris-                                                                                         attack, giving all your units +2 during your
+tocracy and representatives from various counties.
+                                                                                                                                                                 next turn.
+
+                                                                                                                                                              Edward I earned the nickname `Hammer of the Scots'. He broke the Franco-
+                                                                                                                                                              Scottish alliance and executed William Wallace, but never managed to
+                                                                                                                                                              subdue Robert the Bruce.
+
+        Bowyers                                                                         Purveyance                                                                    Magna Carta
+
+1                                                                               2                                                                             1
+1                                                                               2                                                                             2
+
+                                   EVENT                                                                           EVENT                                                                         EVENT
+
+Archer units of yours cost 1 less wood resource                                 Units of yours may be deployed with a reduced                                 Your Royal figures (King and Queen) lose their bonus
+to deploy and may also be deployed onto your                                    amount of resources of your choice. For each                                  stats. While you have a Royal figure deployed, gain 1
+camps.                                                                          resource you pay less, you lose 2 lifepoints.                                 temporary Gold at the end of your turn (max. 2). If this
+                                                                                                                                                              card reaches 2 Gold, your Royal figures take 2 damage.
+Becoming a bow-making expert required specialised training. Bowyers             Purveyance allowed the crown to buy goods and horses far below market         You may destroy this card at any time. If you do, lose
+had to produce thousands of bows for the military. An expert bowyer could       price. This practice was frequently abused by greedy officials.               2 Capital Lifepoints, heal 4 damage to your Royal
+make a longbow in as little as two hours.                                                                                                                     figures, and restore their bonus stats.
+
+                                                                                                                                                              The Magna Carta was a charter of law forsefully signed by King John.
+                                                                                                                                                              It limited royal authority. Kings often reaffirmed it to demonstrated
+                                                                                                                                                              obedience to the law, ensuring taxes and political support.
+
