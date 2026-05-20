@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export * from './resources.js';
+
 // ───────────────────────────── Identity ──────────────────────────────
 
 export const GameId = z.string().min(4).max(16);
