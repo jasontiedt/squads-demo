@@ -1,0 +1,15 @@
+name = "echoes-of-emperors-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+
+# CORS allowed origin(s) — set per-environment. Comma-separated list.
+# Worker reads env.ALLOWED_ORIGINS at request time.
+[vars]
+ALLOWED_ORIGINS = "http://localhost:5173"
+
+# KV namespace for game state. One key per gameId.
+# TODO: run `wrangler kv:namespace create GAMES` and paste the id below,
+# then uncomment the block.
+# [[kv_namespaces]]
+# binding = "GAMES"
+# id = "<paste-id-here>"

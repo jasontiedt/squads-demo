@@ -1,0 +1,22 @@
+{
+  "universe_usage_history": [
+    {
+      "universe": "Star Wars",
+      "assignment_id": "2026-05-20-initial-cast",
+      "used_at": "2026-05-20"
+    }
+  ],
+  "assignment_cast_snapshots": {
+    "2026-05-20-initial-cast": {
+      "universe": "Star Wars",
+      "agents": {
+        "lead": "Wedge",
+        "frontend": "Lando",
+        "backend": "Artoo",
+        "designer": "Sabine",
+        "tester": "Cassian"
+      },
+      "created_at": "2026-05-20"
+    }
+  }
+}
