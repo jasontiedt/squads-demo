@@ -25,14 +25,19 @@ export type TemporaryResourceId = z.infer<typeof TemporaryResourceId>;
 
 /**
  * Resource kinds. Terrain-derived: each Main token comes from a Camp built on
- * a matching terrain square (forest → wood, farmland → food, mine → stone,
+ * a matching terrain square (forest → wood, farmland → food, mine → gold,
  * gold/gold-double → gold, village → wild).
  *
- * @needs-confirmation: `wedge-rulebook-synthesis.md` enumerated only
- *   {food, wood, gold, wild} for the resource banks, but the issue #2
- *   acceptance criteria explicitly list `stone`. The `mine` terrain in
- *   `TerrainType` strongly implies a stone resource. Pinning to the
- *   five-kind set here; confirm with rulebook before card data is loaded.
+ * @needs-confirmation: `stone` is RETAINED here despite contradicting the
+ *   rulebook. Source review (`Rulebook_EN.txt` line 47) lists the bank as
+ *   "5 Food, 5 Wood, 5 Gold, 3 Wild" — no stone. The Mine terrain produces
+ *   gold (rulebook §"Resources" diagram on page 4, where "Mine" sits next
+ *   to the Gold cluster, not a separate stone cluster). Removing `stone`
+ *   from `ResourceKind` is OUT OF SCOPE for issue #3 (this PR adds card
+ *   kinds only). It should be removed in a follow-up that also cleans up
+ *   issue #2 fixtures referencing `'stone'`.
+ *   See PR #3 body for context. Do NOT introduce new code paths that
+ *   depend on `'stone'`.
  */
 export const ResourceKind = z.enum(['wood', 'stone', 'food', 'gold', 'wild']);
 export type ResourceKind = z.infer<typeof ResourceKind>;
