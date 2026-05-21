@@ -1,5 +1,6 @@
 import type { Action, GameState, Seat } from '@eoe/schema';
 
+import { deployUnit } from './deployUnit.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { err, ok, type Result } from './result.js';
 
@@ -141,6 +142,10 @@ export function applyAction(
       });
     }
 
+    // Issue #8: DeployUnit — MVP Capital-only path.
+    case 'DeployUnit':
+      return deployUnit(state, action, actorId);
+
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues (#7 = card draw, #8 = movement, etc.).
@@ -155,7 +160,6 @@ export function applyAction(
     case 'Resupply':
     case 'RecruitDraw':
     case 'PlayTactic':
-    case 'DeployUnit':
     case 'PlayTechnology':
     case 'PlayUpgrade':
     case 'PlayAction':
