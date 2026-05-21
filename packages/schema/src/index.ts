@@ -1,6 +1,11 @@
 import { z } from 'zod';
+import { CardId } from './cards.js';
 
 export * from './resources.js';
+export * from './civ.js';
+export * from './cards.js';
+
+import { Civ } from './civ.js';
 
 // ───────────────────────────── Identity ──────────────────────────────
 
@@ -16,17 +21,6 @@ export type PlayerToken = z.infer<typeof PlayerToken>;
 
 export const Seat = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
 export type Seat = z.infer<typeof Seat>;
-
-export const Civ = z.enum([
-  'byzantines',
-  'hre',
-  'mongols',
-  'norsemen',
-  'ottomans',
-  'scots',
-  'english',
-]);
-export type Civ = z.infer<typeof Civ>;
 
 // ───────────────────────────── Phases ────────────────────────────────
 
@@ -117,9 +111,7 @@ export type Player = z.infer<typeof Player>;
 
 // ─────────────────────────── Game state ──────────────────────────────
 
-/** Card payload kept loose for MVP — real card metadata lives in @eoe/assets-meta. */
-export const CardId = z.string();
-export type CardId = z.infer<typeof CardId>;
+/** `CardId` is defined in `./cards.ts` (branded) and re-exported above. */
 
 export const Deck = z.array(CardId);
 export type Deck = z.infer<typeof Deck>;
