@@ -1,5 +1,5 @@
-// In-memory mock implementation of GameApi. Used in dev, tests, and as the
-// default until issue #13 wires the real Worker calls.
+// In-memory mock implementation of GameApi. Used in dev, tests, and as
+// the default until production opts into RealGameApi.
 
 import type {
   CreateGameRequest,
@@ -9,16 +9,25 @@ import type {
   GetGameResponse,
   JoinGameRequest,
   JoinGameResponse,
+  PostActionRequest,
+  PostActionResponse,
+  PublicGameState,
 } from './client.js';
-import { ApiError, placeholderState } from './client.js';
-import type { GameId, GameState, PlayerToken, Seat } from '@eoe/schema';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  VersionMismatchError,
+  placeholderState,
+} from './client.js';
+import type { GameId, PlayerToken, Seat } from '@eoe/schema';
 
 // Tokens must be ≥32 chars per @eoe/schema PlayerToken. Pad deterministically.
 const pad = (s: string): string => (s + '-'.repeat(40)).slice(0, 40);
 
 interface MockGameRecord {
   code: GameId;
-  state: GameState;
+  state: PublicGameState;
   /** seat → playerToken assigned at join/create time. */
   tokensBySeat: Map<Seat, PlayerToken>;
 }
@@ -70,8 +79,9 @@ export class MockGameApi implements GameApi {
     if (!req.name.trim()) {
       throw new ApiError('invalid_name', 'name is required');
     }
-    // For the shell mock, accept any well-formed code: if we haven't seen it
-    // we lazily create a host slot so the join flow works in isolation.
+    // For the shell mock, accept any well-formed code: if we haven't
+    // seen it we lazily create a host slot so the join flow works in
+    // isolation.
     let record = this.games.get(req.gameCode);
     if (!record) {
       record = {
@@ -98,7 +108,7 @@ export class MockGameApi implements GameApi {
   async getGame(req: GetGameRequest): Promise<GetGameResponse> {
     const record = this.games.get(req.gameCode);
     if (!record) {
-      throw new ApiError('not_found', `unknown game ${req.gameCode}`, 404);
+      throw new NotFoundError(`unknown game ${req.gameCode}`);
     }
     let foundSeat: Seat | undefined;
     for (const [seat, tk] of record.tokensBySeat) {
@@ -108,9 +118,34 @@ export class MockGameApi implements GameApi {
       }
     }
     if (foundSeat === undefined) {
-      throw new ApiError('unauthorized', 'invalid playerToken for game', 401);
+      throw new AuthError('invalid playerToken for game');
     }
     return { state: record.state, seat: foundSeat };
+  }
+
+  async postAction(req: PostActionRequest): Promise<PostActionResponse> {
+    const record = this.games.get(req.gameCode);
+    if (!record) {
+      throw new NotFoundError(`unknown game ${req.gameCode}`);
+    }
+    const seatToken = record.tokensBySeat.get(req.seat);
+    if (seatToken === undefined || seatToken !== req.token) {
+      throw new AuthError('invalid token for seat');
+    }
+    if (record.state.version !== req.expectedVersion) {
+      throw new VersionMismatchError(
+        record.state.version,
+        req.expectedVersion,
+      );
+    }
+    // Mock semantics: any action that parses just bumps the version.
+    // The real rules engine lives in @eoe/rules and runs on the worker.
+    const nextState: PublicGameState = {
+      ...record.state,
+      version: record.state.version + 1,
+    };
+    record.state = nextState;
+    return { state: nextState, version: nextState.version };
   }
 }
 
