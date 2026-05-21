@@ -101,3 +101,26 @@
 - **Tests: 92 in `@eoe/rules`, 204 in `@eoe/schema`, 4 in `@eoe/worker`** all green. No regressions anywhere downstream.
 
 - Branch: `copilot/6-rules-phase-machine`. PR #24 (draft). Body includes `Closes #6`, the reviewer notes about boundary placement of `RuleError`, `actorId: Seat` vs `PlayerId`, and the Cassian-style EndPhase-from-end ambiguity pin.
+
+### 2026-05-21: Issue #12 — Worker POST /games + /join (KV-backed game creation)
+
+- **Files added in `apps/worker/`:**
+  - `src/http.ts` — `corsHeaders`, `json`, `errorBody` (uniform `{code, error, details?}`).
+  - `src/random.ts` — `newGameCode` (6 chars, alphabet `ABCDEFGHJKMNPQRSTUVWXYZ23456789` — no I/O/L/0/1), `newPlayerToken` (32 bytes → base64url), `newSeed` (4 bytes → 8 hex), `sha256Hex` (Web Crypto), `shuffleWith` (Fisher-Yates with explicit `undefined` guards for `noUncheckedIndexedAccess`).
+  - `src/game-init.ts` — `buildCreatorState` (seat-1 only, version=1) and `addJoiner` (folds seat 2 in, bumps version). Hand=5, deck=remainder. Civ deck shuffled deterministically via `mulberry32(seedFor({seed, turn:1, activePlayer:1}, 'shuffle:deck:<seat>'))`. Capitals at `(0,0)` and `(5,5)` — flagged `@needs-confirmation`.
+  - `src/kv-store.ts` — `StoredGame = { state: GameState; tokenHashes: {1?,2?,3?,4?: string} }`. Key `game:<code>`. Version lives **only** on `state.version`, never duplicated.
+  - `src/request-schema.ts` — Zod `CreateGameBody` and `JoinGameBody`, both `.strict()`.
+  - `src/routes/create-game.ts` — 5 collision retries before 503 `code_collision`; 400 on bad JSON or schema fail.
+  - `src/routes/join-game.ts` — 404 on unknown code, 409 on `state.players[2]` already set.
+  - `src/index.ts` (rewritten) — router with OPTIONS preflight, POST `/games`, POST `/games/:code/join`, plus 501 stubs for `/games/:id/actions` (#13) and `GET /games/:id` (#14).
+  - `test/post-games.test.ts` — 19 tests covering response shapes, KV writes (Zod-parsed), token-hash flow (sha256, plaintext never persisted), both civs as creator and joiner, version bump 1→2, seat-2 `firstPlayerSecondPlayerWild` flag, capital placement, 409/404/400 errors.
+  - `test/helpers/memory-kv.ts` — in-memory `KVNamespace`-shaped stub with `get`/`put`/`delete` plus `peek` and `size` for assertions.
+- **Modified:** `apps/worker/package.json` adds `@eoe/assets-meta: workspace:*` (deck data). `apps/worker/wrangler.toml` `ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173"`.
+- **Token-hash flow:** `crypto.getRandomValues` → base64url plaintext → `sha256Hex` → store hash in `tokenHashes[seat]`. Plaintext returned **once** in the create/join response, never re-stored. Tests assert the raw token does not appear anywhere in the KV blob.
+- **Error response shape:** `{code, error, details?}`. Codes used: `invalid_json`, `invalid_body`, `not_found`, `game_full`, `code_collision`, `not_implemented`.
+- **gameCode collision:** loop up to 5 attempts (`gameExists` check); after that, 503. Single retry is the common path — the codespace is ~10⁹.
+- **`exactOptionalPropertyTypes` gotcha:** `firstPlayerSecondPlayerWild` is omitted on seat 1 and `true` on seat 2 — I build seat 2 with a conditional spread (`{...player, firstPlayerSecondPlayerWild: true}`) rather than always assigning, otherwise seat 1 ends up with the wrong shape.
+- **Deck padding (`@needs-confirmation`):** Byzantines has only 2 cards in `@eoe/assets-meta` data today (1 unit + 1 civ card). I pad to `MIN_DECK_AFTER_DRAW + STARTING_HAND_SIZE = 12` with civ-namespaced placeholders (`<civ>-placeholder-<i>`) so the 5-card draw never under-runs. Will be revisited when card catalogs ship.
+- **Workspace dep gotcha:** `pnpm install` in the worktree can't run unattended because it wants to wipe-and-rebuild `node_modules` (the per-package junctions confuse it). Workaround: manually create the missing workspace symlink in the **main checkout** — `ln -s /c/GitRepos/squads-demo/packages/assets-meta/ apps/worker/node_modules/@eoe/assets-meta` — and the worktree picks it up through the junction. Real install will reconcile on the next clean main-repo `pnpm install`.
+- **Test counts:** worker **23** (was 4 — +19 new), schema 204, rules 121 (+16 needs-confirmation skipped), assets-meta 17. All green.
+- Branch: `copilot/12-worker-post-games`. Decision filed at `.squad/decisions/inbox/artoo-worker-kv-contract.md` documenting KV schema, endpoint contracts, token-hash flow, code alphabet, and the three `@needs-confirmation` items (capital squares, starting tile terrain, deck padding).
