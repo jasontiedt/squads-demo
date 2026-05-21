@@ -1,0 +1,181 @@
+import type { Action, GameState, Seat } from '@eoe/schema';
+
+import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
+import { err, ok, type Result } from './result.js';
+
+// ─────────────────────────── applyAction ─────────────────────────────
+//
+// Issue #6: the rules engine entry point. Pure, deterministic, no I/O.
+//
+// Contract:
+//   - Inputs are NEVER mutated. We spread a new `GameState` for any
+//     transition that changes phase, turn, or activePlayer.
+//   - All control flow goes through `Result<GameState>`. We never
+//     throw for ruleset violations; throws are reserved for true
+//     programming bugs (which the type system should already catch).
+//   - Phase gating runs FIRST, before any handler logic. The gate
+//     consults `ACTION_PHASE_LEGALITY` (see `./phases.ts`) — one
+//     lookup, no branching tree.
+//   - This issue (#6) implements gating + the EndPhase/EndTurn state
+//     machine. Every other action passes through the gate and then
+//     returns `{ code: 'not_implemented' }`. Effect handlers land in
+//     subsequent issues (#7+).
+//
+// Active-seat semantics:
+//   - "Active-turn" actions (everything except `PlayReaction`) must be
+//     played by `state.activePlayer`. Any other seat → `not_your_turn`.
+//   - `PlayReaction` is the inverse: it must be played by a NON-active
+//     seat. The active player calling PlayReaction → `not_your_turn`.
+//   - For now we treat "non-active" as "any seat that isn't the active
+//     seat" — once full reaction windows land we'll refine to "the seat
+//     in the pending reaction window".
+
+// ─── Seat rotation ───
+//
+// Rotates the active seat to the next *occupied* seat (1 → 2 → 3 → 4 → 1).
+// We skip empty seats so a 2-player game (seats 1 & 2 occupied) flips
+// 1 ↔ 2 cleanly. Returns the next seat AND whether we wrapped past seat
+// 1 (which is the signal to increment the turn counter).
+//
+// Determinism: relies only on the keys present in `state.players`. The
+// players record uses literal-number keys 1|2|3|4.
+
+const SEATS_IN_ORDER: ReadonlyArray<Seat> = [1, 2, 3, 4];
+
+function rotateSeat(state: GameState): { next: Seat; wrapped: boolean } {
+  const current = state.activePlayer;
+  const currentIdx = SEATS_IN_ORDER.indexOf(current);
+
+  // Walk forward up to 4 slots looking for the next occupied seat.
+  // Bound the loop at 4 — anything beyond is a corrupt state and we
+  // defensively fall back to keeping the current seat (caller handles
+  // the no-op by treating wrapped=true so the turn still advances).
+  for (let i = 1; i <= SEATS_IN_ORDER.length; i++) {
+    const probeIdx = (currentIdx + i) % SEATS_IN_ORDER.length;
+    const probeSeat = SEATS_IN_ORDER[probeIdx];
+    if (probeSeat === undefined) continue;
+    if (state.players[probeSeat] !== undefined) {
+      return { next: probeSeat, wrapped: probeIdx <= currentIdx };
+    }
+  }
+
+  // Solo game (only the current seat occupied). Stay on this seat but
+  // signal wrap so the turn counter still ticks — useful for tests.
+  return { next: current, wrapped: true };
+}
+
+// ─── End-of-turn cleanup stub ───
+//
+// Placeholder for the end-of-turn hooks described in issue #6:
+// hand-cap check, exhausted-resource reset, scheduled card draw, etc.
+// Real implementations land in #7 (card draw) and #8+ (resource resets).
+//
+// For now we return `state` untouched — but we still flow it through
+// this hook so the call site stays stable when #7 lands.
+
+function drawAndDiscardCleanup(state: GameState): GameState {
+  // TODO(#7): trigger Recruit / Tactic / Event deck draws here.
+  // TODO(#8): reset exhausted units and per-turn resource caps here.
+  return state;
+}
+
+// ─── Main entry point ───
+
+export function applyAction(
+  state: GameState,
+  action: Action,
+  actorId: Seat,
+): Result<GameState> {
+  // 1) Active-seat / opponent-seat gate.
+  const isReaction = isOpponentTurnAction(action.type);
+  if (isReaction) {
+    if (actorId === state.activePlayer) {
+      return err(
+        'not_your_turn',
+        `${action.type} must be played by a non-active seat (active seat is ${state.activePlayer})`,
+      );
+    }
+  } else {
+    if (actorId !== state.activePlayer) {
+      return err(
+        'not_your_turn',
+        `${action.type} requires the active seat (${state.activePlayer}); actor was seat ${actorId}`,
+      );
+    }
+  }
+
+  // 2) Phase gate. Reactions skip the phase check — they're legal in
+  //    any phase as long as the actor is the non-active seat.
+  if (!isReaction && !isPhaseLegal(action.type, state.phase)) {
+    return err(
+      'wrong_phase',
+      `${action.type} is not legal during the ${state.phase} phase`,
+    );
+  }
+
+  // 3) Dispatch. Only EndPhase / EndTurn have real effect logic in #6;
+  //    everything else returns `not_implemented` after the gate passes.
+  switch (action.type) {
+    case 'EndPhase': {
+      const next = nextPhase(state.phase);
+      if (next === null) {
+        // Should be unreachable thanks to the gate (EndPhase is illegal
+        // from `end`), but we keep this defensive branch so a bug in
+        // the table surfaces as a clear error rather than a crash.
+        return err(
+          'wrong_phase',
+          `Cannot EndPhase from ${state.phase}; use EndTurn instead`,
+        );
+      }
+      return ok({ ...state, phase: next });
+    }
+
+    case 'EndTurn': {
+      const { next, wrapped } = rotateSeat(state);
+      const cleaned = drawAndDiscardCleanup(state);
+      return ok({
+        ...cleaned,
+        phase: 'start',
+        activePlayer: next,
+        turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
+      });
+    }
+
+    // Every other action passed the phase + seat gate but has no
+    // effect implementation yet. These stubs are lifted one-by-one in
+    // subsequent issues (#7 = card draw, #8 = movement, etc.).
+    case 'MoveUnit':
+    case 'Scout':
+    case 'BuildCamp':
+    case 'BuildBarracks':
+    case 'RelocateBuilding':
+    case 'Attack':
+    case 'SwitchAttackMode':
+    case 'UnitAbility':
+    case 'Resupply':
+    case 'RecruitDraw':
+    case 'PlayTactic':
+    case 'DeployUnit':
+    case 'PlayTechnology':
+    case 'PlayUpgrade':
+    case 'PlayAction':
+    case 'PlayEvent':
+    case 'DiscardEvent':
+    case 'PlayReaction':
+      return err(
+        'not_implemented',
+        `${action.type} passed phase/seat gating but its effect handler is not yet implemented`,
+      );
+
+    default: {
+      // Exhaustiveness check — if a new Action variant is added to the
+      // schema and not handled above, TS will flag this branch.
+      const _exhaustive: never = action;
+      void _exhaustive;
+      return err(
+        'unknown_action',
+        `Unrecognised action variant (this is a bug — schema and rules drifted apart)`,
+      );
+    }
+  }
+}
