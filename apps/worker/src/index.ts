@@ -9,6 +9,8 @@
 import { corsHeaders, errorBody, json } from './http.js';
 import { handleCreateGame } from './routes/create-game.js';
 import { handleJoinGame } from './routes/join-game.js';
+import { handleActions } from './routes/post-action.js';
+import { handleGetGame } from './routes/get-game.js';
 
 export interface Env {
   ALLOWED_ORIGINS: string;
@@ -42,13 +44,15 @@ export default {
     // POST /games/:id/actions — submit action (#13)
     const actionsMatch = pathname.match(/^\/games\/([^/]+)\/actions$/);
     if (request.method === 'POST' && actionsMatch) {
-      return json(errorBody('not_implemented', 'Action handler ships in #13.'), 501, cors);
+      const code = actionsMatch[1] ?? '';
+      return handleActions(request, env.GAMES, code, cors);
     }
 
-    // GET /games/:id — read state (#14)
+    // GET /games/:id — read state (#13)
     const gameMatch = pathname.match(/^\/games\/([^/]+)$/);
     if (request.method === 'GET' && gameMatch) {
-      return json(errorBody('not_implemented', 'Read handler ships in #14.'), 501, cors);
+      const code = gameMatch[1] ?? '';
+      return handleGetGame(request, env.GAMES, code, cors);
     }
 
     return json(errorBody('not_found', `No route for ${request.method} ${pathname}.`), 404, cors);
