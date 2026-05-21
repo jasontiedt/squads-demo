@@ -6,11 +6,14 @@
 
 export { applyAction } from './applyAction.js';
 export { deployUnit } from './deployUnit.js';
+export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
 export {
-  ACTION_PHASE_LEGALITY,
-  isOpponentTurnAction,
-  isPhaseLegal,
-  nextPhase,
-  type PhaseLegality,
+    ACTION_PHASE_LEGALITY,
+    isOpponentTurnAction,
+    isPhaseLegal,
+    nextPhase,
+    type PhaseLegality
 } from './phases.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
+export { mulberry32, seedFor } from './rng.js';
+
