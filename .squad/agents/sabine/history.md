@@ -41,3 +41,32 @@
 **Image strategy:** No binary `.png` files in this PR. `apps/web/public/cards/english/README.md` documents expected filenames so future card-art ingest is drop-in.
 
 **Worktree gotcha:** The worktree at `c:/GitRepos/squads-demo-10` had a junction for root `node_modules` but per-package `node_modules` were empty. Had to manually `mklink /J` `packages/{assets-meta,schema}/node_modules` to the main checkout. If we keep using worktree-local strategy, a heartbeat helper that creates these junctions on worktree init would save 5 minutes per worktree.
+
+### 2026-05-21: OCR ingest pipeline shipped (issue #17, PR #29)
+
+**Shipped:** Pure-JS OCR pipeline at `scripts/ocr-pdf.mjs` using `tesseract.js` v7 + `pdf-to-png-converter` v3 (no Poppler/Tesseract CLI, no system deps). Scripts: `pnpm ocr:pdf <file.pdf>` (single) and `pnpm ocr:all` (Byzantines + Constantinople + StartingTiles). Output schema per page: `{ page, text, confidence, words: [{ text, bbox, confidence }] }` → `documentation/ocr/<basename>.ocr.json`. Full write-up in `documentation/ocr/REPORT.md`.
+
+**Per-source confidence (text extraction):**
+
+| Source | Pages | Avg conf | Verdict |
+|--------|-------|----------|---------|
+| Byzantines_Base_EN | 4 | ~47% | Names + flavor + ability text recoverable. Numeric costs/stats and resource icons NOT extractable. |
+| Constantinople | 4 | ~32% | Mostly tile artwork. Not suitable for auto-ingest. |
+| StartingTiles | 1 | ~28% | OCR hallucination on iconography. Manual transcription required. |
+
+**Byzantines OCR identified units:** Optimatoi (1pt cost, cavalry/villager hybrid?), Skoutatoi, Stratiotai, Varangian Guard. Cost/stat numbers visible but unreliable — confirm by eyeball before backfilling `byzantines.json`.
+
+**English `_needsConfirmation` flags NOT resolved by this PR.** `English_Base_EN.pdf` was not OCR'd in this batch (likely also image-only). 10 flags from PR #26 remain open in `english.json`. Recommended follow-up issue: run `pnpm ocr:pdf documentation/English_Base_EN.pdf` and resolve the 10 flags from the output.
+
+**Windows quirk handled:** `pdf-to-png-converter` v3 / `pdfjs-dist` v5 expect forward-slash paths. Script monkey-patches `normalizePath` via `require.cache` lookup to convert backslashes. If pipeline breaks on a future Node/pdfjs version, check that patch first.
+
+**Asset hygiene:** `eng.traineddata` (~5MB) is auto-downloaded by tesseract.js on first run. Added `eng.traineddata` + `*.traineddata` to `.gitignore`. Never commit it.
+
+**Follow-up issues recommended (in REPORT.md):**
+1. OCR pass on `English_Base_EN.pdf` → resolve the 10 `needs_confirmation` flags.
+2. Data-only PR: backfill `byzantines.json` (4 units recoverable, numbers need eyeball-verification).
+3. Manual transcription for `StartingTiles.pdf` (OCR unusable).
+4. Manual transcription for `Constantinople.pdf` (tile descriptions).
+5. Optional: bump `viewportScale` in the script to test if Byzantines confidence becomes auto-ingestable.
+
+**Tests:** schema 204/204, rules 94/94 (+14 skipped), assets-meta 17/17, worker 4/4. `apps/web` config failed to load in worktree due to missing node_modules junction (env quirk, no apps/web changes in this PR).
