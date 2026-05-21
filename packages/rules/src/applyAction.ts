@@ -1,5 +1,6 @@
 import type { Action, GameState, Seat } from '@eoe/schema';
 
+import { drawAndDiscardCleanup } from './draw.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { err, ok, type Result } from './result.js';
 
@@ -64,20 +65,12 @@ function rotateSeat(state: GameState): { next: Seat; wrapped: boolean } {
   return { next: current, wrapped: true };
 }
 
-// ─── End-of-turn cleanup stub ───
+// ─── End-of-turn cleanup ───
 //
-// Placeholder for the end-of-turn hooks described in issue #6:
-// hand-cap check, exhausted-resource reset, scheduled card draw, etc.
-// Real implementations land in #7 (card draw) and #8+ (resource resets).
-//
-// For now we return `state` untouched — but we still flow it through
-// this hook so the call site stays stable when #7 lands.
-
-function drawAndDiscardCleanup(state: GameState): GameState {
-  // TODO(#7): trigger Recruit / Tactic / Event deck draws here.
-  // TODO(#8): reset exhausted units and per-turn resource caps here.
-  return state;
-}
+// Real implementation lives in `./draw.ts` (#7): draws to 5 / +1, then
+// applies the hand cap of 7. Resource resets (#8) will compose into the
+// same hook — likely by wrapping or chaining off `drawAndDiscardCleanup`
+// so the call site below stays stable.
 
 // ─── Main entry point ───
 
