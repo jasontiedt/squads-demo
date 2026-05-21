@@ -26,6 +26,7 @@ import { Card, type Civ } from '@eoe/schema';
 //
 // Civs not yet ingested return `[]` — the loader is total over `Civ`.
 import byzantinesData from '../data/byzantines.json' with { type: 'json' };
+import englishData from '../data/english.json' with { type: 'json' };
 
 type CivData = {
   _meta: unknown;
@@ -53,6 +54,8 @@ function pickRaw(civ: Civ): CivData | null {
       // TODO: replace with real Byzantine data after #17 (image-only PDF OCR)
       return byzantinesData satisfies CivData;
     case 'english':
+      // MVP card subset (issue #10). Cost decomposition flagged for #17.
+      return englishData satisfies CivData;
     case 'hre':
     case 'mongols':
     case 'norsemen':
