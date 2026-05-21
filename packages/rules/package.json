@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@eoe/assets-meta": "workspace:*",
     "@eoe/schema": "workspace:*"
   }
 }

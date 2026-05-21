@@ -5,6 +5,7 @@
 // (optimistic UI). Must stay free of I/O, randomness, and time.
 
 export { applyAction } from './applyAction.js';
+export { deployUnit } from './deployUnit.js';
 export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
 export {
     ACTION_PHASE_LEGALITY,
