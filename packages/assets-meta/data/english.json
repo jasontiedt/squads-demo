@@ -1,0 +1,149 @@
+{
+  "_meta": {
+    "status": "MVP_DATA",
+    "summary": "English MVP card subset (6 unit cards) for issue #10. Stats decoded from the partial OCR extract at documentation/English_Base_EN.txt cross-referenced with documentation/Rulebook_EN.txt §'DEPLOYMENT PHASE' (card layout) and §'Combat' (stat definitions). Stat bar order confirmed as melee / health / ranged from inter-card comparison (Welsh Infantry-Archer 3/3/2 vs Longbowman ARCHER 0/2/3 vs Esquire CAVALRY 2/5/0). Movement value sits inline on the class band ('2 INFANTRY' = 2 movement, INFANTRY class). Image placeholders deferred to follow-up real-art ingest (see _meta.images_status).",
+    "covers_issue": "https://github.com/jasontiedt/squads-demo/issues/10",
+    "depends_on": "https://github.com/jasontiedt/squads-demo/issues/3",
+    "owner": "Sabine",
+    "images_status": "DEFERRED — apps/web/public/cards/english/ holds a README explaining placeholders. Real card art will land in a follow-up issue (likely tied to #17 OCR pass which has access to the binary PDF).",
+    "stats_confidence": {
+      "movement": "HIGH — all 6 units show '2 <CLASS>' on the class band; consistent across rulebook examples.",
+      "melee": "HIGH — stat-bar top number aligns with thematic class (Longbowman 0, Knight 4).",
+      "health": "HIGH — stat-bar middle number aligns with thematic durability (Esquire 5, Knight 7, Longbowman 2).",
+      "ranged": "HIGH — stat-bar bottom number is 0 for pure infantry/cavalry, >0 only for ARCHER class.",
+      "cost": "LOW — OCR extracted cost icons as bare numbers without resource-type identification (multi-column PDF layout collapses cost glyphs). Total cost is best-effort, encoded as 'wild' (the rulebook's flexible-resource symbol) so each card parses against ResourceKind. Resource-type breakdown MUST be confirmed in the #17 OCR follow-up.",
+      "keywords": "MEDIUM — extracted from card effect text where named (Long-Range, Charge 2, Armor 2, Melee Armor 1). Watchman's 'Action: Replace a surrounding camp...' is recorded in flavor since unit cards do not carry effect payloads in the MVP-1 schema."
+    },
+    "do_not": [
+      "treat the cost numbers as canonical — encode as wild now, refine in #17",
+      "add behavior code (rules/cards/english/*.ts) — deferred per the assets-meta loader-shape decision (sabine-assets-meta-loader-shape.md)",
+      "ship real card art alongside this — placeholder strategy documented in apps/web/public/cards/english/README.md"
+    ],
+    "needs_confirmation": [
+      { "card": "eng-watchman", "field": "cost.breakdown", "note": "cost icons ambiguous; STARTING SCOUT may imply free" },
+      { "card": "eng-watchman", "field": "effect.action", "note": "Action: Replace camp -> barracks; modelled as flavor only" },
+      { "card": "eng-billman", "field": "cost.breakdown", "note": "OCR shows 1+1+1; resource types unknown" },
+      { "card": "eng-welsh-infantry", "field": "cost.breakdown", "note": "OCR shows 2+1; resource types unknown" },
+      { "card": "eng-welsh-infantry", "field": "class.dual", "note": "INFANTRY-ARCHER hybrid class semantics" },
+      { "card": "eng-longbowman", "field": "cost.breakdown", "note": "OCR shows 2+2; resource types unknown" },
+      { "card": "eng-esquire", "field": "cost.breakdown", "note": "OCR shows 2+1; resource types unknown" },
+      { "card": "eng-esquire", "field": "keywords.charge", "note": "Charge 2 keyword vocabulary TBD" },
+      { "card": "eng-english-knight", "field": "cost.breakdown", "note": "OCR shows 3+4; resource types unknown" },
+      { "card": "eng-english-knight", "field": "keywords.armor", "note": "Armor 2 keyword vocabulary TBD" }
+    ]
+  },
+  "cards": [
+    {
+      "kind": "unit",
+      "id": "eng-watchman",
+      "name": "Watchman",
+      "civ": "english",
+      "imageRef": "english/watchman.png",
+      "flavor": "STARTING SCOUT. Action: Replace a surrounding camp of yours with a barracks. \u2014 In 13th-century England, strict curfews gave rise to the Night Watch.",
+      "cost": { "wild": 1 },
+      "movement": { "points": 2 },
+      "melee": 1,
+      "ranged": 0,
+      "health": 4,
+      "class": ["infantry"],
+      "keywords": ["starting-scout"],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows multiple cost icons next to Watchman but values may belong to the adjacent Anglo-Normans civilization column. Watchman is labelled STARTING SCOUT which often implies free / pre-deployed in similar boardgames; cost encoded as wild:1 pending #17.",
+        "effect.action": "Watchman's 'Action: Replace a surrounding camp of yours with a barracks' is flavor-only in this MVP-1 data file. The unit schema does not carry effect payloads (only action/tactic/upgrade/event cards do). Confirm in #17 whether this should be modelled as a separate ability hook."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-billman",
+      "name": "Billman",
+      "civ": "english",
+      "imageRef": "english/billman.png",
+      "flavor": "A bill was an agricultural tool used for trimming trees, later adapted into a weapon by adding spikes. While much of Europe adopted the pike, the English kept the bill as their primary polearm.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 4,
+      "class": ["infantry"],
+      "keywords": ["melee-armor-1"],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows three '1' cost icons (1+1+1). Encoded as wild:3 until #17 identifies which resources (wood/food/gold)."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-welsh-infantry",
+      "name": "Welsh Infantry",
+      "civ": "english",
+      "imageRef": "english/welsh-infantry.png",
+      "flavor": "Welsh infantry became a vital pillar of the English army. Primarily recruited as spearmen and foot-archers, thousands of these skilled warriors were drafted to fight the king's wars in Scotland and France.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 2,
+      "health": 3,
+      "class": ["infantry", "archer"],
+      "keywords": [],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows '2 1' cost icons (sum 3). Encoded as wild:3 until #17 resolves resource types.",
+        "class.dual": "Card band reads 'INFANTRY - ARCHER'. Modelled here as a class array ['infantry','archer']. Confirm in #17 whether the rules engine treats hybrid classes as union (any matching class effect applies) or intersection."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-longbowman",
+      "name": "Longbowman",
+      "civ": "english",
+      "imageRef": "english/longbowman.png",
+      "flavor": "Longbows were a common weapon throughout history, most famously the yew longbows. Made from one piece of wood, they were quick and easy to craft.",
+      "cost": { "wild": 4 },
+      "movement": { "points": 2 },
+      "melee": 0,
+      "ranged": 3,
+      "health": 2,
+      "class": ["archer"],
+      "keywords": ["long-range"],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows '2 2' cost icons (sum 4). Encoded as wild:4 until #17."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-esquire",
+      "name": "Esquire",
+      "civ": "english",
+      "imageRef": "english/esquire.png",
+      "flavor": "Esquire was a title of respect for men of higher social rank. They were employed by nobles of higher rank, such as knights.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 5,
+      "class": ["cavalry"],
+      "keywords": ["charge-2"],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows '2 1' cost icons (sum 3). Encoded as wild:3 until #17.",
+        "keywords.charge": "Card text reads 'Charge 2 (+2 against units after moving 2 or more squares this turn)'. Encoded as 'charge-2' keyword; the rules engine will need a typed keyword vocabulary in a follow-up (see Wedge's card-effect-typing inbox note)."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-english-knight",
+      "name": "English Knight",
+      "civ": "english",
+      "imageRef": "english/english-knight.png",
+      "flavor": "Knighthood was considered a rank of minor nobility. A knight was often a vassal who served as an elite warrior or bodyguard to a lord in return for payment.",
+      "cost": { "wild": 7 },
+      "movement": { "points": 2 },
+      "melee": 4,
+      "ranged": 0,
+      "health": 7,
+      "class": ["cavalry"],
+      "keywords": ["charge-2", "armor-2"],
+      "_needsConfirmation": {
+        "cost.breakdown": "OCR shows '3 4' cost icons (sum 7). Encoded as wild:7 until #17.",
+        "keywords.armor": "Card text reads 'Armor 2 (Take 2 less damage during combat)'. Modelled as 'armor-2' keyword string; structured armor handling deferred."
+      }
+    }
+  ]
+}

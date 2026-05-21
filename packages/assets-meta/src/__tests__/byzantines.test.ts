@@ -47,10 +47,6 @@ describe("loadCivMeta('byzantines') — placeholder stub for issue #11", () => {
 });
 
 describe('loadCivMeta — uningested civs', () => {
-  it('returns an empty array for english (issue #10 follow-up)', () => {
-    expect(loadCivMeta('english')).toEqual([]);
-  });
-
   it('returns an empty array for civs with no data file yet', () => {
     expect(loadCivMeta('mongols')).toEqual([]);
     expect(loadCivMeta('hre')).toEqual([]);
