@@ -344,17 +344,4 @@ describe('routing', () => {
     const body = (await res.json()) as { code: string };
     expect(body.code).toBe('not_found');
   });
-
-  it('GET /games/:id returns 501 (handler ships in #14)', async () => {
-    const { env } = buildEnv();
-    const { payload } = await createGame(env, {
-      playerName: 'Alice',
-      civ: 'english',
-    });
-    const res = await call(env, {
-      url: `http://example.com/games/${payload.gameCode}`,
-      method: 'GET',
-    });
-    expect(res.status).toBe(501);
-  });
 });
