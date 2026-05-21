@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import worker from '../index.js';
+import worker, { type Env } from '../index.js';
 
-const env = { ALLOWED_ORIGINS: 'http://localhost:5173' };
+const env: Env = {
+  ALLOWED_ORIGINS: 'http://localhost:5173',
+  // CORS preflight never touches KV — a stub satisfies the type without
+  // needing the full in-memory KV from the post-games suite.
+  GAMES: {} as unknown as KVNamespace,
+};
 
 describe('worker CORS preflight', () => {
   it('responds 204 with CORS headers on OPTIONS', async () => {
