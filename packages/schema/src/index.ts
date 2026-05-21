@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { CardId } from './cards.js';
 
+export * from './ids.js';
 export * from './resources.js';
 export * from './civ.js';
 export * from './cards.js';
 export * from './state.js';
+export * from './actions.js';
 
 // ───────────────────────────── Identity ──────────────────────────────
 
@@ -86,29 +87,11 @@ export type Tile = z.infer<typeof Tile>;
 
 // ───────────────────────────── Actions ───────────────────────────────
 //
-// Placeholder Action union from the original scaffold. Issue #4 keeps
-// this OUT OF SCOPE — the full discriminated union (Move, Scout, Build,
-// Attack, Deploy, Play*, Resupply, Recruit, EndPhase, EndTurn) lands in
-// #5 and will replace these stubs. Kept here so the rules-engine stub
-// keeps compiling. The new `GameState.moveLog` uses `ActionLogEntry`
-// (defined in `./state.ts`) — not this Action union — for now.
-
-export const PlayCardAction = z.object({
-  type: z.literal('play_card'),
-  cardId: CardId,
-});
-
-export const EndTurnAction = z.object({
-  type: z.literal('end_turn'),
-});
-
-export const DrawAction = z.object({
-  type: z.literal('draw'),
-  count: z.number().int().positive(),
-});
-
-export const Action = z.discriminatedUnion('type', [PlayCardAction, EndTurnAction, DrawAction]);
-export type Action = z.infer<typeof Action>;
+// The `Action` discriminated union is exported from `./actions.ts`
+// (re-exported via `export *` above). Issue #5 replaced the original
+// 3-action placeholder (PlayCard / EndTurn / Draw) with the full ~20
+// action set covering Mobilization, Deployment, Opponent reactions,
+// and Phase control.
 
 // ────────────────────────────── Errors ───────────────────────────────
 
