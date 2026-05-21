@@ -1,0 +1,41 @@
+{
+  "_meta": {
+    "status": "PLACEHOLDER",
+    "summary": "Placeholder Byzantine card data for issue #11. Real data is blocked on issue #17 (OCR of image-only Byzantines_Base_EN.pdf). Do NOT balance, playtest, or reason about gameplay against these numbers — they are invented to make a 2-player MVP-1 lobby launchable, not to represent the Byzantine faction.",
+    "blocked_on": "https://github.com/jasontiedt/squads-demo/issues/17",
+    "covers_issue": "https://github.com/jasontiedt/squads-demo/issues/11",
+    "owner": "Sabine",
+    "do_not": [
+      "treat numeric stats as canonical",
+      "extend with more fake cards (one unit + one civ is enough for MVP-1)",
+      "reference these in card-handler logic in @eoe/rules"
+    ]
+  },
+  "cards": [
+    {
+      "kind": "civilization",
+      "id": "byz-civ-placeholder",
+      "name": "Byzantine Empire (Placeholder)",
+      "civ": "byzantines",
+      "civId": "byzantines",
+      "imageRef": "byzantines/placeholder.png",
+      "flavor": "Placeholder pending OCR of Byzantines_Base_EN.pdf — see issue #17.",
+      "effect": "Placeholder Civilization card. No effect implemented; replace after issue #17 (OCR ingest)."
+    },
+    {
+      "kind": "unit",
+      "id": "byz-unit-placeholder",
+      "name": "Byzantine Infantry (Placeholder)",
+      "civ": "byzantines",
+      "imageRef": "byzantines/placeholder.png",
+      "flavor": "Placeholder pending OCR of Byzantines_Base_EN.pdf — see issue #17. These stats are fake.",
+      "cost": { "wild": 1 },
+      "movement": { "points": 1, "pattern": "short" },
+      "melee": 1,
+      "ranged": 0,
+      "health": 2,
+      "class": ["placeholder"],
+      "keywords": []
+    }
+  ]
+}
