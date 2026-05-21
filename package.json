@@ -8,14 +8,18 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "eslint \"{apps,packages}/**/src/**/*.{ts,tsx}\"",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "ocr:pdf": "node scripts/ocr-pdf.mjs",
+    "ocr:all": "node scripts/ocr-pdf.mjs documentation/Byzantines_Base_EN.pdf && node scripts/ocr-pdf.mjs documentation/Constantinople.pdf && node scripts/ocr-pdf.mjs documentation/StartingTiles.pdf"
   },
   "devDependencies": {
     "@types/node": "^22.7.4",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",
     "eslint": "^8.57.1",
+    "pdf-to-png-converter": "3",
     "prettier": "^3.3.3",
+    "tesseract.js": "^7.0.0",
     "typescript": "^5.6.2",
     "vitest": "^2.1.1"
   },

@@ -22,3 +22,5 @@ coverage/
 # OS
 .DS_Store
 
+eng.traineddata
+*.traineddata
