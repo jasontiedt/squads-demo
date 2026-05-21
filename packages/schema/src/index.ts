@@ -4,8 +4,7 @@ import { CardId } from './cards.js';
 export * from './resources.js';
 export * from './civ.js';
 export * from './cards.js';
-
-import { Civ } from './civ.js';
+export * from './state.js';
 
 // ───────────────────────────── Identity ──────────────────────────────
 
@@ -22,14 +21,6 @@ export type PlayerToken = z.infer<typeof PlayerToken>;
 export const Seat = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
 export type Seat = z.infer<typeof Seat>;
 
-// ───────────────────────────── Phases ────────────────────────────────
-
-export const GamePhase = z.enum(['lobby', 'setup', 'playing', 'ended']);
-export type GamePhase = z.infer<typeof GamePhase>;
-
-export const TurnPhase = z.enum(['draw', 'main', 'combat', 'end']);
-export type TurnPhase = z.infer<typeof TurnPhase>;
-
 // ────────────────────────────── Map ──────────────────────────────────
 //
 // Map model (per `wedge-rulebook-synthesis.md`):
@@ -40,10 +31,6 @@ export type TurnPhase = z.infer<typeof TurnPhase>;
 //   • Tiles may be face-down (undiscovered) or face-up with an orientation
 //     (rotation chosen on Scout reveal). Orientation only matters to the
 //     renderer; the engine reads terrain per square.
-//
-// `kind` enumerates the tile families present in the base game + Constantinople
-// expansion referenced by the rulebook. Card data and richer tile content are
-// out of scope for this issue (#1) — populated later from PDF OCR.
 
 /** Board-flat coordinate in the 6×6 base map. */
 export const Coord = z.object({
@@ -97,42 +84,14 @@ export const Tile = z.object({
 });
 export type Tile = z.infer<typeof Tile>;
 
-// ───────────────────────────── Players ───────────────────────────────
-
-export const Player = z.object({
-  id: PlayerId,
-  seat: Seat,
-  name: z.string().min(1).max(40),
-  civ: Civ,
-  tokenHash: z.string(),
-  connected: z.boolean(),
-});
-export type Player = z.infer<typeof Player>;
-
-// ─────────────────────────── Game state ──────────────────────────────
-
-/** `CardId` is defined in `./cards.ts` (branded) and re-exported above. */
-
-export const Deck = z.array(CardId);
-export type Deck = z.infer<typeof Deck>;
-
-export const GameState = z.object({
-  gameId: GameId,
-  version: z.number().int().nonnegative(),
-  phase: GamePhase,
-  turnPhase: TurnPhase,
-  players: z.array(Player).min(1).max(4),
-  turnIndex: z.number().int().nonnegative(),
-  /** Civ-agnostic board state. Shape TBD by Artoo — kept loose for MVP. */
-  board: z.unknown(),
-  decksByPlayer: z.record(PlayerId, Deck),
-  handsByPlayer: z.record(PlayerId, z.array(CardId)),
-  moveLog: z.array(z.unknown()),
-  winner: PlayerId.optional(),
-});
-export type GameState = z.infer<typeof GameState>;
-
 // ───────────────────────────── Actions ───────────────────────────────
+//
+// Placeholder Action union from the original scaffold. Issue #4 keeps
+// this OUT OF SCOPE — the full discriminated union (Move, Scout, Build,
+// Attack, Deploy, Play*, Resupply, Recruit, EndPhase, EndTurn) lands in
+// #5 and will replace these stubs. Kept here so the rules-engine stub
+// keeps compiling. The new `GameState.moveLog` uses `ActionLogEntry`
+// (defined in `./state.ts`) — not this Action union — for now.
 
 export const PlayCardAction = z.object({
   type: z.literal('play_card'),
