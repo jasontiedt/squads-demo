@@ -64,3 +64,40 @@
 - **Tests passing:** 148/148 in `@eoe/schema`, 4/4 in `@eoe/worker` (including 3 fixture parses), 1/1 in `@eoe/rules`, 7/7 in `@eoe/assets-meta`. All five `tsc --noEmit` typechecks clean.
 - **Workspace gotcha (re-confirmed):** Vitest auto-discovers `**/*.test.ts` regardless of tsconfig `include`. The fixture test in `apps/worker/test/` runs fine even without tsconfig changes — but typecheck would skip it. Always update `include` when you add test directories outside `src/`.
 - Branch: `copilot/4-schema-gamestate`. PR body includes `Closes #4`, the four pinned decisions, the `@needs-confirmation` on `ActionLogEntry`, and the cycle-avoidance comment about local re-declarations being a temporary structure that #5+ may refactor into a `map.ts` leaf module.
+
+### 2025-11-21: Issue #6 — Rules engine phase machine + legal-action gating
+
+- **Files created:** `packages/rules/src/result.ts` (Result/RuleError/ok/err), `packages/rules/src/phases.ts` (ACTION_PHASE_LEGALITY table + nextPhase/isPhaseLegal/isOpponentTurnAction), `packages/rules/src/applyAction.ts` (the gate + dispatch), `packages/rules/src/__tests__/fixtures.ts` (minimal local GameState), `packages/rules/src/__tests__/phases.test.ts` (81 table-driven gating tests), `packages/rules/src/__tests__/applyAction.test.ts` (11 behavior tests).
+- **Files modified:** `packages/rules/src/index.ts` (replaced stub with real re-exports).
+
+#### Architecture decisions pinned in the inbox
+- **`Result<T>` and `RuleError` live in `@eoe/rules`, NOT `@eoe/schema`.** Tempting to share via schema but schema describes wire shapes; engine outcomes are an internal contract of the rules layer.
+- **`RuleErrorCode` is a closed union:** `not_implemented | wrong_phase | not_your_turn | unknown_action`. Extending it is a deliberate cross-cutting change.
+- **`ACTION_PHASE_LEGALITY` is a static table**, not per-handler `if` checks. Single source of truth, and the test suite iterates `ACTION_TYPES × ALL_PHASES` so adding a new action automatically gets phase coverage.
+- **`actorId: Seat`, NOT `PlayerId`.** State machine cares about seat number, not account string. Original stub had `actorId: PlayerId` — corrected.
+- **EndPhase and EndTurn are split actions.** EndPhase is illegal from `end` (returns `wrong_phase` with message directing to EndTurn). EndTurn is illegal from non-`end`. Two actions, no overload — the type system already enforces it because both are members of the discriminated `Action` union.
+
+#### Reaction semantics
+- **`PlayReaction` is the only action mapped to the synthetic `'opponent-turn'` legality marker.** Reactions skip the phase gate entirely and instead require `actorId !== state.activePlayer`. This is the cleanest gate model that doesn't require reaction-window state yet — full reaction-window tracking lifts in a later issue.
+- The PhaseLegality type is `TurnPhase | 'opponent-turn'` — keep `'opponent-turn'` out of `TurnPhase` itself so phase transitions stay clean.
+
+#### Seat rotation
+- `rotateSeat(state)` walks `SEATS_IN_ORDER = [1,2,3,4]` modulo the array, starting at `(activePlayer mod 4) + 1`, and skips seats not present in `state.players`. Returns `{ next, wrapped }`. **`wrapped` means rotation crossed back through seat 1 — that's the signal to increment `turn`.** Works for 2/3/4-player games without branching by player count.
+
+#### Cleanup hook
+- `drawAndDiscardCleanup(state)` is a no-op today. EndTurn always routes through it so when #7 lifts card draw and #8 lifts resource resets, the wiring is local to that function — `applyAction` itself does not change.
+
+#### Purity
+- No `fs`/`path`/`fetch`/`crypto`/`Math.random`/`Date.now`. No input mutation — every transition returns a fresh `{...state, ...}` object. Hand-verified during PR review. **Future Cassian-style task:** unit test that grep-scans `rules/src/` for forbidden tokens. Filed mentally; should become a real issue.
+
+#### Test patterns worth remembering
+- **Table-driven generation over `ACTION_TYPES`:** `ACTION_TYPES.flatMap(t => ALL_PHASES.map(p => [t, p]))` generates every pair. Filtering out reactions (they have their own seat gate) keeps the table clean. Asserting `ok` OR `not_implemented` (never `wrong_phase`) verifies the gate passed without requiring effects.
+- **`stubAction(type)` cast through `unknown`:** The gate only reads `action.type`, so each test can synthesize a minimal `{ type } as unknown as Action`. This avoids manually crafting valid payloads for all 20 action variants in the gate-only tests.
+- **Immutability check:** Deep-clone the input with `structuredClone`, run `applyAction`, then `expect(input).toEqual(deepCloneBefore)`. Catches any accidental write to the original.
+- **Two-player round-trip:** `advance(actor)` helper runs `EndPhase × 3 + EndTurn` per seat. After two full turns the state must be back to `phase: 'start'`, `activePlayer: 1`, `turn: 2`. Catches off-by-one errors in `wrapped` detection.
+
+#### Workspace gotchas
+- **`create_file` cannot overwrite existing files.** When replacing `packages/rules/src/index.ts` (stub) and `packages/rules/src/__tests__/applyAction.test.ts` (wrong old literals), I wrote `*.new` files and used `mv -f` in the terminal. Future: prefer `replace_string_in_file` when only a few lines change; reach for the `.new` + `mv -f` workaround only when the whole file is being replaced.
+- **Tests: 92 in `@eoe/rules`, 204 in `@eoe/schema`, 4 in `@eoe/worker`** all green. No regressions anywhere downstream.
+
+- Branch: `copilot/6-rules-phase-machine`. PR #24 (draft). Body includes `Closes #6`, the reviewer notes about boundary placement of `RuleError`, `actorId: Seat` vs `PlayerId`, and the Cassian-style EndPhase-from-end ambiguity pin.
