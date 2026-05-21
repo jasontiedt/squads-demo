@@ -21,15 +21,34 @@
 //                        Should be unreachable for parsed `Action`
 //                        inputs; defensive only.
 //
-// Future codes will be added here (e.g. `insufficient_resources`,
-// `illegal_target`, `hand_full`). Don't reuse codes across error
-// classes — distinct codes are cheaper to triage than overloaded ones.
+// DeployUnit (#8) added the following effect-handler codes:
+//
+//   'card_not_in_hand'     — actor's hand does not contain the cardId.
+//   'card_not_in_catalog'  — civ catalog (`@eoe/assets-meta`) lookup
+//                            for the cardId returned nothing. Indicates
+//                            either fixture drift or a malformed action.
+//   'card_not_unit'        — cardId resolved to a non-unit card kind
+//                            (technology / tactic / action / etc.).
+//   'invalid_deploy_square' — MVP Capital-only deploy: `action.square`
+//                            is not equal to the player's `capitalSquare`.
+//                            Will be loosened once Barracks/zone deploys
+//                            (#TBD) land.
+//   'insufficient_resources' — not enough unexhausted tokens of the
+//                            required kind(s) to satisfy the card cost.
+//
+// Don't reuse codes across error classes — distinct codes are cheaper
+// to triage than overloaded ones.
 
 export type RuleErrorCode =
   | 'not_implemented'
   | 'wrong_phase'
   | 'not_your_turn'
-  | 'unknown_action';
+  | 'unknown_action'
+  | 'card_not_in_hand'
+  | 'card_not_in_catalog'
+  | 'card_not_unit'
+  | 'invalid_deploy_square'
+  | 'insufficient_resources';
 
 export interface RuleError {
   readonly code: RuleErrorCode;
