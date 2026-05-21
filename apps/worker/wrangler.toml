@@ -4,10 +4,12 @@ compatibility_date = "2026-05-01"
 
 # CORS allowed origin(s) — set per-environment. Comma-separated list.
 # Worker reads env.ALLOWED_ORIGINS at request time.
+# Production deploys MUST set this to the GH Pages origin only:
+#   ALLOWED_ORIGINS = "https://jasontiedt.github.io"
 [vars]
-ALLOWED_ORIGINS = "http://localhost:5173"
+ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173"
 
-# KV namespace for game state. One key per gameId.
+# KV namespace for game state. One key per gameCode (`game:<code>`).
 # TODO: run `wrangler kv:namespace create GAMES` and paste the id below,
 # then uncomment the block.
 # [[kv_namespaces]]

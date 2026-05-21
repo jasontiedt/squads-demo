@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@eoe/assets-meta": "workspace:*",
     "@eoe/rules": "workspace:*",
     "@eoe/schema": "workspace:*",
     "zod": "^3.23.8"

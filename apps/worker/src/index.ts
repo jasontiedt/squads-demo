@@ -1,32 +1,18 @@
 /// <reference types="@cloudflare/workers-types" />
-import { applyAction } from '@eoe/rules';
+//
+// ─────────────────────────── Worker entry point ──────────────────────
+//
+// Routing layer. Real game logic lives in the route handlers under
+// `./routes/`. The Worker owns I/O (KV, randomness, request parsing);
+// `@eoe/rules` stays a pure engine.
 
-// Imported to verify cross-package wiring. Artoo replaces these stubs
-// with real handlers backed by KV.
-void applyAction;
+import { corsHeaders, errorBody, json } from './http.js';
+import { handleCreateGame } from './routes/create-game.js';
+import { handleJoinGame } from './routes/join-game.js';
 
 export interface Env {
   ALLOWED_ORIGINS: string;
-  // GAMES: KVNamespace; // wire up after `wrangler kv:namespace create GAMES`
-}
-
-function corsHeaders(origin: string | null, allowed: string): HeadersInit {
-  const allowList = allowed.split(',').map((s) => s.trim());
-  const allowOrigin = origin && allowList.includes(origin) ? origin : allowList[0] ?? '*';
-  return {
-    'Access-Control-Allow-Origin': allowOrigin ?? '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Max-Age': '86400',
-    Vary: 'Origin',
-  };
-}
-
-function json(body: unknown, status: number, headers: HeadersInit): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...headers, 'Content-Type': 'application/json' },
-  });
+  GAMES: KVNamespace;
 }
 
 export default {
@@ -43,26 +29,28 @@ export default {
 
     // POST /games — create a new game
     if (request.method === 'POST' && pathname === '/games') {
-      // Stub: Artoo wires real game creation + KV write.
-      return json(
-        { gameId: 'STUB01', playerToken: 'stub-token-not-secure' },
-        200,
-        cors,
-      );
+      return handleCreateGame(request, env.GAMES, cors);
     }
 
-    // POST /games/:id/actions — submit action
+    // POST /games/:code/join — second player joins
+    const joinMatch = pathname.match(/^\/games\/([^/]+)\/join$/);
+    if (request.method === 'POST' && joinMatch) {
+      const code = joinMatch[1] ?? '';
+      return handleJoinGame(request, env.GAMES, code, cors);
+    }
+
+    // POST /games/:id/actions — submit action (#13)
     const actionsMatch = pathname.match(/^\/games\/([^/]+)\/actions$/);
     if (request.method === 'POST' && actionsMatch) {
-      return json({ error: 'not_implemented' }, 501, cors);
+      return json(errorBody('not_implemented', 'Action handler ships in #13.'), 501, cors);
     }
 
-    // GET /games/:id — read state
+    // GET /games/:id — read state (#14)
     const gameMatch = pathname.match(/^\/games\/([^/]+)$/);
     if (request.method === 'GET' && gameMatch) {
-      return json({ error: 'not_implemented' }, 501, cors);
+      return json(errorBody('not_implemented', 'Read handler ships in #14.'), 501, cors);
     }
 
-    return json({ error: 'not_found' }, 404, cors);
+    return json(errorBody('not_found', `No route for ${request.method} ${pathname}.`), 404, cors);
   },
 } satisfies ExportedHandler<Env>;
