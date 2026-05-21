@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { Action } from './actions.js';
 import { CardId } from './cards.js';
 import { Civ } from './civ.js';
+import { BuildingInstanceId, Seed, UnitInstanceId } from './ids.js';
 import { ResourceToken, TemporaryResource } from './resources.js';
 
 // ─────────────────────────── Game state ──────────────────────────────
@@ -15,9 +17,9 @@ import { ResourceToken, TemporaryResource } from './resources.js';
 //     (capitalHp + capitalSquare) so Player parsing alone gates HP, and
 //     a matching `BuildingInstance(type:'capital')` lives in
 //     `GameState.buildings` for board/damage operations.
-//   • `Action` discriminated union is OUT OF SCOPE for #4 — lands in #5.
-//     `ActionLogEntry` is intentionally minimal here so `moveLog` and
-//     `pendingReactionWindow` can be typed today and tightened in #5.
+//   • `Action` discriminated union lives in `./actions.ts` (added in
+//     #5). `ActionLogEntry` here wraps an `Action` with `at`/`seat`
+//     metadata for `moveLog` and the reaction window.
 //
 // `Seat` lives in `./index.ts` (already exported there). Importing it
 // here would create an `index.ts` ↔ `state.ts` cycle, so the literal
@@ -25,18 +27,12 @@ import { ResourceToken, TemporaryResource } from './resources.js';
 // `1 | 2 | 3 | 4` literal union, so consumers see one type.
 
 // ─────────────────────────── Identity (branded) ──────────────────────
-
-/** Branded id for a deployed unit on the board. */
-export const UnitInstanceId = z.string().min(1).brand<'UnitInstanceId'>();
-export type UnitInstanceId = z.infer<typeof UnitInstanceId>;
-
-/** Branded id for a building token on the board (Camp / Barracks / Capital). */
-export const BuildingInstanceId = z.string().min(1).brand<'BuildingInstanceId'>();
-export type BuildingInstanceId = z.infer<typeof BuildingInstanceId>;
-
-/** Branded RNG seed. Engine takes deterministic seeds — no Math.random. */
-export const Seed = z.string().min(1).brand<'Seed'>();
-export type Seed = z.infer<typeof Seed>;
+//
+// `UnitInstanceId`, `BuildingInstanceId`, and `Seed` moved to `./ids.ts`
+// in #5 to break the `state.ts` ↔ `actions.ts` cycle (actions.ts needs
+// the unit/building ids; state.ts needs `Action`). They are imported
+// above and re-exported here so external consumers of state.ts keep
+// the same import path.
 
 // ─────────────────────────── Local re-declarations ───────────────────
 
@@ -237,19 +233,21 @@ export type BuildingInstance = z.infer<typeof BuildingInstance>;
 // ─────────────────────────── Action log ─────────────────────────────
 
 /**
- * Minimal log entry for `GameState.moveLog` and the `pendingReactionWindow`
- * trigger. Tightened to the full `Action` discriminated union in #5.
+ * Log entry for `GameState.moveLog` and the `pendingReactionWindow`
+ * trigger. Carries the full `Action` discriminated union from
+ * `./actions.ts` (#5) plus metadata needed by the reaction window:
  *
- * @needs-confirmation: Replace `kind: string` and `payload: unknown` with
- *   the discriminated `Action` union once #5 lands. Migration: every
- *   ActionLogEntry's `kind` becomes the Action's `type` literal; `payload`
- *   becomes the rest of the Action members.
+ *   • `at`   — ISO 8601 timestamp written by the Worker on accept.
+ *   • `seat` — actor seat (sourced from the authenticated player token,
+ *              not from the action payload).
+ *   • `action` — the validated, discriminated `Action`.
+ *
+ * The reaction window references entries by index into `moveLog`.
  */
 export const ActionLogEntry = z.object({
   at: z.string().datetime(),
   seat: Seat,
-  kind: z.string().min(1),
-  payload: z.unknown(),
+  action: Action,
 });
 export type ActionLogEntry = z.infer<typeof ActionLogEntry>;
 

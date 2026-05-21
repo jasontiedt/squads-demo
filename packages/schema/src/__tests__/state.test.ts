@@ -227,19 +227,32 @@ describe('BuildingInstance (discriminated union)', () => {
 });
 
 describe('ActionLogEntry', () => {
-  it('round-trips a minimal entry', () => {
+  it('round-trips a minimal entry (EndTurn action)', () => {
     const entry = {
       at: '2025-01-01T00:00:00.000Z',
       seat: 1 as const,
-      kind: 'end_turn',
-      payload: {},
+      action: { type: 'EndTurn' as const },
     };
     expect(ActionLogEntry.parse(entry)).toEqual(entry);
   });
 
   it('rejects non-ISO date', () => {
     expect(() =>
-      ActionLogEntry.parse({ at: 'yesterday', seat: 1, kind: 'x', payload: null }),
+      ActionLogEntry.parse({
+        at: 'yesterday',
+        seat: 1,
+        action: { type: 'EndTurn' },
+      }),
+    ).toThrow();
+  });
+
+  it('rejects entry whose action fails the discriminator', () => {
+    expect(() =>
+      ActionLogEntry.parse({
+        at: '2025-01-01T00:00:00.000Z',
+        seat: 1,
+        action: { type: 'NotAnAction' },
+      }),
     ).toThrow();
   });
 });
@@ -285,13 +298,14 @@ describe('GameState', () => {
     const trigger = {
       at: '2025-01-01T00:00:00.000Z',
       seat: 1 as const,
-      kind: 'attack',
-      payload: {},
+      action: { type: 'EndPhase' as const },
     };
     const withWindow: GameState = {
       ...minimalState,
       pendingReactionWindow: { triggeredBy: trigger },
     };
-    expect(GameState.parse(withWindow).pendingReactionWindow?.triggeredBy.kind).toBe('attack');
+    expect(GameState.parse(withWindow).pendingReactionWindow?.triggeredBy.action.type).toBe(
+      'EndPhase',
+    );
   });
 });
