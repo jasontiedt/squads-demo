@@ -257,6 +257,33 @@ export const DiscardEventAction = z
   .strict();
 export type DiscardEventAction = z.infer<typeof DiscardEventAction>;
 
+// ─────────────────────────── Generic card play (MVP-2 / #36) ─────────
+//
+// PlayCard is the MVP-2 generic entry point for resolving a card from
+// the player's hand. It coexists with the typed `Play*` variants
+// (Tactic / Technology / Upgrade / Action / Event) which remain for
+// future per-kind handlers; PlayCard is the simplest path that the
+// rules engine can resolve today.
+//
+// Issue #36 picks ONE concrete effect: "discard this card, then draw 1".
+// No target is required for that effect. The optional `target` field is
+// reserved for future card effects (place-unit, deal-damage, etc.) and
+// is intentionally `z.unknown()` — same loose-payload pattern as
+// `PlayTactic.payload` (see `.squad/decisions/inbox/artoo-card-effect-typing.md`).
+//
+// Effect dispatch is hardcoded to "draw 1" in the rules engine for MVP-2.
+// Once the card catalog grows real effect DSLs (#41+), the engine will
+// look up the card and dispatch by effect — at that point the schema
+// stays stable.
+export const PlayCardAction = z
+  .object({
+    type: z.literal('PlayCard'),
+    cardId: CardId,
+    target: z.unknown().optional(),
+  })
+  .strict();
+export type PlayCardAction = z.infer<typeof PlayCardAction>;
+
 // ─────────────────────────── Opponent's turn ─────────────────────────
 
 /**
@@ -321,6 +348,7 @@ export const Action = z
     PlayActionCardAction,
     PlayEventAction,
     DiscardEventAction,
+    PlayCardAction,
     // Opponent
     PlayReactionAction,
     // Phase control
@@ -360,6 +388,7 @@ export const ACTION_TYPES = [
   'PlayAction',
   'PlayEvent',
   'DiscardEvent',
+  'PlayCard',
   'PlayReaction',
   'EndPhase',
   'EndTurn',

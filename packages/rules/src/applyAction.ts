@@ -3,6 +3,7 @@ import type { Action, GameState, Seat } from '@eoe/schema';
 import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
+import { playCard } from './playCard.js';
 import { err, ok, type Result } from './result.js';
 
 // ─────────────────────────── applyAction ─────────────────────────────
@@ -138,6 +139,10 @@ export function applyAction(
     // Issue #8: DeployUnit — MVP Capital-only path.
     case 'DeployUnit':
       return deployUnit(state, action, actorId);
+
+    // Issue #36: PlayCard — generic card-play with "draw 1" effect.
+    case 'PlayCard':
+      return playCard(state, action, actorId);
 
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in

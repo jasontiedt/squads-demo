@@ -153,6 +153,61 @@ describe('POST /games/:code/actions — happy path', () => {
     expect(stored?.tokenHashes[1]).toBeDefined();
     expect(stored?.tokenHashes[2]).toBeDefined();
   });
+
+  // Issue #36: PlayCard happy path — generic card-play with "draw 1" effect.
+  it('PlayCard from mobilization → 200, card moves hand→discard, deck top drawn', async () => {
+    const { env, kv, gameCode, token1 } = await setupJoinedGame();
+
+    // Advance phase: start → mobilization (PlayCard requires mob or deploy).
+    const ep = await postAction(env, gameCode, {
+      seat: 1,
+      token: token1,
+      expectedVersion: 2,
+      action: { type: 'EndPhase' },
+    });
+    expect(ep.status).toBe(200);
+
+    // Peek KV to discover seat 1's hand + deck. Worker hand is redacted
+    // in responses, so we use the test-side KV stub for ground truth.
+    const stored = kv.peek<StoredGame>(gameKey(gameCode));
+    const seat1 = stored?.state.players[1];
+    expect(seat1).toBeDefined();
+    expect(seat1?.hand.length).toBe(5);
+    expect(seat1?.deck.length).toBeGreaterThan(0);
+    const playedCard = seat1?.hand[0];
+    const expectedDrawn = seat1?.deck[0];
+    expect(playedCard).toBeDefined();
+    expect(expectedDrawn).toBeDefined();
+    if (playedCard === undefined || expectedDrawn === undefined) return;
+
+    const handBefore = [...(seat1?.hand ?? [])];
+    const discardBefore = [...(seat1?.discard ?? [])];
+    const deckLenBefore = seat1?.deck.length ?? 0;
+
+    const res = await postAction(env, gameCode, {
+      seat: 1,
+      token: token1,
+      expectedVersion: 3,
+      action: { type: 'PlayCard', cardId: playedCard },
+    });
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ActionResponse;
+    expect(body.version).toBe(4);
+    expect(body.state.phase).toBe('mobilization');
+    // Hand stays redacted → count is preserved (−1 played, +1 drawn).
+    expect(body.state.players['1']?.hand).toEqual({ count: 5 });
+
+    // Inspect KV: card moved hand → discard, deck top consumed.
+    const after = kv.peek<StoredGame>(gameKey(gameCode))?.state.players[1];
+    expect(after).toBeDefined();
+    if (after === undefined) return;
+    expect(after.hand).not.toContain(playedCard); // played card consumed
+    expect(after.hand).toContain(expectedDrawn);   // drew the top of deck
+    expect(after.hand.length).toBe(handBefore.length);
+    expect(after.discard).toEqual([...discardBefore, playedCard]);
+    expect(after.deck.length).toBe(deckLenBefore - 1);
+  });
 });
 
 describe('POST /games/:code/actions — auth failures', () => {
