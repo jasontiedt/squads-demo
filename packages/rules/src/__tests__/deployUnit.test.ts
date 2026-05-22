@@ -114,6 +114,10 @@ describe('DeployUnit — happy path', () => {
     expect(newUnit.upgrades).toEqual([]);
     // Deterministic id (turn 1, seat 2, 0 existing units).
     expect(newUnit.id).toBe('unit-1-2-0');
+
+    // Issue #53: version bumps by exactly 1 on success — drives
+    // optimistic concurrency on the worker side.
+    expect(next.version).toBe(state.version + 1);
   });
 
   it('does not mutate the input state', () => {
@@ -263,6 +267,35 @@ describe('DeployUnit — effect failures', () => {
     );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('invalid_deploy_square');
+  });
+
+  it('invalid_deploy_square: rejects when the target tile is face-down (Issue #53)', () => {
+    // Flip the byzantines starting tile (the one containing (5,5)) to
+    // faceDown — placement zone exists but is not revealed yet.
+    const base = deployState();
+    const state: GameState = {
+      ...base,
+      map: {
+        ...base.map,
+        tiles: base.map.tiles.map((t) =>
+          t.squares.some((s) => s.coord.x === 5 && s.coord.y === 5)
+            ? { ...t, faceDown: true }
+            : t,
+        ),
+      },
+    };
+    const player = state.players[2];
+    if (player === undefined) throw new Error('fixture broken');
+    const result = applyAction(
+      state,
+      deployByzUnit(player.capitalSquare),
+      SEAT_2,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('invalid_deploy_square');
+      expect(result.error.message).toMatch(/face-down/);
+    }
   });
 
   it('insufficient_resources: rejects when no unexhausted token covers the cost', () => {
