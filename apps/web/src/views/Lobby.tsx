@@ -198,9 +198,16 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
   const handCount = state?.players[membership.seat]?.hand.count ?? 0;
 
   return (
-    <main className="lobby">
+    <main
+      className="lobby"
+      data-testid="lobby"
+      data-version={state?.version ?? 0}
+      data-seat={membership.seat}
+      data-active-player={state?.activePlayer ?? 0}
+      data-your-turn={yourTurn ? 'true' : 'false'}
+    >
       <header className="lobby-header">
-        <h1>Game {gameCode}</h1>
+        <h1 data-testid="game-code">Game {gameCode}</h1>
         <button onClick={handleLeave} className="leave-btn">
           Leave game
         </button>
@@ -266,6 +273,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
         </button>
         <button
           type="button"
+          data-testid="end-phase-btn"
           disabled={buttonsDisabled}
           onClick={() => void dispatchAction({ type: 'EndPhase' })}
         >
@@ -273,6 +281,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
         </button>
         <button
           type="button"
+          data-testid="end-turn-btn"
           disabled={buttonsDisabled}
           onClick={() => void dispatchAction({ type: 'EndTurn' })}
         >

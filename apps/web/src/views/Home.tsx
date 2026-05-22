@@ -21,6 +21,7 @@ export const Home = (): JSX.Element => {
       <div role="tablist" aria-label="Home actions" className="tabs">
         <button
           role="tab"
+          data-testid="tab-create"
           aria-selected={tab === 'create'}
           onClick={() => setTab('create')}
         >
@@ -28,6 +29,7 @@ export const Home = (): JSX.Element => {
         </button>
         <button
           role="tab"
+          data-testid="tab-join"
           aria-selected={tab === 'join'}
           onClick={() => setTab('join')}
         >
@@ -83,6 +85,7 @@ const CreateForm = (): JSX.Element => {
         Your name
         <input
           name="name"
+          data-testid="create-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={32}
@@ -92,6 +95,7 @@ const CreateForm = (): JSX.Element => {
         Civilization
         <select
           name="civ"
+          data-testid="create-civ"
           value={civ}
           onChange={(e) => setCiv(e.target.value as Civ)}
         >
@@ -112,7 +116,7 @@ const CreateForm = (): JSX.Element => {
           {storeError}
         </p>
       )}
-      <button type="submit" disabled={pollState === 'creating'}>
+      <button type="submit" data-testid="create-submit" disabled={pollState === 'creating'}>
         {pollState === 'creating' ? 'Creating…' : 'Create game'}
       </button>
     </form>
@@ -170,6 +174,7 @@ const JoinForm = (): JSX.Element => {
         Game code
         <input
           name="gameCode"
+          data-testid="join-code"
           value={gameCode}
           onChange={(e) => setGameCode(e.target.value.toUpperCase())}
           maxLength={6}
@@ -181,6 +186,7 @@ const JoinForm = (): JSX.Element => {
         Your name
         <input
           name="name"
+          data-testid="join-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={32}
@@ -190,6 +196,7 @@ const JoinForm = (): JSX.Element => {
         Civilization
         <select
           name="civ"
+          data-testid="join-civ"
           value={civ}
           onChange={(e) => setCiv(e.target.value as Civ)}
         >
@@ -210,7 +217,7 @@ const JoinForm = (): JSX.Element => {
           {storeError}
         </p>
       )}
-      <button type="submit" disabled={pollState === 'joining'}>
+      <button type="submit" data-testid="join-submit" disabled={pollState === 'joining'}>
         {pollState === 'joining' ? 'Joining…' : 'Join game'}
       </button>
     </form>

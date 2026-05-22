@@ -25,8 +25,12 @@ import { Card, type Civ } from '@eoe/schema';
 //   3. Add a test under `src/__tests__/{civ}.test.ts`.
 //
 // Civs not yet ingested return `[]` — the loader is total over `Civ`.
-import byzantinesData from '../data/byzantines.json' with { type: 'json' };
-import englishData from '../data/english.json' with { type: 'json' };
+// NOTE: Plain JSON import (no `with { type: 'json' }` attribute). The
+// attribute syntax is ES2025; wrangler's bundled esbuild (v3.x) can't
+// parse it. TypeScript `resolveJsonModule` covers us in all of vitest,
+// Vite, and wrangler dev.
+import byzantinesData from '../data/byzantines.json';
+import englishData from '../data/english.json';
 
 type CivData = {
   _meta: unknown;
