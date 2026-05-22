@@ -5,6 +5,7 @@ import { drawAndDiscardCleanup } from './draw.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playCard } from './playCard.js';
 import { err, ok, type Result } from './result.js';
+import { scout } from './scout.js';
 
 // ─────────────────────────── applyAction ─────────────────────────────
 //
@@ -144,11 +145,14 @@ export function applyAction(
     case 'PlayCard':
       return playCard(state, action, actorId);
 
+    // Issue #56: Scout — reveal a face-down tile (MVP-3, no adjacency).
+    case 'Scout':
+      return scout(state, action, actorId);
+
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues (#7 = card draw, #8 = movement, etc.).
     case 'MoveUnit':
-    case 'Scout':
     case 'BuildCamp':
     case 'BuildBarracks':
     case 'RelocateBuilding':

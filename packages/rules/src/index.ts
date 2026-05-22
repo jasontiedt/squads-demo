@@ -21,6 +21,7 @@ export {
     type PhaseLegality
 } from './phases.js';
 export { playCard } from './playCard.js';
+export { scout } from './scout.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
 export { mulberry32, seedFor } from './rng.js';
 export { shuffleWith } from './shuffle.js';

@@ -48,7 +48,13 @@ export type RuleErrorCode =
   | 'card_not_in_catalog'
   | 'card_not_unit'
   | 'invalid_deploy_square'
-  | 'insufficient_resources';
+  | 'insufficient_resources'
+  // Scout (#56) — Scout targets a face-down tile via a square coord.
+  // `tile_not_found` covers both "no tile at this coord" and the
+  // defensive "tile vanished" branch. `tile_already_revealed` is the
+  // distinct "tile exists but faceDown is false" case.
+  | 'tile_not_found'
+  | 'tile_already_revealed';
 
 export interface RuleError {
   readonly code: RuleErrorCode;
