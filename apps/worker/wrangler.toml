@@ -7,11 +7,13 @@ compatibility_date = "2026-05-01"
 # Production deploys MUST set this to the GH Pages origin only:
 #   ALLOWED_ORIGINS = "https://jasontiedt.github.io"
 [vars]
-ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173"
+# 5173 = vite dev (manual local), 5174 = vite preview (Playwright e2e).
+ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173,http://localhost:5174"
 
 # KV namespace for game state. One key per gameCode (`game:<code>`).
-# TODO: run `wrangler kv:namespace create GAMES` and paste the id below,
-# then uncomment the block.
-# [[kv_namespaces]]
-# binding = "GAMES"
-# id = "<paste-id-here>"
+# `id` below is a placeholder for `wrangler dev` (local Miniflare KV
+# ignores it — storage is in-memory). Before `wrangler deploy`, replace
+# with the real namespace id from `wrangler kv:namespace create GAMES`.
+[[kv_namespaces]]
+binding = "GAMES"
+id = "0000000000000000000000000000ffff"
