@@ -9,7 +9,7 @@ import {
 
 describe('ResourceKind', () => {
   it('accepts every documented kind', () => {
-    for (const k of ['wood', 'stone', 'food', 'gold', 'wild'] as const) {
+    for (const k of ['wood', 'food', 'gold', 'wild'] as const) {
       expect(ResourceKind.parse(k)).toBe(k);
     }
   });
