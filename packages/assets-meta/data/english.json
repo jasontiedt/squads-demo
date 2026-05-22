@@ -1,8 +1,36 @@
 {
   "_meta": {
     "status": "MVP_DATA",
-    "summary": "English MVP card subset (6 unit cards) for issue #10. Stats decoded from the partial OCR extract at documentation/English_Base_EN.txt cross-referenced with documentation/Rulebook_EN.txt §'DEPLOYMENT PHASE' (card layout) and §'Combat' (stat definitions). Stat bar order confirmed as melee / health / ranged from inter-card comparison (Welsh Infantry-Archer 3/3/2 vs Longbowman ARCHER 0/2/3 vs Esquire CAVALRY 2/5/0). Movement value sits inline on the class band ('2 INFANTRY' = 2 movement, INFANTRY class). Image placeholders deferred to follow-up real-art ingest (see _meta.images_status).",
+    "summary": "English card set expanded to 20 entries for MVP-2 PlayCard playtest (issue #41). 6 entries are OCR-decoded from documentation/English_Base_EN.txt (Watchman, Billman, Welsh Infantry, Longbowman, Esquire, English Knight — original issue #10 subset). The remaining 14 entries are PLAYTEST STUBS invented by Sabine to exercise the broader Card discriminated union (mix of unit / action / tactic / upgrade / technology) and give MVP-2 PlayCard a deeper deck. The PlayCard MVP-2 path treats every card kind generically (discard + draw 1), so stub variety is purely for playtest flavor and to surface schema coverage gaps. Stat bar order confirmed as melee / health / ranged from inter-card comparison (Welsh Infantry-Archer 3/3/2 vs Longbowman ARCHER 0/2/3 vs Esquire CAVALRY 2/5/0). Movement value sits inline on the class band ('2 INFANTRY' = 2 movement, INFANTRY class). Image placeholders deferred to follow-up real-art ingest (see _meta.images_status). All stub stats and costs MUST be refined in the #17 OCR pass when the real card backs are available.",
+    "stub_status": {
+      "real_from_ocr": [
+        "eng-watchman",
+        "eng-billman",
+        "eng-welsh-infantry",
+        "eng-longbowman",
+        "eng-esquire",
+        "eng-english-knight"
+      ],
+      "playtest_stubs": [
+        "eng-hobelar",
+        "eng-pikeman",
+        "eng-yeoman",
+        "eng-crossbowman",
+        "eng-man-at-arms",
+        "eng-mounted-sergeant",
+        "eng-welsh-spearman",
+        "eng-border-reiver",
+        "eng-foot-knight",
+        "eng-mounted-archer",
+        "eng-levy-the-fyrd",
+        "eng-shield-wall",
+        "eng-plate-armor",
+        "eng-longbow-mastery"
+      ],
+      "note": "playtest_stubs entries are STUBS invented for MVP-2 playtest variety (issue #41). They MUST be refined or replaced against the real English card backs during the #17 OCR pass. Each stub carries a per-card `_needsConfirmation` block describing the stub status."
+    },
     "covers_issue": "https://github.com/jasontiedt/squads-demo/issues/10",
+    "covers_issue_secondary": "https://github.com/jasontiedt/squads-demo/issues/41",
     "depends_on": "https://github.com/jasontiedt/squads-demo/issues/3",
     "owner": "Sabine",
     "images_status": "DEFERRED — apps/web/public/cards/english/ holds a README explaining placeholders. Real card art will land in a follow-up issue (likely tied to #17 OCR pass which has access to the binary PDF).",
@@ -143,6 +171,241 @@
       "_needsConfirmation": {
         "cost.breakdown": "OCR shows '3 4' cost icons (sum 7). Encoded as wild:7 until #17.",
         "keywords.armor": "Card text reads 'Armor 2 (Take 2 less damage during combat)'. Modelled as 'armor-2' keyword string; structured armor handling deferred."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-hobelar",
+      "name": "Hobelar",
+      "civ": "english",
+      "imageRef": "english/hobelar.png",
+      "flavor": "Light cavalry scouts mounted on hardy ponies, the hobelars ranged ahead of the main host to harass and report. Indispensable for the long marches into Scotland.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 3 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 3,
+      "class": ["cavalry"],
+      "keywords": ["scout"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Stats picked to fit a light-cavalry scout role (mov 3, melee 2, health 3) distinct from the heavier English Knight; cost encoded as wild per existing rulebook-cost ambiguity convention."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-pikeman",
+      "name": "Pikeman",
+      "civ": "english",
+      "imageRef": "english/pikeman.png",
+      "flavor": "A wall of bristling pikes could break a cavalry charge before it landed. Cheaper than knights and easier to muster from the shire levy.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 0,
+      "health": 4,
+      "class": ["infantry"],
+      "keywords": ["anti-cavalry"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. anti-cavalry keyword is placeholder vocabulary pending the typed keyword DSL."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-yeoman",
+      "name": "Yeoman",
+      "civ": "english",
+      "imageRef": "english/yeoman.png",
+      "flavor": "Free landholders who trained at the village butts every Sunday by royal decree. Their longbows turned smallholdings into a strategic reserve.",
+      "cost": { "wild": 2 },
+      "movement": { "points": 2 },
+      "melee": 1,
+      "ranged": 2,
+      "health": 3,
+      "class": ["archer"],
+      "keywords": [],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Sits between Longbowman (specialist) and Welsh Infantry (hybrid) as a basic archer."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-crossbowman",
+      "name": "Crossbowman",
+      "civ": "english",
+      "imageRef": "english/crossbowman.png",
+      "flavor": "Slower to reload than a longbow but punching clean through mail. Mercenary companies from Genoa filled out English ranks in the early wars.",
+      "cost": { "wild": 4 },
+      "movement": { "points": 2 },
+      "melee": 0,
+      "ranged": 3,
+      "health": 2,
+      "class": ["archer"],
+      "keywords": ["armor-piercing"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. armor-piercing keyword is placeholder vocabulary; semantics TBD by the rules engine."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-man-at-arms",
+      "name": "Man-at-Arms",
+      "civ": "english",
+      "imageRef": "english/man-at-arms.png",
+      "flavor": "Professional soldiers in full mail and plate, retained by lords as the backbone of any serious host.",
+      "cost": { "wild": 4 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 0,
+      "health": 5,
+      "class": ["infantry"],
+      "keywords": ["armor-1"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. armor-1 keyword mirrors the English Knight's armor-2 convention."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-mounted-sergeant",
+      "name": "Mounted Sergeant",
+      "civ": "english",
+      "imageRef": "english/mounted-sergeant.png",
+      "flavor": "Career soldiers under a knight's banner, mounted but lacking the title. Reliable shock cavalry without a knight's price tag.",
+      "cost": { "wild": 5 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 0,
+      "health": 5,
+      "class": ["cavalry"],
+      "keywords": ["charge-1"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Stat-line slots between Esquire and English Knight on the cavalry curve."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-welsh-spearman",
+      "name": "Welsh Spearman",
+      "civ": "english",
+      "imageRef": "english/welsh-spearman.png",
+      "flavor": "Levied from the Welsh uplands, these spearmen formed bristling hedges that held the line while the longbows did their work.",
+      "cost": { "wild": 2 },
+      "movement": { "points": 2 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 3,
+      "class": ["infantry"],
+      "keywords": ["anti-cavalry"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Complements Welsh Infantry (hybrid) as a cheaper pure-infantry option."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-border-reiver",
+      "name": "Border Reiver",
+      "civ": "english",
+      "imageRef": "english/border-reiver.png",
+      "flavor": "Light horsemen of the Anglo-Scottish marches, equally at home raiding cattle by moonlight or scouting for the king's army.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 3 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 3,
+      "class": ["cavalry"],
+      "keywords": ["raid"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. raid keyword is placeholder vocabulary, semantics TBD."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-foot-knight",
+      "name": "Foot Knight",
+      "civ": "english",
+      "imageRef": "english/foot-knight.png",
+      "flavor": "Dismounted men-at-arms in full harness, anchoring the centre of the line where horses could not reach.",
+      "cost": { "wild": 6 },
+      "movement": { "points": 2 },
+      "melee": 4,
+      "ranged": 0,
+      "health": 6,
+      "class": ["infantry"],
+      "keywords": ["armor-2"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. armor-2 mirrors English Knight; intentionally cheaper than the mounted version."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "eng-mounted-archer",
+      "name": "Mounted Archer",
+      "civ": "english",
+      "imageRef": "english/mounted-archer.png",
+      "flavor": "Horse and bow together — skirmishers who could harry a column for miles without ever offering a fight.",
+      "cost": { "wild": 4 },
+      "movement": { "points": 3 },
+      "melee": 1,
+      "ranged": 2,
+      "health": 3,
+      "class": ["cavalry", "archer"],
+      "keywords": ["skirmish"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Hybrid cavalry/archer mirrors Welsh Infantry's hybrid pattern. skirmish keyword is placeholder vocabulary."
+      }
+    },
+    {
+      "kind": "action",
+      "id": "eng-levy-the-fyrd",
+      "name": "Levy the Fyrd",
+      "civ": "english",
+      "imageRef": "english/levy-the-fyrd.png",
+      "flavor": "The king's writ summons every able-bodied freeman to his banner. Boots on the road within the week.",
+      "cost": { "wild": 2 },
+      "effect": "PLACEHOLDER: draw 2 cards. Effect payload is loose (z.unknown) per the Card schema; structured effect DSL deferred per artoo-card-effect-typing.md.",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. The English card pool may not include an action card with this name; treat as schema-coverage filler until real data lands."
+      }
+    },
+    {
+      "kind": "tactic",
+      "id": "eng-shield-wall",
+      "name": "Shield Wall",
+      "civ": "english",
+      "imageRef": "english/shield-wall.png",
+      "flavor": "Locked shields, planted feet, the old Saxon discipline. The line holds or the line dies.",
+      "cost": { "wild": 1 },
+      "playableIn": ["deployment"],
+      "effect": "PLACEHOLDER: target infantry unit gains +1 health until end of turn. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Deployment-only because the effect modifies a deployed unit; confirm phase against real card text."
+      }
+    },
+    {
+      "kind": "upgrade",
+      "id": "eng-plate-armor",
+      "name": "Plate Armor",
+      "civ": "english",
+      "imageRef": "english/plate-armor.png",
+      "flavor": "Articulated steel covering shoulder to greave. Heavy, hot, and very hard to kill.",
+      "cost": { "wild": 3 },
+      "restrictedToClass": ["infantry", "cavalry"],
+      "effect": "PLACEHOLDER: attached unit gains armor-1 keyword. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Class restriction mirrors the rulebook's class-restricted upgrade pattern; archers excluded as a thematic guess."
+      }
+    },
+    {
+      "kind": "technology",
+      "id": "eng-longbow-mastery",
+      "name": "Longbow Mastery",
+      "civ": "english",
+      "imageRef": "english/longbow-mastery.png",
+      "flavor": "Mandated weekly practice at the village butts. A generation of yeomen could draw a war bow at ninety pounds.",
+      "cost": { "wild": 2 },
+      "subType": "A",
+      "effect": "PLACEHOLDER: all friendly archer units gain +1 ranged. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. subType 'A' is the schema placeholder per TechnologySubType — real subtype taxonomy TBD."
       }
     }
   ]

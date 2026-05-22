@@ -3,7 +3,7 @@ import { Card } from '@eoe/schema';
 import { loadCivMeta } from '../index.js';
 import englishData from '../../data/english.json' with { type: 'json' };
 
-const EXPECTED_NAMES = [
+const EXPECTED_OCR_UNIT_NAMES = [
   'Watchman',
   'Billman',
   'Welsh Infantry',
@@ -12,11 +12,11 @@ const EXPECTED_NAMES = [
   'English Knight',
 ] as const;
 
-describe("loadCivMeta('english') — MVP card subset for issue #10", () => {
+describe("loadCivMeta('english') — MVP card subset for issue #10 + #41 stubs", () => {
   const cards = loadCivMeta('english');
 
-  it('returns exactly 6 unit cards', () => {
-    expect(cards).toHaveLength(6);
+  it('returns exactly 20 cards (6 OCR + 14 MVP-2 playtest stubs from #41)', () => {
+    expect(cards).toHaveLength(20);
   });
 
   it('every entry parses against the Card schema', () => {
@@ -25,19 +25,20 @@ describe("loadCivMeta('english') — MVP card subset for issue #10", () => {
     }
   });
 
-  it('every entry is a unit card on the English civ', () => {
+  it('every entry is on the English civ', () => {
     for (const card of cards) {
-      expect(card.kind).toBe('unit');
       expect(card.civ).toBe('english');
     }
   });
 
-  it('contains all 6 expected unit names', () => {
-    const names = cards.map((c) => c.name).sort();
-    expect(names).toEqual([...EXPECTED_NAMES].sort());
+  it('contains all 6 OCR-decoded unit names alongside the stubs', () => {
+    const names = cards.map((c) => c.name);
+    for (const expected of EXPECTED_OCR_UNIT_NAMES) {
+      expect(names).toContain(expected);
+    }
   });
 
-  it('every unit has a stable string id and imageRef under english/', () => {
+  it('every entry has a stable string id and imageRef under english/', () => {
     for (const card of cards) {
       expect(typeof card.id).toBe('string');
       expect(String(card.id).length).toBeGreaterThan(0);
@@ -46,7 +47,13 @@ describe("loadCivMeta('english') — MVP card subset for issue #10", () => {
     }
   });
 
-  it('stat values are non-negative integers with positive health', () => {
+  it('mixes card kinds (units plus at least one non-unit) for MVP-2 schema coverage', () => {
+    const kinds = new Set(cards.map((c) => c.kind));
+    expect(kinds.has('unit')).toBe(true);
+    expect(kinds.size).toBeGreaterThan(1);
+  });
+
+  it('unit stat values are non-negative integers with positive health', () => {
     for (const card of cards) {
       if (card.kind !== 'unit') continue;
       expect(Number.isInteger(card.melee)).toBe(true);
@@ -71,11 +78,14 @@ describe("loadCivMeta('english') — MVP card subset for issue #10", () => {
     expect(knight && knight.kind === 'unit' && knight.ranged === 0).toBe(true);
   });
 
-  it('English Knight has the highest melee + health among the six (heavy hitter check)', () => {
-    const knight = cards.find((c) => c.name === 'English Knight');
+  it('English Knight has the highest melee + health among the original 6 OCR units (heavy hitter check)', () => {
+    const ocrUnits = cards.filter(
+      (c) => c.kind === 'unit' && (EXPECTED_OCR_UNIT_NAMES as readonly string[]).includes(c.name),
+    );
+    const knight = ocrUnits.find((c) => c.name === 'English Knight');
     expect(knight).toBeDefined();
     if (knight?.kind !== 'unit') return;
-    for (const other of cards) {
+    for (const other of ocrUnits) {
       if (other.kind !== 'unit' || other.name === 'English Knight') continue;
       expect(knight.melee + knight.health).toBeGreaterThan(other.melee + other.health);
     }
