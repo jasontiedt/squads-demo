@@ -201,6 +201,13 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
   // action response), opaque count otherwise. Length-derived either way.
   const ownHand = state?.players[membership.seat]?.hand;
   const handCount = Array.isArray(ownHand) ? ownHand.length : (ownHand?.count ?? 0);
+  // Issue #37: PlayCard hand UI — cards are clickable only on your
+  // turn during the mobilization or deployment phase (matches the
+  // rules engine's phase gate in `packages/rules/src/applyAction.ts`).
+  const cardsClickable =
+    !buttonsDisabled &&
+    state !== null &&
+    (state.phase === 'mobilization' || state.phase === 'deployment');
 
   return (
     <main
@@ -254,13 +261,34 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
             {handCount === 1 ? '' : 's'}
           </h2>
           <ul className="hand-tiles" role="list">
-            {Array.from({ length: handCount }, (_, i) => (
-              <li key={i} className="hand-tile" aria-label="Face-down card">
-                {/* Card contents stay opaque on the wire — the server
-                    redacts every player's hand. */}
-                <span className="hand-tile-back">🂠</span>
-              </li>
-            ))}
+            {Array.isArray(ownHand)
+              ? ownHand.map((cardId) => (
+                  <li key={cardId} className="hand-tile">
+                    <button
+                      type="button"
+                      data-testid={`card-${cardId}`}
+                      className="hand-card-btn"
+                      disabled={!cardsClickable}
+                      aria-label={`Play card ${cardId}`}
+                      onClick={() =>
+                        void dispatchAction({
+                          type: 'PlayCard',
+                          cardId,
+                          target: undefined,
+                        })
+                      }
+                    >
+                      {cardId}
+                    </button>
+                  </li>
+                ))
+              : Array.from({ length: handCount }, (_, i) => (
+                  <li key={i} className="hand-tile" aria-label="Face-down card">
+                    {/* Opponent / opaque view — own-hand reveal lives
+                        in the Array.isArray branch above. */}
+                    <span className="hand-tile-back">🂠</span>
+                  </li>
+                ))}
             {handCount === 0 && (
               <li className="hand-empty">No cards in hand.</li>
             )}
@@ -269,13 +297,6 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
       )}
 
       <section className="actions" aria-label="Your actions">
-        <button
-          type="button"
-          disabled
-          title="Play card lands once @eoe/rules has a PlayCard action"
-        >
-          Play card
-        </button>
         <button
           type="button"
           data-testid="end-phase-btn"
