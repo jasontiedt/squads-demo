@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Action } from './actions.js';
+import { Action, AttackMode } from './actions.js';
 import { CardId } from './cards.js';
 import { Civ } from './civ.js';
 import { BuildingInstanceId, Seed, UnitInstanceId } from './ids.js';
@@ -144,9 +144,7 @@ export type Player = z.infer<typeof Player>;
 
 // ─────────────────────────── Unit instance ──────────────────────────
 
-/** Combat mode toggle (rulebook §"Switch Attack Mode"). */
-export const AttackMode = z.enum(['melee', 'ranged']);
-export type AttackMode = z.infer<typeof AttackMode>;
+/** AttackMode is defined in `./actions.ts` (canonical home — Attack action owns it). Imported above for use in UnitState. */
 
 /** King/Queen pawn attachment, +1/+2 to a unit. Optional. */
 export const PawnBonus = z.enum(['king', 'queen']);
