@@ -132,3 +132,23 @@
 - 15-minute timeout-minutes. Concurrency group cancels in-progress runs on same ref.
 - Artifacts (playwright-report/, test-results/) uploaded only on failure with 7-day retention.
 - PR #47 (draft).
+
+### 2026-05-22: Issue #57 — Capital placement + board init extracted to @eoe/rules
+
+- **Files added in `packages/rules/`:**
+  - `src/constants.ts` — `CAPITAL_DEFAULT_HP = 20` (rulebook §324 long-game default, per issue #57), `STARTING_HAND_SIZE = 5`, `MIN_DECK_AFTER_DRAW = 7`. All three moved from `apps/worker/src/game-init.ts`.
+  - `src/shuffle.ts` — `shuffleWith<T>(items, rng)` moved verbatim from `apps/worker/src/random.ts`. It is a pure engine primitive — belongs next to `mulberry32`/`seedFor`.
+  - `src/initialState.ts` — `buildCreatorState(gameCode, seed, civ)` and `addJoiner(state, civ)` moved from worker. Capital ids now `bld-cap-p1` / `bld-cap-p2` (issue spec). Capital HP = `CAPITAL_DEFAULT_HP`. Both starting tiles `faceDown: false`. p1 anchored at (0,0), p2 at (5,5) — placement deterministic, MVP-4 will randomize.
+  - `src/__tests__/initialState.test.ts` — 15 tests: round-trip `GameState.parse()`, capital count/owner/id/HP/damage, capital-on-tile assertion (`tileContains(tile, square)`), `units[]` empty, tiles face-up, deterministic across identical inputs, immutability of `addJoiner`'s input, version bump 1→2, seat-2 wild flag.
+- **Files rewritten:**
+  - `apps/worker/src/game-init.ts` — now a 14-line re-export shim. Existing imports (`'./game-init.js'` from create-game.ts + join-game.ts) keep working without churn.
+  - `packages/rules/src/index.ts` — adds `addJoiner`, `buildCreatorState`, `shuffleWith`, `CAPITAL_DEFAULT_HP`, `STARTING_HAND_SIZE`, `MIN_DECK_AFTER_DRAW` exports.
+  - `apps/worker/src/random.ts` — `shuffleWith` removed, comment points readers at the new home.
+- **Files extended:**
+  - `apps/worker/test/post-games.test.ts` — new test "persists both capitals with #57 ids, default HP, and empty units[]". 19 worker post-games tests still pass.
+- **Issue-vs-schema reconciliation:** The issue description mentioned `tileId` and `siegeState` on `BuildingInstance`, plus per-player `units[]`. None of those fields exist in the current schema (#4 landed `BuildingInstance` as a discriminated union with `square: Coord` and no siege state; units live on `GameState.units[]`, not per-player). Did NOT add them — that would be schema bloat outside #57's stop condition. The stop condition ("each player has a Capital BuildingInstance on a starting tile and empty units[]") is satisfied as-is: `square` locates the capital on the tile via square-membership, and `GameState.units = []` satisfies "empty units[]". Decision filed at `.squad/decisions/inbox/artoo-capital-init.md`.
+- **HP change (10 → 20):** Production init now uses long-game HP. Test fixtures (`apps/worker/test/fixtures/initial-state.ts`, `packages/rules/src/__tests__/fixtures.ts`, `packages/schema/src/__tests__/state.test.ts`) keep `capitalHp: 10` — they are sample-data fixtures, not assertions about init output. They round-trip through `Player.parse()` regardless of the HP value. Touching them would be cosmetic noise.
+- **Worktree gotcha (re-confirmed):** pnpm-installed `apps/worker/node_modules/@eoe/{rules,schema,assets-meta}` were REAL directory copies (not symlinks) in the worktree, pointing at the main repo's content. New files in `packages/rules/src/` were invisible to the worker. Fix: `cmd //c "rmdir /S /Q apps\worker\node_modules\@eoe\<pkg>"` then `cmd //c "mklink /J <abs-dst> <abs-src>"`. **Junctions need absolute paths** — `mklink /J` resolves relatives against the cmd CWD, NOT the link's location, so `..\..\..\..\packages\rules` lands in `c:\GitRepos\packages\rules` and silently breaks. Adding this to my memory for future worktree spawns.
+- **Test counts:** rules 121 → 136 (+15 new), schema 204 unchanged, worker 43 → 44 (+1 new). All green in scope.
+- **Web failures are pre-existing**, NOT regressions: 38 `document is not defined` errors in `apps/web/src/**/*.test.tsx`. `apps/web/` has no `vitest.config.ts` so vitest defaults to node env. Out of scope for #57.
+- Branch: `copilot/57-capital-init`. PR drafted with `Closes #57`.

@@ -256,6 +256,27 @@ describe('POST /games/:code/join — second player', () => {
     expect(stored?.state.players[2]?.capitalSquare).toEqual({ x: 5, y: 5 });
   });
 
+  it('persists both capitals with #57 ids, default HP, and empty units[] (POST /games + join)', async () => {
+    const { env, kv } = buildEnv();
+    const { payload: created } = await createGame(env, {
+      playerName: 'Alice',
+      civ: 'english',
+    });
+    await joinGame(env, created.gameCode, { playerName: 'Bob', civ: 'byzantines' });
+    const stored = kv.peek<StoredGame>(gameKey(created.gameCode));
+
+    const capitals = stored?.state.buildings.filter((b) => b.type === 'capital') ?? [];
+    expect(capitals).toHaveLength(2);
+    expect(capitals.map((c) => c.id).sort()).toEqual(['bld-cap-p1', 'bld-cap-p2']);
+
+    expect(stored?.state.players[1]?.capitalHp).toBe(20);
+    expect(stored?.state.players[2]?.capitalHp).toBe(20);
+    expect(stored?.state.units).toEqual([]);
+
+    // Both starting tiles are face-up so units can deploy onto them.
+    expect(stored?.state.map.tiles.every((t) => t.faceDown === false)).toBe(true);
+  });
+
   it('rejects a join on a full game with 409', async () => {
     const { env } = buildEnv();
     const { payload: created } = await createGame(env, {
