@@ -4,13 +4,17 @@
 // `./real.ts`. The interface here is implementation-agnostic — both
 // `MockGameApi` (dev/tests) and `RealGameApi` (live Worker) conform.
 //
-// State over the wire is *redacted*: each player's `hand` arrives as
-// `{ count: number }`, never the actual card ids. We carry our own
-// hand contents client-side from the original create/join/postAction
-// responses; opponents' hands stay opaque.
+// State over the wire is *partially* redacted (issue #38). Opponents'
+// hands arrive as `{ count: number }`. The requesting player's OWN
+// hand arrives as `CardId[]` whenever the worker can identify them —
+// via the create/join response (the player just authenticated to
+// create the game) or via a Bearer-token GET / a POST /actions whose
+// body auth matches the seat. `RedactedPlayer.hand` is therefore a
+// union; consumers check `Array.isArray(hand)` to discriminate.
 
 import type {
   Action,
+  CardId,
   Civ,
   GameId,
   GameState,
@@ -22,18 +26,19 @@ import { Seed } from '@eoe/schema';
 
 // ─────────────────────────── Redacted state shape ────────────────────
 //
-// Mirror of the Worker's `redactStateForPublic` output. Kept web-local
+// Mirror of the Worker's `redactStateForSeat` output. Kept web-local
 // (no Zod parse needed — we trust our own Worker, and a malformed
 // payload will surface as a runtime crash already caught by the API
 // layer's try/catch). If we ever need to validate incoming state at
 // the boundary, lift these into `@eoe/schema` as Zod schemas.
 
 /**
- * Public view of a player — same as `Player` but `hand` is the size,
- * not the card ids.
+ * Wire view of a player. `hand` is EITHER the size descriptor
+ * (opponent / anonymous GET) OR the real card-id array (the requester's
+ * own seat under a valid bearer / the acting seat on POST /actions).
  */
 export interface RedactedPlayer extends Omit<Player, 'hand'> {
-  readonly hand: { readonly count: number };
+  readonly hand: { readonly count: number } | readonly CardId[];
 }
 
 /** Public view of game state — every player's hand redacted. */

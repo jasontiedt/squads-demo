@@ -152,18 +152,16 @@ describe('RealGameApi', () => {
     expect(api.baseUrl).toBe('http://localhost:8787');
   });
 
-  it('createGame POSTs /games then GETs state and returns full response', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        okJson({
-          gameCode: 'ABCD12',
-          playerToken: TOKEN,
-          seat: 1,
-        }),
-      )
-      .mockResolvedValueOnce(
-        okJson({ state: placeholderState('ABCD12'), version: 0 }),
-      );
+  it('createGame POSTs /games and returns state inline (no follow-up GET)', async () => {
+    fetchMock.mockResolvedValueOnce(
+      okJson({
+        gameCode: 'ABCD12',
+        playerToken: TOKEN,
+        seat: 1,
+        state: placeholderState('ABCD12'),
+        version: 0,
+      }),
+    );
     const api = new RealGameApi('http://localhost:8787');
     const res = await api.createGame({ name: 'Lando', civ: 'english' });
     expect(res.gameCode).toBe('ABCD12');
@@ -171,7 +169,8 @@ describe('RealGameApi', () => {
     expect(res.playerToken).toBe(TOKEN);
     expect(res.state.gameId).toBe('ABCD12');
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // #38: POST now returns state — no follow-up GET.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     const [postUrl, postInit] = fetchMock.mock.calls[0] as [
       string,
       RequestInit,
@@ -182,19 +181,18 @@ describe('RealGameApi', () => {
       playerName: 'Lando',
       civ: 'english',
     });
-    const [getUrl, getInit] = fetchMock.mock.calls[1] as [string, RequestInit];
-    expect(getUrl).toBe('http://localhost:8787/games/ABCD12');
-    expect(getInit.method ?? 'GET').toBe('GET');
   });
 
-  it('joinGame POSTs /games/:code/join then GETs state', async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        okJson({ playerToken: TOKEN, seat: 2 }),
-      )
-      .mockResolvedValueOnce(
-        okJson({ state: placeholderState('ABCD12'), version: 0 }),
-      );
+  it('joinGame POSTs /games/:code/join and returns state inline (no follow-up GET)', async () => {
+    fetchMock.mockResolvedValueOnce(
+      okJson({
+        gameCode: 'ABCD12',
+        playerToken: TOKEN,
+        seat: 2,
+        state: placeholderState('ABCD12'),
+        version: 0,
+      }),
+    );
     const api = new RealGameApi('http://localhost:8787');
     const res = await api.joinGame({
       gameCode: 'ABCD12',
@@ -203,6 +201,9 @@ describe('RealGameApi', () => {
     });
     expect(res.seat).toBe(2);
     expect(res.gameCode).toBe('ABCD12');
+    expect(res.playerToken).toBe(TOKEN);
+    expect(res.state.gameId).toBe('ABCD12');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       'http://localhost:8787/games/ABCD12/join',
     );

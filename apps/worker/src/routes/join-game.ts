@@ -8,6 +8,7 @@ import { errorBody, json } from '../http.js';
 import { addJoiner } from '../game-init.js';
 import { loadGame, saveGame } from '../kv-store.js';
 import { newPlayerToken, sha256Hex } from '../random.js';
+import { redactStateForSeat } from '../redact.js';
 import { JoinGameBody } from '../request-schema.js';
 
 export async function handleJoinGame(
@@ -53,5 +54,12 @@ export async function handleJoinGame(
     tokenHashes: { ...stored.tokenHashes, 2: tokenHash },
   });
 
-  return json({ playerToken, seat: 2 }, 200, cors);
+  // Issue #38: include the redacted state with the joiner's own hand
+  // visible (CardId[]). Saves the client a follow-up GET round-trip.
+  const stateForJoiner = redactStateForSeat(nextState, 2);
+  return json(
+    { gameCode, playerToken, seat: 2, state: stateForJoiner, version: nextState.version },
+    200,
+    cors,
+  );
 }

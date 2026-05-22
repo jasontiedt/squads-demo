@@ -34,7 +34,7 @@ import { applyAction } from '@eoe/rules';
 import { errorBody, json } from '../http.js';
 import { loadGame, saveGame } from '../kv-store.js';
 import { sha256Hex } from '../random.js';
-import { redactStateForPublic } from '../redact.js';
+import { redactStateForSeat } from '../redact.js';
 import { PostActionBody } from '../request-schema.js';
 
 export async function handleActions(
@@ -108,8 +108,12 @@ export async function handleActions(
   const nextState = { ...result.value, version: stored.state.version + 1 };
   await saveGame(kv, gameCode, { ...stored, state: nextState });
 
+  // Issue #38: return the acting seat's own hand unredacted (CardId[]).
+  // The action just mutated it (e.g. PlayCard discards one + draws one)
+  // so the client needs the new hand contents to render. Opponents stay
+  // redacted to { count }.
   return json(
-    { state: redactStateForPublic(nextState), version: nextState.version },
+    { state: redactStateForSeat(nextState, seat), version: nextState.version },
     200,
     cors,
   );

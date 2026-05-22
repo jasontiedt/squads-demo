@@ -138,15 +138,12 @@ export class RealGameApi implements GameApi {
       { playerName: req.name.trim(), civ: req.civ },
       op,
     );
+    // Issue #38: create now returns redacted state with creator's hand
+    // visible, so no follow-up GET is needed.
     const data = (await res.json()) as {
       gameCode: GameId;
       playerToken: PlayerToken;
       seat: Seat;
-    };
-    // Worker create returns identity only; fetch state via GET to fill
-    // out the CreateGameResponse contract.
-    const stateRes = await this.get(`/games/${data.gameCode}`, op);
-    const stateData = (await stateRes.json()) as {
       state: PublicGameState;
       version: number;
     };
@@ -154,7 +151,7 @@ export class RealGameApi implements GameApi {
       gameCode: data.gameCode,
       seat: data.seat,
       playerToken: data.playerToken,
-      state: stateData.state,
+      state: data.state,
     };
   }
 
@@ -168,47 +165,53 @@ export class RealGameApi implements GameApi {
       { playerName: req.name.trim(), civ: req.civ },
       op,
     );
+    // Issue #38: join now returns redacted state with joiner's hand
+    // visible, so no follow-up GET is needed.
     const data = (await res.json()) as {
+      gameCode: GameId;
       playerToken: PlayerToken;
       seat: Seat;
-    };
-    const stateRes = await this.get(`/games/${req.gameCode}`, op);
-    const stateData = (await stateRes.json()) as {
       state: PublicGameState;
       version: number;
     };
     return {
-      gameCode: req.gameCode,
+      gameCode: data.gameCode,
       seat: data.seat,
       playerToken: data.playerToken,
-      state: stateData.state,
+      state: data.state,
     };
   }
 
   async getGame(req: GetGameRequest): Promise<GetGameResponse> {
     const op = `GET /games/${req.gameCode}`;
-    const res = await this.get(
-      `/games/${encodeURIComponent(req.gameCode)}`,
-      op,
-    );
+    // Issue #38: send Authorization: Bearer <playerToken> so the
+    // worker returns our own hand unredacted. Malformed/wrong tokens
+    // silently fall back to public state (no 401), so the call never
+    // fails on token issues — it just yields opaque hands.
+    let res: Response;
+    try {
+      res = await fetch(
+        `${this.baseUrl}/games/${encodeURIComponent(req.gameCode)}`,
+        {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${req.playerToken}` },
+        },
+      );
+    } catch (err) {
+      throw wrapNetworkError(err, op);
+    }
+    if (!res.ok) {
+      await throwFromResponse(res, op);
+    }
     const data = (await res.json()) as {
       state: PublicGameState;
       version: number;
+      seat?: Seat;
     };
-    // Live worker GET is currently unauthenticated and does not echo
-    // the caller's seat — derive it from the player record in state by
-    // matching against any seat we hold a token for client-side. The
-    // worker's followup (`?seat=X` token-auth GET) will let us drop
-    // this once landed. For now: return seat 0 placeholder is invalid
-    // (Seat is 1..4), so return seat=1 as a benign default. Callers
-    // (Lobby) already know their seat from membership and don't read
-    // this field after rehydrate.
-    //
-    // NB: the worker's 401 path won't fire here (GET is open); auth
-    // gets enforced on postAction.
-    const _ = req.playerToken; // satisfy noUnusedParameters
-    void _;
-    const seat: Seat = 1;
+    // If the worker echoed back a seat, trust it. Otherwise fall back
+    // to seat 1 (consumers like Lobby know their real seat from local
+    // membership and don't read this field after rehydrate).
+    const seat: Seat = data.seat ?? 1;
     return { state: data.state, seat };
   }
 
