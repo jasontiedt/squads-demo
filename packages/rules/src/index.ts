@@ -5,9 +5,14 @@
 // (optimistic UI). Must stay free of I/O, randomness, and time.
 
 export { applyAction } from './applyAction.js';
+export {
+    CAPITAL_DEFAULT_HP,
+    MIN_DECK_AFTER_DRAW,
+    STARTING_HAND_SIZE,
+} from './constants.js';
 export { deployUnit } from './deployUnit.js';
 export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
-export { playCard } from './playCard.js';
+export { addJoiner, buildCreatorState } from './initialState.js';
 export {
     ACTION_PHASE_LEGALITY,
     isOpponentTurnAction,
@@ -15,6 +20,8 @@ export {
     nextPhase,
     type PhaseLegality
 } from './phases.js';
+export { playCard } from './playCard.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
 export { mulberry32, seedFor } from './rng.js';
+export { shuffleWith } from './shuffle.js';
 

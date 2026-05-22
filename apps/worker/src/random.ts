@@ -74,28 +74,8 @@ export async function sha256Hex(input: string): Promise<string> {
   return out;
 }
 
-/**
- * Deterministic Fisher–Yates shuffle. The caller supplies a uint32 seed
- * derived from the game state via `@eoe/rules`'s `seedFor` so the same
- * inputs always produce the same order — critical for reproducible
- * games and tests.
- *
- * Pure: returns a new array; input untouched.
- */
-export function shuffleWith<T>(items: readonly T[], rng: () => number): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const ai = out[i];
-    const aj = out[j];
-    // `noUncheckedIndexedAccess` — guards are unreachable because
-    // `i` and `j` are within bounds, but the type system requires them.
-    if (ai === undefined || aj === undefined) continue;
-    out[i] = aj;
-    out[j] = ai;
-  }
-  return out;
-}
+// `shuffleWith` moved to `@eoe/rules/shuffle.ts` in #57 — it is a pure
+// engine primitive and now lives next to the seeded RNG that drives it.
 
 // ─────────────────────────── base64url ───────────────────────────────
 
