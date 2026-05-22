@@ -54,7 +54,21 @@ export type RuleErrorCode =
   // defensive "tile vanished" branch. `tile_already_revealed` is the
   // distinct "tile exists but faceDown is false" case.
   | 'tile_not_found'
-  | 'tile_already_revealed';
+  | 'tile_already_revealed'
+  // Attack (#54) — MVP-3 attacker/target validation. `attacker_*` codes
+  // pin issues with the attacker side; `target_*` and `out_of_range`
+  // pin defender / geometry issues. `attack_mode_mismatch` catches a
+  // caller bug where the action mode disagrees with the attacker's
+  // current `attackMode`. `attack_value_zero` rejects e.g. a melee-
+  // only unit asked to attack in ranged mode.
+  | 'attacker_not_found'
+  | 'attacker_not_yours'
+  | 'attacker_exhausted'
+  | 'target_not_found'
+  | 'target_friendly'
+  | 'out_of_range'
+  | 'attack_mode_mismatch'
+  | 'attack_value_zero';
 
 export interface RuleError {
   readonly code: RuleErrorCode;

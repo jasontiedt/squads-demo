@@ -1,5 +1,6 @@
 import type { Action, GameState, Seat } from '@eoe/schema';
 
+import { attack } from './attack.js';
 import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
@@ -149,6 +150,10 @@ export function applyAction(
     case 'Scout':
       return scout(state, action, actorId);
 
+    // Issue #54: Attack — unit attacks another unit (MVP-3, no capital).
+    case 'Attack':
+      return attack(state, action, actorId);
+
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues (#7 = card draw, #8 = movement, etc.).
@@ -156,7 +161,6 @@ export function applyAction(
     case 'BuildCamp':
     case 'BuildBarracks':
     case 'RelocateBuilding':
-    case 'Attack':
     case 'SwitchAttackMode':
     case 'UnitAbility':
     case 'Resupply':
