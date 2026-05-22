@@ -7,6 +7,7 @@
 export { applyAction } from './applyAction.js';
 export { deployUnit } from './deployUnit.js';
 export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
+export { playCard } from './playCard.js';
 export {
     ACTION_PHASE_LEGALITY,
     isOpponentTurnAction,
