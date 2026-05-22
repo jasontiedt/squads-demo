@@ -252,9 +252,11 @@ describe('<Lobby />', () => {
         <Lobby gameCode="STUB42" />
       </GameApiProvider>,
     );
-    const btn = screen.getByRole('button', { name: /play card/i });
-    expect((btn as HTMLButtonElement).disabled).toBe(true);
-    expect(btn.getAttribute('title')).toMatch(/playcard/i);
+    // Issue #37: the placeholder generic "Play card" button was
+    // removed. Cards in the hand are themselves the click targets.
+    // Verify the placeholder is gone (it would have been a button
+    // named "Play card" with a title attribute mentioning PlayCard).
+    expect(screen.queryByRole('button', { name: /^play card$/i })).toBeNull();
   });
 
   // ---- 409 retry ------------------------------------------------------
