@@ -154,3 +154,18 @@ h1 {
   text-align: center;
   color: #888;
 }
+
+.board {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.board-svg {
+  display: block;
+  max-width: 480px;
+  margin: 0 auto;
+  image-rendering: crisp-edges;
+}

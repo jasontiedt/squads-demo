@@ -11,6 +11,7 @@ import {
   type PublicGameState,
 } from '../api/client.js';
 import { navigate } from '../router/hash.js';
+import { Board } from '../components/board/Board.js';
 
 export interface LobbyProps {
   gameCode: string;
@@ -294,9 +295,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
         )}
       </section>
 
-      <section className="board-placeholder" aria-label="Game board">
-        <p>Board view lands in a follow-up issue.</p>
-      </section>
+      {state && <Board state={state} />}
     </main>
   );
 };
