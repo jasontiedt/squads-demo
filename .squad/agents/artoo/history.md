@@ -124,3 +124,11 @@
 - **Workspace dep gotcha:** `pnpm install` in the worktree can't run unattended because it wants to wipe-and-rebuild `node_modules` (the per-package junctions confuse it). Workaround: manually create the missing workspace symlink in the **main checkout** — `ln -s /c/GitRepos/squads-demo/packages/assets-meta/ apps/worker/node_modules/@eoe/assets-meta` — and the worktree picks it up through the junction. Real install will reconcile on the next clean main-repo `pnpm install`.
 - **Test counts:** worker **23** (was 4 — +19 new), schema 204, rules 121 (+16 needs-confirmation skipped), assets-meta 17. All green.
 - Branch: `copilot/12-worker-post-games`. Decision filed at `.squad/decisions/inbox/artoo-worker-kv-contract.md` documenting KV schema, endpoint contracts, token-hash flow, code alphabet, and the three `@needs-confirmation` items (capital squares, starting tile terrain, deck padding).
+
+## 2026-05-22: Issue #39 — CI e2e workflow
+- Added `.github/workflows/e2e.yml` running Playwright on PRs and pushes to main touching apps/web, apps/worker, apps/e2e, packages/, lockfiles.
+- Followed deploy-pages.yml conventions: pnpm/action-setup@v4 (no version pin — uses packageManager from root package.json: pnpm@9.12.0), actions/setup-node@v4 with node 20 + pnpm cache.
+- Playwright browser cache keyed on pnpm-lock.yaml + apps/e2e/package.json hash so cache invalidates when @playwright/test version bumps.
+- 15-minute timeout-minutes. Concurrency group cancels in-progress runs on same ref.
+- Artifacts (playwright-report/, test-results/) uploaded only on failure with 7-day retention.
+- PR #47 (draft).
