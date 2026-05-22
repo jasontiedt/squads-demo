@@ -16,4 +16,4 @@ ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173,http://loc
 # with the real namespace id from `wrangler kv:namespace create GAMES`.
 [[kv_namespaces]]
 binding = "GAMES"
-id = "0000000000000000000000000000ffff"
+id = "fc7865669f1247bf9d4a76df50c6029b"

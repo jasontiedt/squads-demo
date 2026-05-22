@@ -31,6 +31,8 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build web
+        env:
+          VITE_WORKER_URL: https://echoes-of-emperors-api.jasontiedt.workers.dev
         run: pnpm -F @eoe/web build
 
       - uses: actions/configure-pages@v5
