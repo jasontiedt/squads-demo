@@ -70,7 +70,12 @@ interface ActionResponse {
   readonly state: {
     readonly phase: string;
     readonly version: number;
-    readonly players: Record<string, { hand: { count: number } } | undefined>;
+    // Issue #38: acting seat's hand comes back as CardId[]; opponents
+    // stay redacted to { count }.
+    readonly players: Record<
+      string,
+      { hand: { count: number } | readonly string[] } | undefined
+    >;
   };
   readonly version: number;
 }
@@ -90,8 +95,11 @@ describe('POST /games/:code/actions — happy path', () => {
     expect(body.version).toBe(3);
     expect(body.state.version).toBe(3);
     expect(body.state.phase).toBe('mobilization');
-    // Hand stays redacted in the response.
-    expect(body.state.players['1']?.hand).toEqual({ count: 5 });
+    // Issue #38: acting seat's own hand returns as CardId[] (length 5);
+    // opponent stays redacted.
+    const seat1Hand = body.state.players['1']?.hand;
+    expect(Array.isArray(seat1Hand)).toBe(true);
+    if (Array.isArray(seat1Hand)) expect(seat1Hand.length).toBe(5);
     expect(body.state.players['2']?.hand).toEqual({ count: 5 });
   });
 
@@ -195,8 +203,16 @@ describe('POST /games/:code/actions — happy path', () => {
     const body = (await res.json()) as ActionResponse;
     expect(body.version).toBe(4);
     expect(body.state.phase).toBe('mobilization');
-    // Hand stays redacted → count is preserved (−1 played, +1 drawn).
-    expect(body.state.players['1']?.hand).toEqual({ count: 5 });
+    // Issue #38: acting seat's hand returns as CardId[] (length 5,
+    // −1 played +1 drawn). PlayCard mutates the hand, so the client
+    // needs the new contents to re-render.
+    const seat1Hand = body.state.players['1']?.hand;
+    expect(Array.isArray(seat1Hand)).toBe(true);
+    if (Array.isArray(seat1Hand)) {
+      expect(seat1Hand.length).toBe(5);
+      expect(seat1Hand).not.toContain(playedCard); // played card gone
+      expect(seat1Hand).toContain(expectedDrawn);  // drew deck top
+    }
 
     // Inspect KV: card moved hand → discard, deck top consumed.
     const after = kv.peek<StoredGame>(gameKey(gameCode))?.state.players[1];

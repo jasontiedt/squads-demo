@@ -8,6 +8,7 @@ import { errorBody, json } from '../http.js';
 import { buildCreatorState } from '../game-init.js';
 import { gameExists, saveGame } from '../kv-store.js';
 import { newGameCode, newPlayerToken, newSeed, sha256Hex } from '../random.js';
+import { redactStateForSeat } from '../redact.js';
 import { CreateGameBody } from '../request-schema.js';
 import { type Seed } from '@eoe/schema';
 
@@ -66,5 +67,12 @@ export async function handleCreateGame(
     tokenHashes: { 1: tokenHash },
   });
 
-  return json({ gameCode, playerToken, seat: 1 }, 200, cors);
+  // Issue #38: include the redacted state with the creator's own hand
+  // visible (CardId[]). Saves the client a follow-up GET round-trip.
+  const stateForCreator = redactStateForSeat(state, 1);
+  return json(
+    { gameCode, playerToken, seat: 1, state: stateForCreator, version: state.version },
+    200,
+    cors,
+  );
 }

@@ -196,7 +196,11 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
   const yourTurn =
     state !== null && state.activePlayer === membership.seat;
   const buttonsDisabled = !state || !yourTurn || actionInFlight;
-  const handCount = state?.players[membership.seat]?.hand.count ?? 0;
+  // Issue #38: hand is `CardId[] | { count }` — array when this client
+  // is authenticated as the owning seat (create/join/Bearer-GET/POST
+  // action response), opaque count otherwise. Length-derived either way.
+  const ownHand = state?.players[membership.seat]?.hand;
+  const handCount = Array.isArray(ownHand) ? ownHand.length : (ownHand?.count ?? 0);
 
   return (
     <main
