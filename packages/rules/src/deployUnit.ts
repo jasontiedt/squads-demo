@@ -104,6 +104,33 @@ export function deployUnit(
     );
   }
 
+  // 4b) Issue #53: target tile must be revealed (faceDown:false).
+  //     We locate the tile containing the target square by scanning
+  //     `state.map.tiles`. A square belongs to exactly one tile, so
+  //     the first match wins. If no tile contains the target square,
+  //     the placement zone is undefined and we reject. The Capital
+  //     square check above already pinned the placement zone to the
+  //     actor's capital for MVP-3; this check additionally enforces
+  //     that the tile under it is revealed.
+  const targetTile = state.map.tiles.find((t) =>
+    t.squares.some(
+      (s) =>
+        s.coord.x === action.square.x && s.coord.y === action.square.y,
+    ),
+  );
+  if (targetTile === undefined) {
+    return err(
+      'invalid_deploy_square',
+      `target square (${action.square.x},${action.square.y}) is not on any tile`,
+    );
+  }
+  if (targetTile.faceDown) {
+    return err(
+      'invalid_deploy_square',
+      `target tile ${targetTile.id} is face-down; reveal via Scout before deploying`,
+    );
+  }
+
   // 5) Capital stacking: MVP allows. See needs-confirmation test.
   //    No occupancy check here.
 
@@ -154,6 +181,7 @@ export function deployUnit(
 
   return ok({
     ...state,
+    version: state.version + 1,
     players: { ...state.players, [actorId]: newPlayer },
     units: [...state.units, newUnit],
   });
