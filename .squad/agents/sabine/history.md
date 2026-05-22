@@ -70,3 +70,17 @@
 5. Optional: bump `viewportScale` in the script to test if Byzantines confidence becomes auto-ingestable.
 
 **Tests:** schema 204/204, rules 94/94 (+14 skipped), assets-meta 17/17, worker 4/4. `apps/web` config failed to load in worktree due to missing node_modules junction (env quirk, no apps/web changes in this PR).
+
+## 2025-01-XX — Issue #35: Static board view shipped
+
+**What I built:** `apps/web/src/components/board/Board.tsx` — SVG renderer for the polled `PublicGameState`. 6×6 square grid, terrain-colored cells, unit/building overlays, tile borders drawn with heavier stroke on the 2×2 grid lines. Wired into `Lobby.tsx` replacing the `board-placeholder` section. 6 new Vitest component tests, all 64 web tests green, Vite build clean (221 KB JS, 1.87 KB CSS).
+
+**Key call: squares, not hexes.** Issue copy said "hex/region" but the engine model is a 6×6 square grid (`Coord{x,y}∈0..5`). Rendering hexes would have added a coord-translation layer that disagrees with the schema, rules engine, and the click-to-target work coming in #37. Wrote this up in `.squad/decisions/inbox/sabine-board-squares-over-hex.md`.
+
+**Data contract found:** `PublicGameState.map.tiles[]` is the source of truth — `assets-meta` has card data only, not map data. Tiles are 2×2 with `faceDown` flag; the renderer skips face-down tiles and draws an "unrevealed" fill for any square without a revealed tile. This also means `placeholderState` (empty `tiles: []`) renders cleanly as a blank 6×6 grid — important because `Lobby` shows that state briefly during rehydrate.
+
+**Null guard at Lobby, not Board.** `Lobby` derives `state` as `PublicGameState | null` (null during rehydrate). Tightened to `{state && <Board state={state} />}` rather than make `Board` accept null — keeps `Board`'s contract clean and matches the existing null-check pattern used for `state?.version` etc. elsewhere in Lobby.
+
+**Test-id contract for #37:** `data-testid="board"` on the root, `data-testid="region-{x}-{y}"` on every cell (all 36 always present, even unrevealed), `data-testid="unit-{id}"` and `data-testid="building-{id}"` on overlays. The click pipeline in #37 can attach directly — no coord math, no hit testing.
+
+**Seat colors picked:** seat 1 red `#d94f4f`, seat 2 blue `#4f9ed9`, seat 3 amber `#d9b94f`, seat 4 violet `#a44fd9`. Exhausted units render at 0.55 opacity. Terrain palette: muted, calm, dark-mode-friendly. If Sabine-the-designer wants to repaint these later, the palettes are isolated as `TERRAIN_FILL` and `SEAT_COLOR` constants at the top of `Board.tsx`.
