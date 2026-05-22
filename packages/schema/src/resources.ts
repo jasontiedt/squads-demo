@@ -28,18 +28,10 @@ export type TemporaryResourceId = z.infer<typeof TemporaryResourceId>;
  * a matching terrain square (forest → wood, farmland → food, mine → gold,
  * gold/gold-double → gold, village → wild).
  *
- * @needs-confirmation: `stone` is RETAINED here despite contradicting the
- *   rulebook. Source review (`Rulebook_EN.txt` line 47) lists the bank as
- *   "5 Food, 5 Wood, 5 Gold, 3 Wild" — no stone. The Mine terrain produces
- *   gold (rulebook §"Resources" diagram on page 4, where "Mine" sits next
- *   to the Gold cluster, not a separate stone cluster). Removing `stone`
- *   from `ResourceKind` is OUT OF SCOPE for issue #3 (this PR adds card
- *   kinds only). It should be removed in a follow-up that also cleans up
- *   issue #2 fixtures referencing `'stone'`.
- *   See PR #3 body for context. Do NOT introduce new code paths that
- *   depend on `'stone'`.
+ * Per `Rulebook_EN.txt` the bank is "5 Food, 5 Wood, 5 Gold, 3 Wild" — no
+ * stone. The Mine terrain produces gold, not stone.
  */
-export const ResourceKind = z.enum(['wood', 'stone', 'food', 'gold', 'wild']);
+export const ResourceKind = z.enum(['wood', 'food', 'gold', 'wild']);
 export type ResourceKind = z.infer<typeof ResourceKind>;
 
 /**
