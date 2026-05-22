@@ -259,8 +259,8 @@ describe('Ambiguity #10 — Deck-empty discard interactions', () => {
       // Post-EndTurn (with hand-cap draw implemented in #7), the
       // english player's deck should still be empty AND capital HP
       // should be unchanged.
-      expect(endTurn.value.players[1].deck).toEqual([]);
-      expect(endTurn.value.players[1].capitalHp).toBe(10);
+      expect(endTurn.value.players[1]!.deck).toEqual([]);
+      expect(endTurn.value.players[1]!.capitalHp).toBe(10);
     }
   });
 
@@ -282,12 +282,12 @@ describe('Ambiguity #10 — Deck-empty discard interactions', () => {
     // EndTurn currently uses an unimplemented draw stub — the
     // assertion captures the future contract.
     const state = withState({ phase: 'end', activePlayer: 1 });
-    const handBefore = state.players[1].hand;
+    const handBefore = state.players[1]!.hand;
     const result = applyAction(state, stub('EndTurn'), SEAT_1);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.players[1].hand).toEqual(handBefore);
-      expect(result.value.players[1].capitalHp).toBe(10);
+      expect(result.value.players[1]!.hand).toEqual(handBefore);
+      expect(result.value.players[1]!.capitalHp).toBe(10);
     }
   });
 });

@@ -46,14 +46,15 @@ function deployState(opts: DeployStateOpts = {}): GameState {
   const player: Player = {
     ...seat2,
     hand: (opts.hand ?? ['byz-unit-placeholder']).map(cid),
-    resources:
-      opts.resources ?? [
+    resources: [
+      ...(opts.resources ?? [
         {
           id: rtid('rt-byz-wild-1'),
-          kind: 'wild',
+          kind: 'wild' as const,
           exhausted: false,
         },
-      ],
+      ]),
+    ],
   };
   return {
     ...baseState,
