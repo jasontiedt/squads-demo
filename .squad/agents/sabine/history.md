@@ -84,3 +84,31 @@
 **Test-id contract for #37:** `data-testid="board"` on the root, `data-testid="region-{x}-{y}"` on every cell (all 36 always present, even unrevealed), `data-testid="unit-{id}"` and `data-testid="building-{id}"` on overlays. The click pipeline in #37 can attach directly — no coord math, no hit testing.
 
 **Seat colors picked:** seat 1 red `#d94f4f`, seat 2 blue `#4f9ed9`, seat 3 amber `#d9b94f`, seat 4 violet `#a44fd9`. Exhausted units render at 0.55 opacity. Terrain palette: muted, calm, dark-mode-friendly. If Sabine-the-designer wants to repaint these later, the palettes are isolated as `TERRAIN_FILL` and `SEAT_COLOR` constants at the top of `Board.tsx`.
+
+### 2026-05-22 — #58: Byzantines 20-card stub deck (MVP-3)
+
+**Shipped:** `packages/assets-meta/data/byzantines.json` expanded from 2 placeholders to 20 stub cards mirroring the English deck shape from #41. Tests rewritten (14 cases in `byzantines.test.ts`) to assert the new shape — schema parse, civ tagging, kind diversity (unit/action/tactic/upgrade/technology/event), archer ranged > 0, persistent events flag. assets-meta 26/26, schema 206/206 green.
+
+**Pattern reused from #41:**
+- `_meta.summary` + `stub_status.{themed_stubs, generic_stubs}` listing all card IDs by category (analogous to `real_from_ocr` / `playtest_stubs` for English).
+- Every card carries a per-card `_needsConfirmation.stub` block with a one-line rationale and a "refine in #17" pointer.
+- Top-level `_meta.needs_confirmation[]` array of `{card, field, note}` so a single grep yields the full #17 TODO surface (the test suite enforces every entry references a real card id, and that all 20 ids are present — i.e. ALL byzantine cards are stubs).
+- Cost convention: encode every cost as `wild` since Byzantines OCR (#17, 47% confidence) couldn't extract resource-type icons either.
+
+**Themes chosen (6 themed stubs):**
+- `byz-cataphract` — UNIT, heavy cavalry. Stat-line intentionally mirrors English Knight (4/7 melee/health) so the two MVP-3 civs have comparable apex units for playtest.
+- `byz-varangian-guard` — UNIT, elite mercenary infantry (4/5, armor-1 + elite).
+- `byz-strategos` — ACTION (general's rally). Chose action over unit so the deck has at least one leadership-flavored action card distinct from a unit.
+- `byz-greek-fire` — TACTIC (deployment-phase combat, 2 dmg ignoring armor). The rulebook may class greek-fire as naval-only or persistent — flagged.
+- `byz-basileus` — EVENT (persistent, capital +1 gold/turn). Modelled as event rather than unit/upgrade since "emperor's reign" reads as a global persistent effect.
+- `byz-tagmata` — UNIT, mid-tier elite infantry slotting between Skoutatoi (basic) and Varangian Guard (apex).
+
+**Generic 14 distribution:** 7 units (skoutatoi/stratiotai/optimatoi/toxotai/akritai/dromon/pronoiar) + 2 actions (themata-muster=draw 2, imperial-courier=scry 3) + 2 tactics (fortified-line=+2 health, naval-blockade=skip move) + 1 upgrade (lamellar-armor, infantry/cavalry only mirroring English plate-armor) + 1 technology (cataphract-doctrine, subType 'A' placeholder) + 1 event (purple-born-heir, persistent cost reduction).
+
+**Schema coverage:** Byzantines deck exercises 6 of 8 Card kinds (unit, action, tactic, upgrade, technology, event). Reaction and civilization kinds not represented — civilization cards never sit in a deck per the schema header (they're set up on the Unit Field), and reaction is an MVP-1 schema-only stub the rules engine doesn't resolve yet.
+
+**Dromon naval flag:** Used `class: ['naval']` + `movement.pattern: 'long'` for the warship card. Both are guesses — the schema accepts any string in `class[]` and `pattern` is enum 'short'|'long' so this parses, but confirm in #17 whether naval is a first-class unit class with rules-engine semantics or a thematic-only tag.
+
+**Loader wiring:** No change needed. `src/index.ts` already had `case 'byzantines'` returning `byzantinesData` — the JSON file swap is transparent to the loader.
+
+**Worktree state:** worktree-local strategy at `c:/GitRepos/squads-demo-58`, junctions present (root + per-package node_modules) from the heartbeat helper.
