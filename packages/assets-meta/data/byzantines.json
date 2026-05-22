@@ -1,41 +1,387 @@
 {
   "_meta": {
-    "status": "PLACEHOLDER",
-    "summary": "Placeholder Byzantine card data for issue #11. Real data is blocked on issue #17 (OCR of image-only Byzantines_Base_EN.pdf). Do NOT balance, playtest, or reason about gameplay against these numbers — they are invented to make a 2-player MVP-1 lobby launchable, not to represent the Byzantine faction.",
+    "status": "MVP_DATA",
+    "summary": "20 cards: 6 themed stubs + 14 generic stubs — Byzantines civ deck for MVP-3 playtest (issue #58). NONE of these are OCR-decoded; the Byzantines_Base_EN.pdf OCR pass (#17) confirmed numbers/icons are not extractable at usable confidence. Stat lines and costs are invented to (a) parse against the Card schema, (b) give MVP-3 PlayCard a Byzantines deck that mirrors the English deck's shape (#41), and (c) exercise the broader Card discriminated union (unit/action/tactic/upgrade/technology/event). Themed entries (cataphract, varangian, strategos, greek-fire, basileus, tagmata) use plausible Byzantine military terminology. Generic entries fill in coverage for additional unit types (light cav, archer, naval), actions, tactics, and one each of upgrade/technology/event. The cost-encoding convention from #41 carries forward: every cost is encoded as `wild` until #17 (or a future image-bearing OCR pass) resolves resource-type icons. Refine in #17.",
+    "stub_status": {
+      "real_from_ocr": [],
+      "themed_stubs": [
+        "byz-cataphract",
+        "byz-varangian-guard",
+        "byz-strategos",
+        "byz-greek-fire",
+        "byz-basileus",
+        "byz-tagmata"
+      ],
+      "generic_stubs": [
+        "byz-skoutatoi",
+        "byz-stratiotai",
+        "byz-optimatoi",
+        "byz-toxotai",
+        "byz-akritai",
+        "byz-dromon",
+        "byz-pronoiar",
+        "byz-themata-muster",
+        "byz-imperial-courier",
+        "byz-fortified-line",
+        "byz-naval-blockade",
+        "byz-lamellar-armor",
+        "byz-cataphract-doctrine",
+        "byz-purple-born-heir"
+      ],
+      "note": "All 20 entries are STUBS. Every card carries a per-card `_needsConfirmation.stub` block. Refine or replace against the real Byzantine card backs during the #17 OCR pass (or a manual transcription pass — see documentation/ocr/REPORT.md for OCR confidence on the Byzantines source)."
+    },
+    "covers_issue": "https://github.com/jasontiedt/squads-demo/issues/58",
     "blocked_on": "https://github.com/jasontiedt/squads-demo/issues/17",
-    "covers_issue": "https://github.com/jasontiedt/squads-demo/issues/11",
     "owner": "Sabine",
+    "images_status": "DEFERRED — no apps/web/public/cards/byzantines/ binaries shipped with this PR. Real card art lands in the same follow-up as English (likely tied to #17 OCR pass with binary PDF access).",
+    "stats_confidence": {
+      "all_fields": "LOW — every stat, cost, keyword, class, and subType on every card was invented for MVP-3 playtest variety. Do not balance, playtest as canonical, or reason about gameplay against these numbers. See _meta.stub_status."
+    },
     "do_not": [
-      "treat numeric stats as canonical",
-      "extend with more fake cards (one unit + one civ is enough for MVP-1)",
-      "reference these in card-handler logic in @eoe/rules"
+      "treat any stat / cost / keyword as canonical — every entry is a stub",
+      "extend with more fake cards (20 is the MVP-3 target, matching English)",
+      "reference these in card-handler logic in @eoe/rules — stubs only"
+    ],
+    "needs_confirmation": [
+      { "card": "byz-cataphract", "field": "all", "note": "stub — heavy cavalry stat-line invented; refine in #17" },
+      { "card": "byz-varangian-guard", "field": "all", "note": "stub — elite infantry stat-line invented; refine in #17" },
+      { "card": "byz-strategos", "field": "effect", "note": "stub — strategos rally action effect is placeholder prose; refine in #17" },
+      { "card": "byz-greek-fire", "field": "all", "note": "stub — tactic phase + effect invented; greek-fire historically a naval incendiary, modelled as deployment-phase tactic" },
+      { "card": "byz-basileus", "field": "all", "note": "stub — emperor's reign modelled as a persistent event; refine in #17" },
+      { "card": "byz-tagmata", "field": "all", "note": "stub — elite professional regiment stat-line invented; refine in #17" },
+      { "card": "byz-skoutatoi", "field": "all", "note": "stub — heavy infantry shield-bearer; refine in #17" },
+      { "card": "byz-stratiotai", "field": "all", "note": "stub — provincial soldier infantry; refine in #17" },
+      { "card": "byz-optimatoi", "field": "all", "note": "stub — cavalry stat-line invented; the OCR pass spotted this name as a possible villager/cavalry hybrid, encoded as cavalry here pending #17" },
+      { "card": "byz-toxotai", "field": "all", "note": "stub — Byzantine archer stat-line invented; refine in #17" },
+      { "card": "byz-akritai", "field": "all", "note": "stub — border light cavalry stat-line invented; refine in #17" },
+      { "card": "byz-dromon", "field": "all", "note": "stub — naval unit modelled with movement.pattern='long'; refine in #17 if naval is a separate class or uses different movement" },
+      { "card": "byz-pronoiar", "field": "all", "note": "stub — landholding heavy cavalry stat-line invented; refine in #17" },
+      { "card": "byz-themata-muster", "field": "effect", "note": "stub — provincial levy action effect is placeholder prose" },
+      { "card": "byz-imperial-courier", "field": "effect", "note": "stub — courier action effect is placeholder prose" },
+      { "card": "byz-fortified-line", "field": "effect", "note": "stub — fortified-line tactic effect is placeholder prose" },
+      { "card": "byz-naval-blockade", "field": "effect", "note": "stub — naval blockade tactic effect is placeholder prose; deployment-phase guessed" },
+      { "card": "byz-lamellar-armor", "field": "effect", "note": "stub — upgrade effect placeholder; class restriction guessed at infantry/cavalry" },
+      { "card": "byz-cataphract-doctrine", "field": "all", "note": "stub — technology subType 'A' is schema placeholder; effect placeholder prose" },
+      { "card": "byz-purple-born-heir", "field": "effect", "note": "stub — persistent event effect is placeholder prose" }
     ]
   },
   "cards": [
     {
-      "kind": "civilization",
-      "id": "byz-civ-placeholder",
-      "name": "Byzantine Empire (Placeholder)",
+      "kind": "unit",
+      "id": "byz-cataphract",
+      "name": "Cataphract",
       "civ": "byzantines",
-      "civId": "byzantines",
-      "imageRef": "byzantines/placeholder.png",
-      "flavor": "Placeholder pending OCR of Byzantines_Base_EN.pdf — see issue #17.",
-      "effect": "Placeholder Civilization card. No effect implemented; replace after issue #17 (OCR ingest)."
+      "imageRef": "byzantines/cataphract.png",
+      "flavor": "Horse and rider sheathed in scale and lamellar — the iron fist of the Byzantine field army. A wedge of cataphracts could break any line that did not run first.",
+      "cost": { "wild": 7 },
+      "movement": { "points": 2 },
+      "melee": 4,
+      "ranged": 0,
+      "health": 7,
+      "class": ["cavalry"],
+      "keywords": ["charge-2", "armor-2"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Themed after the Cataphract heavy cavalry; stat-line intentionally mirrors English Knight (the heavy hitter of that deck) so the two civs have comparable apex units."
+      }
     },
     {
       "kind": "unit",
-      "id": "byz-unit-placeholder",
-      "name": "Byzantine Infantry (Placeholder)",
+      "id": "byz-varangian-guard",
+      "name": "Varangian Guard",
       "civ": "byzantines",
-      "imageRef": "byzantines/placeholder.png",
-      "flavor": "Placeholder pending OCR of Byzantines_Base_EN.pdf — see issue #17. These stats are fake.",
-      "cost": { "wild": 1 },
-      "movement": { "points": 1, "pattern": "short" },
-      "melee": 1,
+      "imageRef": "byzantines/varangian-guard.png",
+      "flavor": "Northmen sworn to the emperor's person, wielding two-handed axes that no shield wall could weather. Mercenaries by trade, fanatics by oath.",
+      "cost": { "wild": 6 },
+      "movement": { "points": 2 },
+      "melee": 4,
       "ranged": 0,
+      "health": 5,
+      "class": ["infantry"],
+      "keywords": ["armor-1", "elite"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. elite keyword is placeholder vocabulary pending the typed keyword DSL."
+      }
+    },
+    {
+      "kind": "action",
+      "id": "byz-strategos",
+      "name": "Strategos",
+      "civ": "byzantines",
+      "imageRef": "byzantines/strategos.png",
+      "flavor": "A general of a theme — civil governor in peace, war-leader in season. His word moves a province.",
+      "cost": { "wild": 3 },
+      "effect": "PLACEHOLDER: ready one exhausted friendly unit and grant it +1 movement until end of turn. Effect payload is loose (z.unknown) per the Card schema; structured effect DSL deferred per artoo-card-effect-typing.md.",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Strategos modelled as an action (general's rally) rather than a unit so the deck has at least one leadership-flavored action card distinct from a unit."
+      }
+    },
+    {
+      "kind": "tactic",
+      "id": "byz-greek-fire",
+      "name": "Greek Fire",
+      "civ": "byzantines",
+      "imageRef": "byzantines/greek-fire.png",
+      "flavor": "A jealously guarded recipe — naphtha, quicklime, sulphur, and secrets the empire took to its grave. It clung, it burned, and water made it worse.",
+      "cost": { "wild": 3 },
+      "playableIn": ["deployment"],
+      "effect": "PLACEHOLDER: deal 2 damage to one enemy unit on a square adjacent to a friendly unit; ignores armor keywords. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment (combat-flavored tactic); the rulebook may class Greek Fire as a naval-only effect or a persistent event."
+      }
+    },
+    {
+      "kind": "event",
+      "id": "byz-basileus",
+      "name": "Basileus",
+      "civ": "byzantines",
+      "imageRef": "byzantines/basileus.png",
+      "flavor": "Emperor of the Romans, equal to the apostles, autocrat of the world. His face on every coin, his name in every prayer.",
+      "cost": { "wild": 4 },
+      "persistent": true,
+      "effect": "PLACEHOLDER: while active, your capital generates +1 gold each Mobilization phase. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Basileus modelled as a persistent event (the emperor's reign affecting the realm) rather than a unit or upgrade; the rulebook may have a different mechanical home for emperor-themed cards."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-tagmata",
+      "name": "Tagmata",
+      "civ": "byzantines",
+      "imageRef": "byzantines/tagmata.png",
+      "flavor": "The standing regiments of Constantinople — professionals on the imperial payroll, drilled to a standard the themata could only envy.",
+      "cost": { "wild": 5 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 0,
+      "health": 5,
+      "class": ["infantry"],
+      "keywords": ["armor-1", "elite"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Slotted between Skoutatoi (basic) and Varangian Guard (apex) on the infantry curve."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-skoutatoi",
+      "name": "Skoutatoi",
+      "civ": "byzantines",
+      "imageRef": "byzantines/skoutatoi.png",
+      "flavor": "Heavy infantry of the line, named for the long oval shield. They anchored the centre while the cavalry rolled the flanks.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 4,
+      "class": ["infantry"],
+      "keywords": ["shield-wall"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. shield-wall keyword is placeholder vocabulary."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-stratiotai",
+      "name": "Stratiotai",
+      "civ": "byzantines",
+      "imageRef": "byzantines/stratiotai.png",
+      "flavor": "Provincial soldier-farmers granted land in exchange for service. Cheap to muster, slow to disband.",
+      "cost": { "wild": 2 },
+      "movement": { "points": 2 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 3,
+      "class": ["infantry"],
+      "keywords": [],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Cheap basic-infantry tier of the Byzantine deck."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-optimatoi",
+      "name": "Optimatoi",
+      "civ": "byzantines",
+      "imageRef": "byzantines/optimatoi.png",
+      "flavor": "Originally a baggage-train and remount corps, the Optimatoi grew into a mounted reserve serving the imperial guard.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 3 },
+      "melee": 2,
+      "ranged": 0,
+      "health": 3,
+      "class": ["cavalry"],
+      "keywords": ["scout"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. The Byzantines_Base_EN.pdf OCR (#17) spotted this name with possible cavalry/villager hybrid semantics; encoded here as pure cavalry pending confirmation."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-toxotai",
+      "name": "Toxotai",
+      "civ": "byzantines",
+      "imageRef": "byzantines/toxotai.png",
+      "flavor": "Composite-bow archers of the line, equally at home on foot or behind the wall of Skoutatoi.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 2 },
+      "melee": 1,
+      "ranged": 3,
       "health": 2,
-      "class": ["placeholder"],
-      "keywords": []
+      "class": ["archer"],
+      "keywords": [],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Pure archer stat-line mirrors English Longbowman's specialist profile."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-akritai",
+      "name": "Akritai",
+      "civ": "byzantines",
+      "imageRef": "byzantines/akritai.png",
+      "flavor": "Border lords and their retainers, guarding the frontier marches against Arab raiders. Light, fast, and rarely paid on time.",
+      "cost": { "wild": 3 },
+      "movement": { "points": 3 },
+      "melee": 2,
+      "ranged": 1,
+      "health": 3,
+      "class": ["cavalry"],
+      "keywords": ["skirmish"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Hybrid melee/ranged cavalry — skirmish keyword is placeholder vocabulary."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-dromon",
+      "name": "Dromon",
+      "civ": "byzantines",
+      "imageRef": "byzantines/dromon.png",
+      "flavor": "Oar-and-sail war galley of the imperial fleet, prow-mounted siphons hurling Greek Fire across the waves.",
+      "cost": { "wild": 5 },
+      "movement": { "points": 3, "pattern": "long" },
+      "melee": 2,
+      "ranged": 3,
+      "health": 5,
+      "class": ["naval"],
+      "keywords": ["naval", "siege"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. naval class and movement.pattern='long' are guesses — confirm whether naval is a first-class unit class in the rules engine, or if naval movement uses a different schema field."
+      }
+    },
+    {
+      "kind": "unit",
+      "id": "byz-pronoiar",
+      "name": "Pronoiar",
+      "civ": "byzantines",
+      "imageRef": "byzantines/pronoiar.png",
+      "flavor": "Landholders who owed mounted service in lieu of taxes. Late-empire stopgap for an army the treasury could no longer pay.",
+      "cost": { "wild": 5 },
+      "movement": { "points": 2 },
+      "melee": 3,
+      "ranged": 0,
+      "health": 5,
+      "class": ["cavalry"],
+      "keywords": ["charge-1"],
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mid-tier cavalry sitting between Optimatoi/Akritai and Cataphract; mirrors English Mounted Sergeant's role."
+      }
+    },
+    {
+      "kind": "action",
+      "id": "byz-themata-muster",
+      "name": "Themata Muster",
+      "civ": "byzantines",
+      "imageRef": "byzantines/themata-muster.png",
+      "flavor": "The provinces answer the imperial summons. Where Anatolia and Thrace march, the empire marches.",
+      "cost": { "wild": 2 },
+      "effect": "PLACEHOLDER: draw 2 cards. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Levy the Fyrd' as the deck's basic draw-action."
+      }
+    },
+    {
+      "kind": "action",
+      "id": "byz-imperial-courier",
+      "name": "Imperial Courier",
+      "civ": "byzantines",
+      "imageRef": "byzantines/imperial-courier.png",
+      "flavor": "The cursus publicus — staged horses and signal towers carrying word from the capital to the furthest frontier.",
+      "cost": { "wild": 1 },
+      "effect": "PLACEHOLDER: look at the top 3 cards of your deck; keep 1, return the rest to the top in any order. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Scry-flavored action gives the deck a tempo / selection tool distinct from raw draw."
+      }
+    },
+    {
+      "kind": "tactic",
+      "id": "byz-fortified-line",
+      "name": "Fortified Line",
+      "civ": "byzantines",
+      "imageRef": "byzantines/fortified-line.png",
+      "flavor": "Trench, palisade, and a sky full of arrows. Roman engineering, Greek geometry, infantry doctrine refined for a thousand years.",
+      "cost": { "wild": 2 },
+      "playableIn": ["deployment"],
+      "effect": "PLACEHOLDER: target infantry unit gains +2 health until end of turn. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Shield Wall' as a defensive deployment-phase tactic, scaled up for the empire's fortification doctrine."
+      }
+    },
+    {
+      "kind": "tactic",
+      "id": "byz-naval-blockade",
+      "name": "Naval Blockade",
+      "civ": "byzantines",
+      "imageRef": "byzantines/naval-blockade.png",
+      "flavor": "A chain across the Golden Horn, a fleet across the strait. No grain ship runs to the besieger; no relief lands at the besieged.",
+      "cost": { "wild": 3 },
+      "playableIn": ["deployment"],
+      "effect": "PLACEHOLDER: target enemy unit may not move during the opponent's next turn. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment; the rulebook may class blockade as a persistent event."
+      }
+    },
+    {
+      "kind": "upgrade",
+      "id": "byz-lamellar-armor",
+      "name": "Lamellar Armor",
+      "civ": "byzantines",
+      "imageRef": "byzantines/lamellar-armor.png",
+      "flavor": "Small iron plates laced into rows — flexible enough to ride in, stiff enough to turn a sword. The standard kit of the empire's professionals.",
+      "cost": { "wild": 3 },
+      "restrictedToClass": ["infantry", "cavalry"],
+      "effect": "PLACEHOLDER: attached unit gains armor-1 keyword. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Plate Armor' upgrade; archer/naval classes excluded as a thematic guess."
+      }
+    },
+    {
+      "kind": "technology",
+      "id": "byz-cataphract-doctrine",
+      "name": "Cataphract Doctrine",
+      "civ": "byzantines",
+      "imageRef": "byzantines/cataphract-doctrine.png",
+      "flavor": "The Strategikon codified the wedge — the order of march, the depth of the line, the moment to charge. Doctrine made the kataphraktoi terrible.",
+      "cost": { "wild": 3 },
+      "subType": "A",
+      "effect": "PLACEHOLDER: all friendly cavalry units gain +1 melee. Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. subType 'A' is the schema placeholder per TechnologySubType — real subtype taxonomy TBD."
+      }
+    },
+    {
+      "kind": "event",
+      "id": "byz-purple-born-heir",
+      "name": "Purple-Born Heir",
+      "civ": "byzantines",
+      "imageRef": "byzantines/purple-born-heir.png",
+      "flavor": "Born in the Porphyra chamber, draped in imperial purple from the cradle. The succession is secure; the realm rejoices, briefly.",
+      "cost": { "wild": 2 },
+      "persistent": true,
+      "effect": "PLACEHOLDER: while active, the first card you play each turn costs 1 less wild (minimum 0). Effect payload is loose (z.unknown).",
+      "_needsConfirmation": {
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Second persistent event in the Byzantine deck alongside Basileus; the rulebook caps active events at 3 per player so two stub events leaves headroom."
+      }
     }
   ]
 }
