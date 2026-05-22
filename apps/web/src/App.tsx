@@ -1,19 +1,39 @@
 import { useEffect } from 'react';
 import { GameApiProvider } from './api/context.js';
 import { MockGameApi } from './api/mock.js';
+import { RealGameApi } from './api/real.js';
 import type { GameApi } from './api/client.js';
 import { Home } from './views/Home.js';
 import { Lobby } from './views/Lobby.js';
 import { useHashRoute, navigate } from './router/hash.js';
 import { useSession } from './store/session.js';
 
-// Default API for #14. Issue #13 swaps this for `new RealGameApi(VITE_API_BASE)`.
-const defaultApi = new MockGameApi();
+// Pick the API at module load.
+//
+// Precedence:
+//   `VITE_WORKER_URL`  — primary, set by deployment env.
+//   `VITE_API_BASE`    — legacy alias kept for vite.config compatibility.
+//   `http://localhost:8787` — local `wrangler dev` default.
+//
+// In dev (`import.meta.env.DEV`) we keep the in-memory `MockGameApi` so
+// the web shell runs without `wrangler dev`. Production builds always
+// hit the real worker.
+//
+// Tests inject their own GameApi via the `App` `api` prop and bypass
+// this entirely.
+
+const env = import.meta.env as Record<string, string | undefined>;
+const workerUrl =
+  env.VITE_WORKER_URL ?? env.VITE_API_BASE ?? 'http://localhost:8787';
+
+const defaultApi: GameApi = import.meta.env.PROD
+  ? new RealGameApi(workerUrl)
+  : new MockGameApi();
 
 export interface AppProps {
   /**
    * Test-only injection of a GameApi. Production callers should not pass this;
-   * the default Mock implementation is used.
+   * the env-selected default implementation is used.
    */
   api?: GameApi;
 }

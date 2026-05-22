@@ -8,13 +8,8 @@
 
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type {
-  Civ,
-  GameId,
-  GameState,
-  PlayerToken,
-  Seat,
-} from '@eoe/schema';
+import type { Civ, GameId, PlayerToken, Seat } from '@eoe/schema';
+import type { PublicGameState } from '../api/client.js';
 
 export interface GameMembership {
   playerToken: PlayerToken;
@@ -44,13 +39,13 @@ export interface SessionState {
   /** The game the user is currently looking at (matches URL). */
   currentGameCode: GameId | null;
   /** Most recently fetched server state for `currentGameCode`. */
-  currentGameState: GameState | null;
+  currentGameState: PublicGameState | null;
 
   // ── Actions ──────────────────────────────────────────────────────
   setMembership: (gameCode: GameId, membership: GameMembership) => void;
   setCurrentGame: (
     gameCode: GameId | null,
-    state: GameState | null,
+    state: PublicGameState | null,
   ) => void;
   setPollState: (state: PollState, error?: string | null) => void;
   leaveGame: (gameCode: GameId) => void;

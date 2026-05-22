@@ -88,6 +88,9 @@ describe('<Home />', () => {
       async getGame(): Promise<never> {
         throw new ApiError('boom', 'mock failure');
       }
+      async postAction(): Promise<never> {
+        throw new ApiError('boom', 'mock failure');
+      }
     }
     renderHome(new FailingApi());
     setInput(/your name/i, 'Lando');
