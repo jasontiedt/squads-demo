@@ -129,6 +129,7 @@ export const ALL_PHASES: ReadonlyArray<TurnPhase> = [
   'mobilization',
   'deployment',
   'end',
+  'ended',
 ];
 
 export const SEAT_1: Seat = 1;

@@ -95,8 +95,10 @@ const Tile = z.object({
  * - `mobilization`: board phase (move/build/attack/ability/Tactic).
  * - `deployment`: card phase (deploy units, play Technology/Tactic).
  * - `end`: draw to 5 (or +1 if ≥5), discard down to 7. No reshuffle.
+ * - `ended`: terminal state — game over. `GameState.winner` carries the
+ *   victorious seat. No further actions are legal (see #55 / MVP-3).
  */
-export const TurnPhase = z.enum(['start', 'mobilization', 'deployment', 'end']);
+export const TurnPhase = z.enum(['start', 'mobilization', 'deployment', 'end', 'ended']);
 export type TurnPhase = z.infer<typeof TurnPhase>;
 
 // ─────────────────────────── Player ─────────────────────────────────
@@ -300,5 +302,10 @@ export const GameState = z.object({
   map: GameMap,
   moveLog: z.array(ActionLogEntry),
   pendingReactionWindow: PendingReactionWindow.optional(),
+  /**
+   * Set when `phase === 'ended'`. Carries the seat of the player who
+   * won (see #55 — win condition at EndTurn). Absent during play.
+   */
+  winner: Seat.optional(),
 });
 export type GameState = z.infer<typeof GameState>;
