@@ -72,3 +72,11 @@ Without these, vite can't resolve `@eoe/schema` from the worktree. Worth telling
 **Worktree gotcha (again, confirming the #9 finding):** per-package `node_modules` did not inherit from main pnpm install. Junctioned `packages/rules/node_modules`, `packages/schema/node_modules`, `packages/assets-meta/node_modules`, and `apps/worker/node_modules` from main checkout. After that, vitest resolves `@eoe/schema` from worktree. Squad should bake this junction step into worktree-create.
 
 **Tester wearing dev hat:** This was production code, not tests. Marked draft PR and added comprehensive determinism + edge-case tests. Recommend Cassian (me) NOT review — should go to a non-author per reviewer lockout rule.
+
+### 2026-05-22 — MVP-3 handlers shipped; new test surface available
+
+- DeployUnit (#53), Scout (#56), Attack (#54), Capital init (#57), Win condition (#55) all live in `@eoe/rules`.
+- New error codes added to `RuleErrorCode`: `tile_not_found`, `tile_already_revealed`.
+- CI now runs unit tests on every PR via `.github/workflows/unit-tests.yml` (PR #64). Closes the e2e-only gap.
+- Test fixtures convention reaffirmed: use real catalog ids from `@eoe/assets-meta` (no synthetic placeholders) — hotfix #63 proved this is a real footgun.
+- **needs-confirmation surface to expand:** Scout `unitId` ownership/existence validation, Attack siege-flag semantics, Capital RFC fields (`tileId`/`siegeState`/per-player `units[]`), Reaction-window state tracking.

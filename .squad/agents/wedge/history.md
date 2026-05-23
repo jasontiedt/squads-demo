@@ -63,3 +63,11 @@
 - **10 ambiguities pinned for `needs-confirmation` tests** — Reaction timing windows, "two-effect" cards, King/Queen-attached unit discard, Camp resource regeneration, Scouting-onto-water cost, upgrade stacking across units, "surrounding Capital" diagonal read, melee mutual-kill square ownership, Long-Range diagonal interaction with Short-Range, deck-empty discard interactions.
 - **MVP-1 backlog refined:** original 9-issue plan replaced with ~14 smaller issues (preview only — issues NOT filed). Critical path: schema → applyAction skeleton → first card kind (unit deploy) → handoff demo. Card content beyond unit deploy is post-MVP-1.
 - **Architecture refinements written** to `.squad/decisions/inbox/wedge-rulebook-synthesis.md`. Stack stays locked. Schema additions are additive, no breaking changes to the locked architecture.
+
+### 2026-05-22 — MVP-3 shipped, MVP-4 priority pinned
+
+- Issues #53–#58 closed via PRs #59–#66 (incl hotfix #63 and CI #64). HEAD `69255ca` on main.
+- New @eoe/rules handlers landed: DeployUnit, Scout, Attack, Capital init, Win condition.
+- Byzantines civ data shipped (Sabine, PR #60) — 20-card stub convention pinned for HRE/Mongols/Norsemen/Ottomans/Scots.
+- **MVP-4 blocker:** Issue #37 (PlayCard UI) needs worker `?seat=X` unredact contract — owner needs to be set on the next handoff. See `lando-playcard-needs-worker-unredact` decision (now in decisions.md).
+- **Open RFC obligations:** capital `tileId`/`siegeState`/per-player `units[]` model (Artoo flagged); handler vocabulary lock required before civ behavior modules ship.

@@ -23,6 +23,102 @@
 **Why:** Each domain owner needs a runnable, type-checking starting point. Workspace builds end-to-end with zero placeholder business logic — only enough to verify wiring before real implementation begins.
 **Source:** `.squad/decisions/inbox/wedge-scaffold-complete.md` (archived below).
 
+### 2026-05-20: Card `effect` and `trigger` typed `z.unknown()` for MVP-1
+
+**By:** Artoo (Backend) — issue #3
+**What:** Card discriminated union ships with `effect` (and Reaction `trigger`) as `z.unknown()`. The card-handler registry in `@eoe/rules` does not exist yet; locking a payload shape now would force rework when handlers land. **Implication:** Card-effect interpretation is the rules engine's responsibility, not the schema's. Schema describes wire shape only.
+**Source:** `.squad/decisions/inbox/artoo-card-effect-typing.md` (merged).
+
+### 2026-05-20: GameState shape — strict union BuildingInstance, ESM-safe schemas
+
+**By:** Artoo (Backend) — issue #4
+**What:** `BuildingInstance` is a `z.discriminatedUnion('type', ...)` over `CampInstance | BarracksInstance | CapitalInstance`, each `.strict()`. `UnitInstance` carries `exhausted: boolean` (used by Mobilization gating and now Attack). `state.units` is flat; per-player ownership derived via `unit.owner: Seat`. **Implication:** New building types require schema + union extension + matching handler. Per-player unit arrays are NOT part of the model.
+**Source:** `.squad/decisions/inbox/artoo-gamestate-shape.md` (merged).
+
+### 2026-05-20: Result type and phase legality table — single sources of truth
+
+**By:** Artoo (Backend) — issue #6
+**What:** `Result<T>`, `RuleError`, `RuleErrorCode` live in `packages/rules/src/result.ts` (NOT in `@eoe/schema`). `RuleErrorCode` taxonomy closed: `'not_implemented' | 'wrong_phase' | 'not_your_turn' | 'unknown_action'`. `ACTION_PHASE_LEGALITY` in `packages/rules/src/phases.ts` is the authoritative per-action phase gate. `applyAction(state, action, actorId: Seat)` — `actorId` is `Seat` (1|2|3|4), NOT `PlayerId`. **Implication:** New actions require both an `ACTION_TYPES` schema entry AND a legality table row. Reactions are phase-agnostic — they gate on `actorId !== activePlayer` instead.
+**Source:** `.squad/decisions/inbox/artoo-result-type-and-phase-gating.md` (merged).
+
+### 2026-05-20: UnitAbilityAction.abilityKey stays `z.string().min(1)` — typing deferred
+
+**By:** Artoo (Backend) — issue #5 / PR #23 — `@needs-confirmation`
+**What:** `abilityKey` is free-form `string` for MVP. The two long-term options — (a) module-init enum built from card pack, or (b) nested discriminated union with per-ability payloads — both require the card catalog to land first. **Implication:** Ability handlers in `@eoe/rules` interpret `abilityKey` at runtime. When per-ability payloads appear (target lists, area selections), revisit (b).
+**Source:** `.squad/decisions/inbox/artoo-unitability-abilitykey-typing.md` (merged).
+
+### 2026-05-21: Worker → KV contract for game lifecycle
+
+**By:** Artoo (Backend) — issue #12
+**What:** Locked request/response shapes for `POST /games`, `POST /games/:code/actions`, `GET /games/:code`. KV stores one record per `gameId` keyed by `gameCode`. Token-based auth: `playerToken` in localStorage identifies seat. Worker re-validates every action via `applyAction` (server is authoritative). **Implication:** Any contract change requires coordinated PR across worker + web client.
+**Source:** `.squad/decisions/inbox/artoo-worker-kv-contract.md` (merged).
+
+### 2026-05-21: Seeded PRNG primitive + positional hand-cap overflow
+
+**By:** Cassian (Tester) — issue #7
+**What:** `mulberry32(seed)` + `seedFor(state, salt)` (FNV-1a mix of `seed | turn | activePlayer | salt`) in `packages/rules/src/rng.ts`. Every caller MUST pass a unique salt; salt reuse is a determinism bug. Hand-cap overflow discards positional trailing cards (`hand.slice(7)`) — flagged `@needs-confirmation` since the rulebook doesn't specify. **Implication:** Card effects requiring randomness import from `@eoe/rules` rng; no `Math.random`/`Date.now` in pure code.
+**Source:** `.squad/decisions/inbox/cassian-seeded-prng-and-handcap.md` (merged).
+
+### 2026-05-20: OCR strategy — Tesseract-first with mandatory human verification
+
+**By:** Sabine (Designer) — issue #17
+**What:** Image-only PDFs go through Tesseract → JSON scaffold → human spot-check → schema-validated extract. `StartingTiles.pdf` and `Constantinople.pdf` are manual-primary (visual layout); `Byzantines_Base_EN.pdf` is OCR-primary. Rejected: web-scrape (site has no card-level data), pure manual (doesn't scale), Azure DI (overkill, adds cloud dep). **Implication:** Same pipeline applies to HRE/Mongols/Norsemen/Ottomans/Scots base sets.
+**Source:** `.squad/decisions/inbox/sabine-ocr-strategy.md` (merged).
+
+### 2026-05-20: `loadCivMeta` returns `readonly Card[]` from `@eoe/schema`
+
+**By:** Sabine (Designer) — issue #11, PR #21
+**What:** Loader reads `packages/assets-meta/data/{civ}.json` (envelope `{ _meta, cards }`) and validates each entry against the `Card` discriminated union at load time. Unparseable entries throw (loud failure beats silent drift). **Implication:** All civ data files MUST use the `{ _meta, cards }` envelope; cards are schema-typed end-to-end.
+**Source:** `.squad/decisions/inbox/sabine-assets-meta-loader-shape.md` (merged).
+
+### 2026-05-21: English MVP cards data-only — no behavior modules
+
+**By:** Sabine (Designer) — issue #10, PR #26
+**What:** Six English unit cards ship as data in `english.json`. Deliberately did NOT create `packages/rules/src/cards/english/<id>.ts` behavior modules — handler vocabulary is still TBD per `artoo-card-effect-typing.md`. Every card carries `cost.breakdown._needsConfirmation: true` with `{ wild: <sum> }` placeholder until OCR splits resource columns. **Implication:** Behavior handlers land per-civ only after the handler shape locks; data-only ingest is the standard.
+**Source:** `.squad/decisions/inbox/sabine-english-mvp-cards.md` (merged).
+
+### 2026-05-21: MVP-2 scope locked
+
+**By:** Wedge (Lead) — via Jason
+**What:** MVP-2 = Board view + single PlayCard effect + token-auth private hand + CI e2e + English card stubs/OCR + ResourceKind hygiene. 7 issues. Critical path: Board view → PlayCard UI. **Stop condition:** Two players load, click a card, watch board+hand update (optimistic + server-validated), CI e2e green. **Defers:** Durable Objects, Byzantines backfill (MVP-3), manual asset transcription.
+**Source:** `.squad/decisions/inbox/wedge-mvp2-scope-locked.md` (merged).
+
+### 2026-05-22: PlayCard UI blocked by hand redaction — worker contract needs `?seat=X` unredact
+
+**By:** Lando (Frontend) — issue #37
+**What:** Worker's `redactStateForPublic` strips ALL hands including the requester's own (documented MVP-1 simplification). Client therefore never observes a real `cardId` for its own hand → cannot dispatch `PlayCard`. **Required:** Authenticate requester (token → seat already verified), unredact only that seat's hand. **Implication:** #37 blocked on Artoo/Wedge unredact contract change. Carry into MVP-3 follow-up.
+**Source:** `.squad/decisions/inbox/lando-playcard-needs-worker-unredact.md` (merged).
+
+### 2026-05-22: Test fixtures must reference real catalog cards — no invented placeholders
+
+**By:** Artoo (Backend) — hotfix #63 + CI #64
+**What:** PR #58 (Byzantines refresh) silently removed placeholder ids that nine `deployUnit` tests depended on, short-circuiting them green. Tests touching the catalog MUST use real ids from `@eoe/assets-meta`. CI gap closed by `unit-tests.yml` (PR #64) running `pnpm -r test` on every PR. **Implication:** Removing/renaming cards in `@eoe/assets-meta` requires local `pnpm -r test` before PR. Prefer cheapest catalog match (e.g., `eng-watchman` for single-resource happy-path).
+**Source:** `.squad/decisions/inbox/artoo-test-fixtures-use-real-catalog.md` (merged).
+
+### 2026-05-22: Capital init — `tileId` / `siegeState` / per-player `units[]` deferred to RFC
+
+**By:** Artoo (Backend) — issue #57, PR #61
+**What:** `initialState` places one `capital` `BuildingInstance` per player at fixed seats. Three richer concepts implied by the rulebook are NOT in the current schema: `tileId` (tile-level grouping), `siegeState` (siege flag/besieger ref on capital), and per-player `units[]` (currently derived via `unit.owner`). Deliberately not invented piecemeal. **Implication:** Card/handler code needing siege or tile semantics should flag `@needs-rfc` rather than work around; the model lands as a coherent RFC.
+**Source:** `.squad/decisions/inbox/artoo-capital-init.md` (merged).
+
+### 2026-05-22: Byzantines 20-card civ-deck stub convention pinned (applies to HRE / Mongols / Norsemen / Ottomans / Scots)
+
+**By:** Sabine (Designer) — issue #58, PR #60
+**What:** Byzantines ship as 20 themed cards in `byzantines.json` using `{ _meta, cards }` envelope. Convention for remaining 5 civs: same path/envelope, 20 themed cards, schema-valid, `cost.breakdown = { wild: <sum>, _needsConfirmation: true }`, no behavior modules in `packages/rules/src/cards/<civ>/`. **Implication:** Five remaining civs can land as data-only MVP stubs in parallel without blocking on handler-vocabulary lock. OCR (#17) backfills cost decomposition uniformly.
+**Source:** `.squad/decisions/inbox/sabine-byzantines.md` (merged).
+
+### 2026-05-22: Attack handler reuses `UnitInstance.exhausted` — no parallel `actedThisTurn` flag
+
+**By:** Artoo (Backend) — issue #54, PR #65
+**What:** Attack handler tracks "unit already acted this turn" by reusing the existing `exhausted: boolean` field rather than introducing a parallel `actedThisTurn` flag. Schema mutation has team-wide blast radius (schema + redact + KV + fixtures); `exhausted` already encodes the concept and clears at turn end. **Implication:** Future action handlers (Move, ability activations) MUST use `exhausted` for "already acted" gating. Finer distinctions require an RFC, not a second flag.
+**Source:** `.squad/decisions/inbox/artoo-attack-acted-tracking.md` (merged).
+
+### 2026-05-22: MVP-3 shipped — DeployUnit, Scout, Attack, WinCondition, Capital init, Byzantines, unit-tests CI
+
+**By:** Wedge (Lead) — coordinated via Squad coordinator
+**What:** MVP-3 closed in one session. Issues #53 (DeployUnit, PR #59), #54 (Attack, PR #65), #55 (WinCondition, PR #66), #56 (Scout, PR #62), #57 (Capital init, PR #61), #58 (Byzantines civ, PR #60). Hotfix #63 + new `unit-tests.yml` CI (PR #64) close the catalog-fixture CI gap. HEAD on main: `69255ca`. **Implication:** Rules engine now supports the full MVP-3 action surface. PlayCard UI (#37) remains blocked on the worker unredact contract — first priority for MVP-4.
+**Source:** Session log `.squad/log/2026-05-22T22-55-00Z-mvp-3-shipped.md`.
+
 ## Governance
 
 - All meaningful changes require team consensus

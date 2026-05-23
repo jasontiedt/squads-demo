@@ -112,3 +112,9 @@
 **Loader wiring:** No change needed. `src/index.ts` already had `case 'byzantines'` returning `byzantinesData` — the JSON file swap is transparent to the loader.
 
 **Worktree state:** worktree-local strategy at `c:/GitRepos/squads-demo-58`, junctions present (root + per-package node_modules) from the heartbeat helper.
+
+### 2026-05-22 — Byzantines shipped, convention pinned
+
+- PR #60 merged: `packages/assets-meta/data/byzantines.json` — 20-card civ stub.
+- Convention now pinned for HRE, Mongols, Norsemen, Ottomans, Scots: same `{ _meta, cards }` envelope, schema-validated against `@eoe/schema`'s `Card` union, `cost.breakdown = { wild: <total>, _needsConfirmation: true }` until OCR (#17) splits resource columns, no behavior modules in `packages/rules/src/cards/<civ>/` (data-only landing).
+- Each remaining civ can ship in parallel as MVP stubs; no blocking on handler vocabulary.
