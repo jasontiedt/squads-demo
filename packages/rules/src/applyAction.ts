@@ -130,12 +130,41 @@ export function applyAction(
     case 'EndTurn': {
       const { next, wrapped } = rotateSeat(state);
       const cleaned = drawAndDiscardCleanup(state);
-      return ok({
+      const advanced: GameState = {
         ...cleaned,
         phase: 'start',
         activePlayer: next,
         turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
-      });
+      };
+
+      // ─── Win condition (#55) ───
+      // After end-of-turn effects, if any seated player has zero units
+      // AND total deployed units > 2, the game ends with the opposing
+      // seat as winner. The `> 2` guard prevents instant-end at game
+      // start before deployments have accumulated.
+      //
+      // Capital HP win condition is MVP-4 — out of scope here.
+      if (advanced.units.length > 2) {
+        const occupiedSeats = SEATS_IN_ORDER.filter(
+          (s) => advanced.players[s] !== undefined,
+        );
+        const wipedOut = occupiedSeats.find(
+          (s) => !advanced.units.some((u) => u.owner === s),
+        );
+        if (wipedOut !== undefined) {
+          // Winner = first occupied seat that still has units. In 2-
+          // player this is unambiguous; in 3-4 player we pick the
+          // first survivor by seat order (good enough for MVP-3).
+          const winner = occupiedSeats.find(
+            (s) => advanced.units.some((u) => u.owner === s),
+          );
+          if (winner !== undefined) {
+            return ok({ ...advanced, phase: 'ended', winner });
+          }
+        }
+      }
+
+      return ok(advanced);
     }
 
     // Issue #8: DeployUnit — MVP Capital-only path.
