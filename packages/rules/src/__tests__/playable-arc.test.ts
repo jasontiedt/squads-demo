@@ -261,25 +261,121 @@ describe('Arc 1: units-eliminated (Deploy + Move + Attack + EndTurn)', () => {
 });
 
 // ─────────────────────────── Scenario 2 ──────────────────────────────
-// Full capital-zero arc — SKIPPED. See decision drop file.
+// Full capital-zero arc — Deploy + Move + Attack(capital) + EndTurn.
 
 describe('Arc 2: capital-zero (Deploy + Move + Attack capital + EndTurn)', () => {
-  // ⚠ This arc CANNOT be exercised end-to-end through real `applyAction`
-  // calls today: `Attack` with `targetBuildingId` returns
-  // `not_implemented` (see attack.ts step 1 — "Capital / building
-  // target — MVP-4 concern. Action shape allows targetBuildingId via
-  // XOR refine, but the effect path is not lifted yet."). The capital
-  // damage handler is a follow-up issue for Artoo.
-  //
-  // The capital-HP win condition itself IS pinned by direct EndTurn
-  // tests in winCondition.test.ts (#68). What we're missing is the
-  // ACTION that puts HP onto the path. Until that lands, the full arc
-  // is not testable from applyAction.
-  //
-  // See: .squad/decisions/inbox/cassian-arc-bug-attack-capital-not-implemented.md
-  it.skip('[needs-confirmation] Attack against a building damages capital HP', () => {
-    // Intentionally empty — re-enable when Attack-on-capital is lifted
-    // out of `not_implemented` in attack.ts.
+  it('ends the game with seat 1 as winner after driving seat 2 capitalHp to 0 via Attack', () => {
+    // MVP-4 #78 lifted the capital-damage path: Attack with
+    // `targetBuildingId` now subtracts attacker.attack from the matching
+    // `Player.capitalHp`. With seat 2's capital pre-damaged to 3 HP
+    // (legitimate mid-game state), one Welsh Infantry (melee 3) hit
+    // drives it to 0, and the EndTurn win check declares seat 1.
+    //
+    // We pin the capital-zero branch — NOT units-eliminated — by leaving
+    // seat 2 with at least one unit on the board (Stratiotai at (0,4)
+    // out of attack range). Both win checks could fire if seat 2 had
+    // zero units AND units.length > 2; we keep seat 2's unit alive to
+    // route the win exclusively through capital HP.
+    //
+    // Starting layout (6×6 plains, capitals at (0,0) and (5,5)):
+    //
+    //      x=0 1 2 3 4 5
+    //   y=0  C1 W . . . .          C1 = seat 1 capital
+    //     1   . H . . . .           W  = eng-watchman (seat 1)
+    //     2   . . . . . .           H  = eng-hobelar (mover, seat 1)
+    //     3   . . . . . .
+    //     4   S . . . . .           S  = byz-stratiotai (seat 2, out of range)
+    //     5   . . . . X C2          X  = eng-welsh-infantry (attacker)
+    //                               C2 = seat 2 capital (HP 3, pre-damaged)
+    //
+    // Action chain:
+    //   T1 deployment seat 1:
+    //     1. DeployUnit(eng-watchman → (0,0))  ← Capital deploy
+    //     2. EndPhase  deployment → end
+    //     3. EndTurn   → seat 2, phase=start, turn still 1
+    //   T1 seat 2 (pass everything):
+    //     4. EndPhase  start → mobilization
+    //     5. EndPhase  mobilization → deployment
+    //     6. EndPhase  deployment → end
+    //     7. EndTurn   → seat 1, phase=start, turn=2
+    //   T2 mobilization seat 1:
+    //     8. EndPhase  start → mobilization
+    //     9. MoveUnit(hobelar (1,1) → (2,2))    ← "Move" step (different
+    //        unit than the attacker; attacker stays unexhausted)
+    //    10. Attack(welsh-infantry → b-cap-2, melee)
+    //        Welsh Infantry melee 3 vs cap HP 3 → HP 0
+    //    11. EndPhase  mobilization → deployment
+    //    12. EndPhase  deployment → end
+    //    13. EndTurn   → win check: seat 2 capitalHp = 0,
+    //        seat 1 capitalHp = 10 → seat 1 wins via capital-zero branch.
+
+    const seat1: Player = {
+      ...baseState.players[1]!,
+      hand: [cid('eng-watchman')],
+      resources: [
+        { id: rtid('rt-eng-wild-1'), kind: 'wild', exhausted: false },
+      ] satisfies ResourceToken[],
+    };
+    const seat2: Player = {
+      ...baseState.players[2]!,
+      hand: [],
+      resources: [],
+      capitalHp: 3, // pre-damaged from earlier turns
+    };
+
+    const initial: GameState = {
+      ...baseState,
+      phase: 'deployment',
+      activePlayer: 1,
+      turn: 1,
+      players: { 1: seat1, 2: seat2 },
+      units: [
+        makeUnit('u-eng-welsh', 'eng-welsh-infantry', 1, { x: 4, y: 5 }),
+        makeUnit('u-eng-hobelar', 'eng-hobelar', 1, { x: 1, y: 1 }),
+        // Seat 2 still has a unit on the board — out of range so it
+        // does not interfere, AND so units-eliminated does NOT fire
+        // (we want the win to route through capital-zero).
+        makeUnit('u-byz-stratiotai', 'byz-stratiotai', 2, { x: 0, y: 4 }),
+      ],
+      map: { tiles: plainsBoard() },
+    };
+
+    const final = chain(initial, [
+      { action: ACTIONS.deploy('eng-watchman', { x: 0, y: 0 }), actor: 1, label: 'T1.S1 DeployUnit watchman→(0,0)' },
+      { action: ACTIONS.endPhase, actor: 1, label: 'T1.S1 EndPhase deployment→end' },
+      { action: ACTIONS.endTurn, actor: 1, label: 'T1.S1 EndTurn' },
+      { action: ACTIONS.endPhase, actor: 2, label: 'T1.S2 EndPhase start→mobilization' },
+      { action: ACTIONS.endPhase, actor: 2, label: 'T1.S2 EndPhase mobilization→deployment' },
+      { action: ACTIONS.endPhase, actor: 2, label: 'T1.S2 EndPhase deployment→end' },
+      { action: ACTIONS.endTurn, actor: 2, label: 'T1.S2 EndTurn' },
+      { action: ACTIONS.endPhase, actor: 1, label: 'T2.S1 EndPhase start→mobilization' },
+      { action: ACTIONS.move('u-eng-hobelar', { x: 1, y: 1 }, { x: 2, y: 2 }), actor: 1, label: 'T2.S1 MoveUnit hobelar (1,1)→(2,2)' },
+      {
+        action: {
+          type: 'Attack',
+          attackerUnitId: 'u-eng-welsh',
+          targetBuildingId: 'b-cap-2',
+          mode: 'melee',
+        } as unknown as Action,
+        actor: 1,
+        label: 'T2.S1 Attack welsh-infantry → b-cap-2 (melee, capital)',
+      },
+      { action: ACTIONS.endPhase, actor: 1, label: 'T2.S1 EndPhase mobilization→deployment' },
+      { action: ACTIONS.endPhase, actor: 1, label: 'T2.S1 EndPhase deployment→end' },
+      { action: ACTIONS.endTurn, actor: 1, label: 'T2.S1 EndTurn (win check)' },
+    ]);
+
+    expect(final.phase).toBe('ended');
+    expect(final.winner).toBe(1);
+    // Capital HP went to 0 (the win-condition trigger).
+    expect(final.players[2]!.capitalHp).toBe(0);
+    // Seat 1 still healthy.
+    expect(final.players[1]!.capitalHp).toBe(10);
+    // Capital BuildingInstance still on the board — never removed.
+    expect(final.buildings.find((b) => b.id === 'b-cap-2')).toBeDefined();
+    // Seat 2 still had a unit on the board, so units-eliminated would
+    // NOT have fired — the win has to be via capital-zero.
+    expect(final.units.filter((u) => u.owner === 2)).toHaveLength(1);
   });
 });
 

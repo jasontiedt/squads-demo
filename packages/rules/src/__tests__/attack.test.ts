@@ -475,23 +475,6 @@ describe('Attack — rejections', () => {
     expect(result.error.code).toBe('out_of_range');
   });
 
-  it('rejects building target (not_implemented — capital damage is MVP-4)', () => {
-    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 0, y: 0 });
-    const state = attackState([attacker]);
-    const result = applyAction(
-      state,
-      attackAction({
-        attackerUnitId: 'u-eng-1',
-        targetBuildingId: 'b-cap-2',
-        mode: 'melee',
-      }),
-      SEAT_1,
-    );
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.error.code).toBe('not_implemented');
-  });
-
   it('rejects from the wrong phase (wrong_phase, via applyAction gate)', () => {
     const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 0, y: 0 });
     const defender = makeUnit('u-byz-1', 'byz-cataphract', 2, { x: 0, y: 1 });
@@ -565,6 +548,287 @@ describe('Attack — invariants', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.version).toBe(11);
+  });
+});
+
+// ─── Capital damage (Issue #78) ──────────────────────────────────────
+//
+// MVP-4: Attack against a building of kind `capital` damages the
+// matching `Player.capitalHp`. The BuildingInstance itself is never
+// removed — #68's EndTurn win check reads `capitalHp <= 0`. Camp/
+// barracks targets stay `not_implemented` for MVP-5.
+//
+// baseState (from fixtures) ships two capitals:
+//   - b-cap-1 (seat 1, square (0,0))
+//   - b-cap-2 (seat 2, square (5,5))
+
+const CAP_1_ID = 'b-cap-1';
+const CAP_2_ID = 'b-cap-2';
+
+describe('Attack — happy capital (melee)', () => {
+  it('reduces target capital owner capitalHp by attacker.melee, leaves capital instance intact', () => {
+    // Welsh Infantry (melee 3) adjacent to byz capital at (5,5).
+    const attacker = makeUnit('u-eng-1', 'eng-welsh-infantry', 1, { x: 4, y: 5 });
+    const state = attackState([attacker]);
+    const before = state.players[2]!.capitalHp;
+
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Defender capital owner lost melee=3 HP.
+    expect(result.value.players[2]!.capitalHp).toBe(before - 3);
+    // Attacker now exhausted.
+    expect(result.value.units.find((u) => u.id === uid('u-eng-1'))?.exhausted).toBe(true);
+    // Capital BuildingInstance persists (NEVER removed, even at 0/negative HP).
+    expect(result.value.buildings.find((b) => b.id === CAP_2_ID)).toBeDefined();
+    // Attacker's own capital HP unchanged.
+    expect(result.value.players[1]!.capitalHp).toBe(state.players[1]!.capitalHp);
+  });
+
+  it('allows capitalHp to go negative (no clamp; #68 EndTurn check uses <= 0)', () => {
+    // Watchman melee 1 vs byz capital pre-set to 1 HP → -0? Force a
+    // bigger gap to land negative.
+    const attacker = makeUnit('u-eng-1', 'eng-welsh-infantry', 1, { x: 4, y: 5 });
+    const lowHpState: GameState = {
+      ...attackState([attacker]),
+      players: {
+        ...baseState.players,
+        2: { ...baseState.players[2]!, capitalHp: 1 },
+      },
+    };
+
+    const result = applyAction(
+      lowHpState,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.players[2]!.capitalHp).toBe(-2); // 1 - 3
+    expect(result.value.buildings.find((b) => b.id === CAP_2_ID)).toBeDefined();
+  });
+});
+
+describe('Attack — happy capital (ranged)', () => {
+  it('reduces target capital owner capitalHp by attacker.ranged at Chebyshev >= 2', () => {
+    // Longbowman (ranged 3) at (3,5), byz capital at (5,5) → cheb 2.
+    const attacker = makeUnit('u-eng-1', 'eng-longbowman', 1, { x: 3, y: 5 }, {
+      attackMode: 'ranged',
+    });
+    const state = attackState([attacker]);
+    const before = state.players[2]!.capitalHp;
+
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'ranged',
+      }),
+      SEAT_1,
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.players[2]!.capitalHp).toBe(before - 3);
+    expect(result.value.units.find((u) => u.id === uid('u-eng-1'))?.exhausted).toBe(true);
+  });
+});
+
+describe('Attack — capital rejections', () => {
+  it('rejects targeting attacker own capital (target_friendly)', () => {
+    // Seat 1 attacker, seat 1's own capital at (0,0). Place attacker
+    // at (1,0) — adjacent so the range check passes and the friendly
+    // check is the one to fire.
+    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 1, y: 0 });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_1_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('target_friendly');
+  });
+
+  it('rejects melee attack on non-adjacent capital (out_of_range)', () => {
+    // Watchman at (0,0), byz capital at (5,5) → Chebyshev 5.
+    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 0, y: 0 });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('out_of_range');
+  });
+
+  it('rejects ranged attack on adjacent capital (out_of_range)', () => {
+    const attacker = makeUnit('u-eng-1', 'eng-longbowman', 1, { x: 4, y: 5 }, {
+      attackMode: 'ranged',
+    });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'ranged',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('out_of_range');
+  });
+
+  it('rejects when attacker is exhausted (attacker_exhausted)', () => {
+    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 4, y: 5 }, {
+      exhausted: true,
+    });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('attacker_exhausted');
+  });
+
+  it('rejects when action.mode does not match attacker.attackMode (attack_mode_mismatch)', () => {
+    const attacker = makeUnit('u-eng-1', 'eng-longbowman', 1, { x: 4, y: 5 }, {
+      attackMode: 'melee',
+    });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'ranged',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('attack_mode_mismatch');
+  });
+
+  it('rejects when card has 0 attack value in the requested mode (attack_value_zero)', () => {
+    // Longbowman melee 0 in melee mode adjacent to byz capital.
+    const attacker = makeUnit('u-eng-1', 'eng-longbowman', 1, { x: 4, y: 5 }, {
+      attackMode: 'melee',
+    });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('attack_value_zero');
+  });
+
+  it('rejects when target building id is not on the board (target_not_found)', () => {
+    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 0, y: 0 });
+    const state = attackState([attacker]);
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: 'b-ghost',
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('target_not_found');
+  });
+
+  it('rejects non-capital buildings (not_implemented — camp/barracks lift in MVP-5)', () => {
+    // Inject a camp into state.buildings, attack it adjacent.
+    const attacker = makeUnit('u-eng-1', 'eng-watchman', 1, { x: 2, y: 2 });
+    const state: GameState = {
+      ...attackState([attacker]),
+      buildings: [
+        ...baseState.buildings,
+        {
+          id: 'b-camp-1' as (typeof baseState.buildings)[number]['id'],
+          type: 'camp',
+          owner: 2,
+          square: { x: 3, y: 2 },
+          damage: 0,
+          terrain: 'plain',
+        },
+      ],
+    };
+    const result = applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: 'b-camp-1',
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('not_implemented');
+  });
+});
+
+describe('Attack — capital invariants', () => {
+  it('does not mutate the input state', () => {
+    const attacker = makeUnit('u-eng-1', 'eng-welsh-infantry', 1, { x: 4, y: 5 });
+    const state = attackState([attacker]);
+    const before = structuredClone(state);
+    applyAction(
+      state,
+      attackAction({
+        attackerUnitId: 'u-eng-1',
+        targetBuildingId: CAP_2_ID,
+        mode: 'melee',
+      }),
+      SEAT_1,
+    );
+    expect(state).toEqual(before);
   });
 });
 
