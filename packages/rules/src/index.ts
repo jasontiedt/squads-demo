@@ -14,6 +14,7 @@ export {
 export { deployUnit } from './deployUnit.js';
 export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
 export { addJoiner, buildCreatorState } from './initialState.js';
+export { chebyshev, move } from './move.js';
 export {
     ACTION_PHASE_LEGALITY,
     isOpponentTurnAction,
