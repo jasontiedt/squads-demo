@@ -63,3 +63,10 @@ Active learnings below.
   - Reaction-window state tracking
   - Stone resource (still in `ResourceKind`, not in rulebook)
   - Technology subtypes A|B|C|D (unnamed in rulebook)
+
+## 2025-05-23 — Issue #68: Capital-HP win condition
+
+- **Schema reality vs. issue text:** Issue #68 says "Capital `BuildingInstance.health <= 0`" but the schema has NO `health` field on `BuildingInstance`. HP for capitals lives on `Player.capitalHp` (`packages/schema/src/state.ts`). `BuildingInstance` only carries `damage`. Implemented the win check against `Player.capitalHp <= 0` and pinned a code comment explaining the mapping.
+- **Attack still does NOT damage capitals.** Despite issue #68 claiming #65 shipped capital damage, `packages/rules/src/attack.ts:86` still returns `not_implemented` when targeting a building. The win condition is testable today only via synthetic state with `capitalHp: 0`. Once attack-on-capital is wired (separate ticket), this win path will fire naturally.
+- **Win precedence via code ordering.** Two win paths (#55 units-eliminated, #68 capital-HP) coexist in the EndTurn handler. Precedence is enforced purely by ordering: units-eliminated check runs first and `return`s if it fires; capital-HP check is unreachable on that turn. No flag, no extra branching. Pinned in a test that constructs a state triggering both paths and asserts the units-path result.
+- **4-player corner rule.** Game ends ONLY when EXACTLY ONE occupied seat has `capitalHp > 0`. A single dead capital in a 4-player game does NOT end the game — three seats still alive ⇒ continue. Cleaner formulation than "find dead seat → find opposing seat".

@@ -138,13 +138,16 @@ export function applyAction(
         turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
       };
 
-      // ─── Win condition (#55) ───
+      // ─── Win condition: units-eliminated (#55) ───
       // After end-of-turn effects, if any seated player has zero units
       // AND total deployed units > 2, the game ends with the opposing
       // seat as winner. The `> 2` guard prevents instant-end at game
       // start before deployments have accumulated.
       //
-      // Capital HP win condition is MVP-4 — out of scope here.
+      // PRECEDENCE: this check runs BEFORE the capital-HP check below.
+      // When both win paths would fire on the same EndTurn (a seat
+      // has zero units AND zero capital HP), units-eliminated wins
+      // and we return here. Pinned in winCondition.test.ts.
       if (advanced.units.length > 2) {
         const occupiedSeats = SEATS_IN_ORDER.filter(
           (s) => advanced.players[s] !== undefined,
@@ -162,6 +165,35 @@ export function applyAction(
           if (winner !== undefined) {
             return ok({ ...advanced, phase: 'ended', winner });
           }
+        }
+      }
+
+      // ─── Win condition: capital-HP (#68) ───
+      // After units-eliminated misses, check capital HP. A seat is
+      // "dead" when its `Player.capitalHp <= 0`. If exactly one
+      // occupied seat remains alive, that seat wins.
+      //
+      // NOTE on field naming: issue #68 references
+      // `BuildingInstance.health`, but the canonical schema stores
+      // capital HP on `Player.capitalHp` (see schema/src/state.ts).
+      // `BuildingInstance` only carries `damage`. We check `capitalHp`
+      // as the authoritative HP source.
+      //
+      // 4-player corner case: if seat 3's capital hits 0 but seats
+      // 1, 2, 4 are still alive, the game does NOT end — we need
+      // exactly one survivor. Pinned in winCondition.test.ts.
+      const occupied = SEATS_IN_ORDER.filter(
+        (s) => advanced.players[s] !== undefined,
+      );
+      const aliveSeats = occupied.filter(
+        (s) => (advanced.players[s]?.capitalHp ?? 0) > 0,
+      );
+      // Only end when at least one capital has died AND exactly one
+      // seat survives. Without a dead capital, this turn is normal.
+      if (aliveSeats.length === 1 && aliveSeats.length < occupied.length) {
+        const winner = aliveSeats[0];
+        if (winner !== undefined) {
+          return ok({ ...advanced, phase: 'ended', winner });
         }
       }
 
