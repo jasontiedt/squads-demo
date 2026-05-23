@@ -117,7 +117,7 @@ describe('<Board />', () => {
 
   it('renders buildings with seat-coloured markers and type metadata', () => {
     const capital: BuildingInstance = {
-      id: 'b-cap-1',
+      id: 'b-cap-1' as BuildingInstance['id'],
       type: 'capital',
       owner: 1,
       square: { x: 0, y: 0 },
