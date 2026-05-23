@@ -3,6 +3,7 @@ import type { Action, GameState, Seat } from '@eoe/schema';
 import { attack } from './attack.js';
 import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
+import { move } from './move.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playCard } from './playCard.js';
 import { err, ok, type Result } from './result.js';
@@ -183,10 +184,13 @@ export function applyAction(
     case 'Attack':
       return attack(state, action, actorId);
 
+    // Issue #67: MoveUnit — Chebyshev movement on the 6×6 board.
+    case 'MoveUnit':
+      return move(state, action, actorId);
+
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
-    // subsequent issues (#7 = card draw, #8 = movement, etc.).
-    case 'MoveUnit':
+    // subsequent issues.
     case 'BuildCamp':
     case 'BuildBarracks':
     case 'RelocateBuilding':

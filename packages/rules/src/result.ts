@@ -68,7 +68,17 @@ export type RuleErrorCode =
   | 'target_friendly'
   | 'out_of_range'
   | 'attack_mode_mismatch'
-  | 'attack_value_zero';
+  | 'attack_value_zero'
+  // Move (#67) — MVP-4 unit movement. `unit_*` codes pin actor-side
+  // issues (ownership, exhaustion). `illegal_move` covers the four
+  // blocker conditions called out in the issue spec: water/mountain
+  // terrain, occupied destination (friend or enemy), face-down tile,
+  // and `action.from` not matching the unit's actual square. The
+  // human-readable `message` carries the specific reason.
+  | 'unit_not_found'
+  | 'unit_not_yours'
+  | 'unit_exhausted'
+  | 'illegal_move';
 
 export interface RuleError {
   readonly code: RuleErrorCode;
