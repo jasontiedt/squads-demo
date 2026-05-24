@@ -13,6 +13,9 @@ import {
 } from '../api/client.js';
 import { navigate } from '../router/hash.js';
 import { Board } from '../components/board/Board.js';
+import { ResourceBank } from '../components/hud/ResourceBank.js';
+import { TurnIndicator } from '../components/hud/TurnIndicator.js';
+import { WinnerBanner } from '../components/hud/WinnerBanner.js';
 import {
   computeAttackUnitTargets,
   computeAvailableAttackModes,
@@ -467,6 +470,13 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
           Leave game
         </button>
       </header>
+      {state && (
+        <TurnIndicator
+          activePlayer={state.activePlayer}
+          phase={state.phase}
+          viewerSeat={membership.seat}
+        />
+      )}
       <dl className="lobby-info">
         <dt>You are</dt>
         <dd>
@@ -646,6 +656,35 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
           onSquareClick={handleSquareClick}
           onUnitClick={handleUnitClick}
           onClearSelection={clearSelection}
+        />
+      )}
+
+      {state && (
+        <section
+          className="resource-banks"
+          aria-label="Resource banks"
+          data-testid="resource-banks"
+        >
+          {([1, 2, 3, 4] as const).map((seat) => {
+            const player = state.players[seat];
+            if (player === undefined) return null;
+            const isViewer = seat === membership.seat;
+            return (
+              <ResourceBank
+                key={seat}
+                player={player}
+                label={isViewer ? 'You' : `Seat ${seat}`}
+              />
+            );
+          })}
+        </section>
+      )}
+
+      {state && state.phase === 'ended' && state.winner !== undefined && (
+        <WinnerBanner
+          gameCode={gameCode}
+          winner={state.winner}
+          viewerSeat={membership.seat}
         />
       )}
     </main>

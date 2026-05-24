@@ -38,6 +38,7 @@ import type {
   TerrainType,
   UnitInstance,
 } from '@eoe/schema';
+import { CAPITAL_DEFAULT_HP } from '@eoe/rules';
 
 // ─────────────────────────── Layout constants ───────────────────────
 
@@ -113,6 +114,98 @@ function indexFaceDownSquares(
   }
   return out;
 }
+
+// ─────────────────────────── Capital HP gauge ───────────────────────
+//
+// Numeric + colored bar over each capital marker. The bar width is
+// CELL * 0.7 (slightly wider than the capital square), 8px tall,
+// rounded.
+//
+// Color thresholds (fraction of max):
+//   ≥ 0.66 → green
+//   0.33–0.66 → yellow
+//   < 0.33 → red
+//   0 → gray (capital has fallen)
+
+const CAPITAL_HP_BAR_WIDTH = CELL * 0.7;
+const CAPITAL_HP_BAR_HEIGHT = 8;
+
+type HpTier = 'green' | 'yellow' | 'red' | 'gray';
+
+const hpTier = (hp: number, max: number): HpTier => {
+  if (hp <= 0) return 'gray';
+  const frac = hp / max;
+  if (frac >= 0.66) return 'green';
+  if (frac >= 0.33) return 'yellow';
+  return 'red';
+};
+
+interface CapitalHpGaugeProps {
+  seat: Seat;
+  /** Center x of the bar in SVG units. */
+  cx: number;
+  /** Top y of the bar in SVG units (drawn DOWN from here). */
+  cy: number;
+  capitalHp: number;
+}
+
+const CapitalHpGauge = ({
+  seat,
+  cx,
+  cy,
+  capitalHp,
+}: CapitalHpGaugeProps): JSX.Element => {
+  const max = CAPITAL_DEFAULT_HP;
+  const clamped = Math.max(0, Math.min(capitalHp, max));
+  const tier = hpTier(clamped, max);
+  const fillWidth = (clamped / max) * CAPITAL_HP_BAR_WIDTH;
+  const barX = cx - CAPITAL_HP_BAR_WIDTH / 2;
+
+  return (
+    <g
+      data-testid={`capital-hp-${seat}`}
+      data-seat={seat}
+      data-hp={clamped}
+      data-hp-max={max}
+      data-hp-tier={tier}
+      pointerEvents="none"
+    >
+      <title>{`Seat ${seat} Capital HP: ${clamped}/${max}`}</title>
+      {/* Background track */}
+      <rect
+        className="capital-hp-bar-bg"
+        x={barX}
+        y={cy}
+        width={CAPITAL_HP_BAR_WIDTH}
+        height={CAPITAL_HP_BAR_HEIGHT}
+        rx={CAPITAL_HP_BAR_HEIGHT / 2}
+      />
+      {/* Fill (only when > 0 — gray tier shows just the empty track) */}
+      {clamped > 0 && (
+        <rect
+          data-testid={`capital-hp-${seat}-fill`}
+          className={`capital-hp-bar-fill-${tier}`}
+          x={barX}
+          y={cy}
+          width={fillWidth}
+          height={CAPITAL_HP_BAR_HEIGHT}
+          rx={CAPITAL_HP_BAR_HEIGHT / 2}
+        />
+      )}
+      {/* Numeric label, centered on the bar */}
+      <text
+        className="capital-hp-text"
+        data-testid={`capital-hp-${seat}-text`}
+        x={cx}
+        y={cy + CAPITAL_HP_BAR_HEIGHT / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+      >
+        {clamped}/{max}
+      </text>
+    </g>
+  );
+};
 
 // ─────────────────────────── Component ──────────────────────────────
 
@@ -277,29 +370,38 @@ export const Board = ({
           const isLegalTarget = legalTargetBuildingIds?.has(b.id) ?? false;
           const clickable = onBuildingClick !== undefined;
           return (
-            <rect
-              key={`building-${b.id}`}
-              data-testid={`building-${b.id}`}
-              data-building-type={b.type}
-              data-target-legal={isLegalTarget ? 'true' : 'false'}
-              x={cx - size / 2}
-              y={cy - size / 2}
-              width={size}
-              height={size}
-              fill={isLegalTarget ? ATTACK_OVERLAY : 'none'}
-              stroke={isLegalTarget ? ATTACK_STROKE : color}
-              strokeWidth={3}
-              rx={4}
-              style={clickable ? { cursor: 'pointer' } : undefined}
-              onClick={
-                clickable
-                  ? (e) => {
-                      e.stopPropagation();
-                      onBuildingClick(b);
-                    }
-                  : undefined
-              }
-            />
+            <g key={`building-${b.id}`}>
+              <rect
+                data-testid={`building-${b.id}`}
+                data-building-type={b.type}
+                data-target-legal={isLegalTarget ? 'true' : 'false'}
+                x={cx - size / 2}
+                y={cy - size / 2}
+                width={size}
+                height={size}
+                fill={isLegalTarget ? ATTACK_OVERLAY : 'none'}
+                stroke={isLegalTarget ? ATTACK_STROKE : color}
+                strokeWidth={3}
+                rx={4}
+                style={clickable ? { cursor: 'pointer' } : undefined}
+                onClick={
+                  clickable
+                    ? (e) => {
+                        e.stopPropagation();
+                        onBuildingClick(b);
+                      }
+                    : undefined
+                }
+              />
+              {b.type === 'capital' && (
+                <CapitalHpGauge
+                  seat={b.owner}
+                  cx={cx}
+                  cy={cy + size / 2 + 4}
+                  capitalHp={state.players[b.owner]?.capitalHp ?? 0}
+                />
+              )}
+            </g>
           );
         })}
 
