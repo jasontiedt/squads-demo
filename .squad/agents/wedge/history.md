@@ -71,3 +71,30 @@
 - Byzantines civ data shipped (Sabine, PR #60) — 20-card stub convention pinned for HRE/Mongols/Norsemen/Ottomans/Scots.
 - **MVP-4 blocker:** Issue #37 (PlayCard UI) needs worker `?seat=X` unredact contract — owner needs to be set on the next handoff. See `lando-playcard-needs-worker-unredact` decision (now in decisions.md).
 - **Open RFC obligations:** capital `tileId`/`siegeState`/per-player `units[]` model (Artoo flagged); handler vocabulary lock required before civ behavior modules ship.
+
+### 2026-05-22T23:00:00Z — MVP-4 scope drafted
+
+- Wrote proposal: `.squad/proposals/mvp-4-scope.md` — 7 GitHub-issue-shaped items, one-line dep graph at top, NOT filed yet (per Jason's instruction).
+- **Validated coordinator's hypothesis with refinement.** Board UI half: ✅ accepted. Card-effect-handlers half: ✗ rejected. Handler vocabulary lock is still un-merged (`artoo-card-effect-typing.md`); bundling vocab-lock + per-card behavior + board UI is too wide. Card effects move to MVP-5, gated on a vocab RFC opening that MVP.
+- **Stale-info correction in my own prior entry.** I wrote on 2026-05-22 that #37 (PlayCard UI) was blocked on worker `?seat=X` unredact and was MVP-4's first priority. **Both are wrong.** `gh issue list --state closed` confirms #37 closed 2026-05-22T14:53:44Z and #38 (unredact-by-seat) closed 2026-05-22T15:05:33Z — both shipped during MVP-2/3. Lesson: when MVP-N ship logs document "carry-forward," cross-check against `gh issue list` before propagating the carry-forward into the next MVP's scope.
+- **MVP-4 = "Playable Board"** — Move handler (last missing core action), Capital-HP win path (discharges #55 debt), interactive board pickers (Deploy/Move/Attack/Scout reusing one selection state machine), HUD polish (Capital HP gauges + resource bank + winner banner), schema RFC for tileId/units[] (RFC only — implementation lands MVP-5), E2E playable-arc Playwright, integration tests across Move+Attack+Win.
+- **Deliberate exclusions:** card-effect handlers, Move pattern (short/long), resource cost payment, Reaction timing, Recruit/Resupply/UnitAbility, `_needsConfirmation` OCR backfill, capital/units[] migration.
+- **Risk callouts in proposal:** item 3 (interactive board) is the bulky one — splittable along action lines if it slips; item 2 + item 7 must coordinate on win-precedence rule before either PR opens; item 5 stays RFC-only on purpose.
+- **Next step (not mine):** Jason reviews proposal. If accepted, items get filed as issues with `mvp-4` + area + owner labels.
+
+### 2026-05-23 — Capital tile membership + units[] shape RFC (#69)
+
+Picked the smallest coherent shape: keep `state.units` flat, extend `CapitalInstance` with `tileId: TileId` + `siegeState: SiegeState`. Rejected per-player `players[seat].units` (duplication risk on capture/conversion cards + every global query becomes two-step). Rejected on-demand `tileOfSquare` lookup at every siege handler call site (denormalization is safe because capitals don't move).
+
+Proposed two engine helpers (`unitsFor`, `unitsOnTile`, `capitalOf`, `tileOfSquare`) so card handlers get readable per-seat / per-tile queries without per-player arrays. Migration is one additive PR — no field removal, no client/worker breakage.
+
+**Pattern:** denormalize when the data is fixed-at-init and read-often (capital → tile); never denormalize fields that mutate via card effects (unit ownership).
+
+**Inbox files need `git add -f`.** `.gitignore` blocks `.squad/decisions/inbox/`. For RFC PRs (where the diff IS the file), force-add. Scribe's merge will move content to decisions.md and remove the inbox file in a follow-up.
+
+### 2026-05-23 — MVP-4 closeout (coordination)
+
+- Scoped MVP-4 around the capital-RFC (#69), Move (#70), Capital-HP win (#68), integration arcs (#73), interactive board (#71), HUD (#72). 7 PRs shipped (#74, #75, #76, #77, #79, #80, #81, #82). Blocker #78 surfaced during arc-test work and was fixed mid-flight (#79).
+- **My contribution:** PR #74 — pinned the capital `tileId` + `siegeState` shape with the units-flat invariant intact. Migration sketch + alternative-analysis (A–E) lives in the decisions ledger. MVP-5 first PR carries this through.
+- Carry-forward: capital-RFC migration is the obvious MVP-5 opener; PlayCard UI (#37) worker unredact still pending.
+

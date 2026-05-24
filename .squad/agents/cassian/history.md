@@ -80,3 +80,11 @@ Without these, vite can't resolve `@eoe/schema` from the worktree. Worth telling
 - CI now runs unit tests on every PR via `.github/workflows/unit-tests.yml` (PR #64). Closes the e2e-only gap.
 - Test fixtures convention reaffirmed: use real catalog ids from `@eoe/assets-meta` (no synthetic placeholders) — hotfix #63 proved this is a real footgun.
 - **needs-confirmation surface to expand:** Scout `unitId` ownership/existence validation, Attack siege-flag semantics, Capital RFC fields (`tileId`/`siegeState`/per-player `units[]`), Reaction-window state tracking.
+
+### 2026-05-23 — MVP-4 contributions
+
+- **PR #77 (#73 integration arc suite):** five `playable-arc` arcs — units-eliminated, capital-zero, 4-player partial elimination, win-precedence comparison, and one mid-skip. Found the `Attack`-against-building `not_implemented` gap (filed #78) and left the capital-zero arc as `it.skip` with a `@needs-confirmation` note — coordinator-grade flag rather than a rules-bug stop.
+- **PR #82 (#73 follow-up — E2E baseline):** Playwright two-browser handoff baseline. Players join via game code, take alternating turns, capital-zero arc completes through the real UI surface (board + HUD) after Lando's #80/#81 landed and Artoo's #79 unblocked the action path.
+- Initial spawn on #72 returned silent-success; second pass completed clean. Same recovery pattern as previous sessions.
+- Carry-forward: expand needs-confirmation around the MVP-5 capital-RFC migration (new shape will need fixtures updated).
+

@@ -20,3 +20,10 @@
 - **Tests (39 across 6 files):** hash router (parse/build), validation rules, session store (set/persist/rehydrate via `useSession.persist.rehydrate()`/leave/select), Home form (tab switching, validation rejection, create success with pinned `nextGameCode`, API error path), Lobby (membership display, missing-membership alert, leave clears state, rehydrate via getGame), API stubs (Mock auto-counter, override-once, joinGame seat-2 assignment, getGame token lookup, unauthorized throw, empty-name reject; Real throws on all methods + strips trailing slashes from baseUrl).
 - **Strict-mode discipline:** Zero `!` non-null assertions in tests. Used `getByLabelText` helpers + `setInput(label, val)` wrapper. Zero `any`. `useGameApi()` throws if used outside provider so the type is non-nullable downstream.
 - **What #13 needs to do:** Replace `MockGameApi` default in `App.tsx` (or wrap with env toggle) and flesh out `RealGameApi` to `POST /api/game/create`, `POST /api/game/join`, `GET /api/game/:code` per Wedge's locked architecture. Token persistence + UI shell are ready — just swap the implementation.
+
+### 2026-05-23 — MVP-4 contributions
+
+- **PR #80 (#71 interactive board surface):** rendered the 6×6 tiled board, unit + building sprites positioned by `Coord`, click-to-select wiring tied into the session store. Server-validated action dispatch through the existing `GameApi`. Silent-success recovery on first spawn — coordinator finished commit + push + PR from worktree.
+- **PR #81 (#72 HUD):** turn / phase indicators, active-player badge, per-seat capital HP readouts. Reads `state.players[i].capitalHp` directly — will refactor to read `state.buildings[].damage` once the MVP-5 capital-RFC lands.
+- Carry-forward: PlayCard UI (#37) still blocked on the worker `?seat=X` unredact contract.
+

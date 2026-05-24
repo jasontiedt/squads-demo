@@ -119,6 +119,24 @@
 **What:** MVP-3 closed in one session. Issues #53 (DeployUnit, PR #59), #54 (Attack, PR #65), #55 (WinCondition, PR #66), #56 (Scout, PR #62), #57 (Capital init, PR #61), #58 (Byzantines civ, PR #60). Hotfix #63 + new `unit-tests.yml` CI (PR #64) close the catalog-fixture CI gap. HEAD on main: `69255ca`. **Implication:** Rules engine now supports the full MVP-3 action surface. PlayCard UI (#37) remains blocked on the worker unredact contract — first priority for MVP-4.
 **Source:** Session log `.squad/log/2026-05-22T22-55-00Z-mvp-3-shipped.md`.
 
+### 2026-05-23: Capital tile membership + units[] shape RFC (open for MVP-5)
+
+**By:** Wedge (Lead / Architect) — issue #69, PR #74
+**What:** Locked the shape for capital → tile linkage and unit ownership. `state.units` stays flat (`UnitInstance[]` with `owner: Seat`); `CapitalInstance` gains `tileId: TileId` (denormalized link) and `siegeState: 'open' | 'sieged' | 'fallen'`. `Tile.id` promoted to branded `TileId`. New helpers `unitsFor(state, seat)`, `unitsOnTile(state, tileId)`, `capitalOf(state, seat)`, `tileOfSquare(state, c)` ship in `packages/rules/src/queries.ts`. **Rejected alternatives:** on-demand `tileOfSquare` per handler (repeated lookup); `siegeState` on `Player` (wrong cut — siege is building-shaped); per-player `state.players[seat].units[]` (duplicates ownership info, breaks capture/conversion cards, makes global queries two-step); both shapes (drift risk); side-index `unitsBySeat` (same drift risk smaller). **Implication:** Siege card effects, "all your units" patterns, and capital→tile targeting all bind to this shape. Migration is one additive PR (no field removal, no client/worker breakage). Reviewers: Artoo (rules-engine), Cassian (test-shape).
+**Source:** `.squad/decisions/inbox/wedge-capital-units-shape.md` (merged).
+
+### 2026-05-23: Arc-test gap — `Attack` against a capital was `not_implemented` (closed by PR #79)
+
+**By:** Cassian (Tester / QA) — issue #73, follow-up issue #78
+**What:** During MVP-4 arc-test work (#73), the capital-zero arc could not be exercised end-to-end because `attack.ts` rejected any `Attack` carrying `targetBuildingId` with `not_implemented` (deliberate MVP-3 stub). Capital-HP win was unit-tested via direct state setup only — no real-action path damaged a capital. Cassian flagged this in `playable-arc.test.ts` with `it.skip` + `@needs-confirmation`. Artoo lifted the stub mid-flight in PR #79: `Attack` with `targetBuildingId` now decrements `Player.capitalHp` by `attacker.card[mode]`, exhausts the attacker, and respects Chebyshev range / phase / seat gates. Skipped arc re-enabled. **Implication:** Capital-damage path is now arc-testable. Future "deliberately stubbed handler" gaps caught during integration testing follow the same pattern — flag with `@needs-confirmation`, file a follow-up issue, lift the stub, re-enable.
+**Source:** `.squad/decisions/inbox/cassian-arc-bug-attack-capital-not-implemented.md` (merged).
+
+### 2026-05-23: MVP-4 shipped — schema RFC, Move, Attack-vs-Capital, Capital-HP win, integration arcs, interactive board, HUD, E2E baseline
+
+**By:** Wedge (Lead) — coordinated via Squad coordinator
+**What:** MVP-4 closed in one coordinated session. 7 PRs merged: #74 (schema RFC, Wedge), #75 (Move handler), #76 (Capital-HP win condition), #77 (integration tests, Cassian), #79 (Attack-vs-Capital, Artoo — lifted #78 blocker), #80 (interactive board, Lando), #81 (HUD, Lando), #82 (E2E baseline, Cassian). Blocker #78 surfaced during #77 arc testing (Attack-vs-building stubbed) and was fixed mid-flight by Artoo (#79), unblocking the skipped capital-zero arc. Multiple silent-success agent recoveries handled by coordinator (Lando on #71 / interactive board, agent on #78, Cassian on initial #72 attempt). Worktree `squads-demo-71` orphaned on disk due to file lock — harmless, will clean on next reboot. **Implication:** Rules engine + worker contract + web client now playable end-to-end through the capital-zero arc. Next: MVP-5 capital RFC migration (apply the locked shape from #69), PlayCard UI worker unredact follow-through.
+**Source:** Session log `.squad/log/2026-05-23T19-30-00Z-mvp4-shipped.md`.
+
 ## Governance
 
 - All meaningful changes require team consensus

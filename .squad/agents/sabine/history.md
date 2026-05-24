@@ -118,3 +118,9 @@
 - PR #60 merged: `packages/assets-meta/data/byzantines.json` — 20-card civ stub.
 - Convention now pinned for HRE, Mongols, Norsemen, Ottomans, Scots: same `{ _meta, cards }` envelope, schema-validated against `@eoe/schema`'s `Card` union, `cost.breakdown = { wild: <total>, _needsConfirmation: true }` until OCR (#17) splits resource columns, no behavior modules in `packages/rules/src/cards/<civ>/` (data-only landing).
 - Each remaining civ can ship in parallel as MVP stubs; no blocking on handler vocabulary.
+
+### 2026-05-23 — MVP-4 (no new asset work this session)
+
+- MVP-4 was rules + worker + web-shell focused (Wedge schema RFC, Artoo Move/Attack-vs-Capital/win, Cassian arcs/E2E, Lando board/HUD). No new card data or visuals landed.
+- Carry-forward: HRE / Mongols / Norsemen / Ottomans / Scots civ stubs are still the open queue, per the pinned convention. Will pick up after MVP-5 capital-RFC migration or as parallel work if the queue allows.
+

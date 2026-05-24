@@ -81,3 +81,11 @@ Active learnings below.
 - **Cassian's playable-arc Arc 2 is now unskipped.** The full action-driven capital-zero arc (Deploy + Move + Attack capital + EndTurn) chains through `applyAction` with NO state shortcuts. Win routes through capital-zero by leaving seat 2 with one unit on the board (units-eliminated guard would have fired otherwise since `units.length > 2`).
 - **Test counts:** attack.test.ts grew from 25 → 39 tests (+11 capital-target cases: 2 happy, 8 rejections, 1 invariant; existing "rejects building target — not_implemented" test removed since the path now works). playable-arc.test.ts: 4 passing + 1 skipped → 5 passing. Total rules suite: 251 → 262 passing, 21 skipped.
 - **No new error codes.** Reused `target_not_found`, `target_friendly`, `out_of_range`, `attacker_exhausted`, `attack_mode_mismatch`, `attack_value_zero`, `card_not_in_catalog`, `not_implemented`. Kept `RuleErrorCode` taxonomy stable.
+
+### 2026-05-23 — MVP-4 contributions (summary)
+
+- **PR #75 (#70 Move handler):** action handler shipped, gated by phase / seat / Chebyshev range / exhaustion (reuses `UnitInstance.exhausted` per the locked decision).
+- **PR #76 (#68 Capital-HP win condition):** wired into `applyAction.EndTurn` — direct-state tests passed before #79 closed the action-driven path.
+- **PR #79 (#78 Attack-vs-Capital):** lifted the deliberate `not_implemented` stub Cassian found mid-flight during #77. Same gates as unit-vs-unit attack; unblocked the capital-zero arc.
+- Rules engine now covers the full MVP-4 action surface. Next: pick up the MVP-5 capital-RFC migration (Wedge's PR #74 sketch).
+
