@@ -40,7 +40,8 @@ const sampleTactic = {
   name: 'Forced March',
   cost: { food: 1 },
   playableIn: ['mobilization' as const],
-  effect: null,
+  // Typed via locked Effect DSL (#83/#87).
+  effect: { kind: 'draw' as const, count: 1 },
 };
 
 const sampleUpgrade = {
@@ -56,7 +57,8 @@ const sampleAction = {
   id: 'a-1',
   name: 'Quick Strike',
   cost: { wild: 1 },
-  effect: 42,
+  // Typed via locked Effect DSL (#83/#87).
+  effect: { kind: 'damage' as const, amount: 1, target: 'opponent-capital' as const },
 };
 
 const sampleReaction = {

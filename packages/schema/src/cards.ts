@@ -114,10 +114,8 @@ export const TacticCard = z.object({
   cost: CardCost,
   /** Phases the tactic may be played in (≥1, deduplicated by Zod consumers). */
   playableIn: z.array(TacticPhase).min(1),
-  // Effect DSL locked in #83. Loose-union escape hatch retained until
-  // catalog cards migrate to typed effects in #87 (Sabine). When that
-  // ships, drop `z.unknown()` and keep only `Effect`.
-  effect: z.union([Effect, z.unknown()]),
+  // Effect DSL locked in #83; catalog backfill completed in #87.
+  effect: Effect,
 });
 export type TacticCard = z.infer<typeof TacticCard>;
 
@@ -139,10 +137,8 @@ export const ActionCard = z.object({
   ...CardCommon,
   kind: z.literal('action'),
   cost: CardCost,
-  // Effect DSL locked in #83. Loose-union escape hatch retained until
-  // catalog cards migrate to typed effects in #87 (Sabine). When that
-  // ships, drop `z.unknown()` and keep only `Effect`.
-  effect: z.union([Effect, z.unknown()]),
+  // Effect DSL locked in #83; catalog backfill completed in #87.
+  effect: Effect,
 });
 export type ActionCard = z.infer<typeof ActionCard>;
 
