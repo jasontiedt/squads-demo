@@ -162,13 +162,95 @@ describe('POST /games/:code/actions — happy path', () => {
     expect(stored?.tokenHashes[2]).toBeDefined();
   });
 
-  // Issue #36: PlayCard happy path — REMOVED in #85.
-  // Generic PlayCard ("draw 1") was deleted along with the verb itself.
-  // The replacement is PlayAction which dispatches typed effects, but
-  // card catalogs don't have typed effects until #87 (Sabine's backfill).
-  // Re-enable as a PlayAction happy-path test once #87 lands and at
-  // least one Action card has a typed `effect` (e.g. `draw n=1`).
-  it.skip('PlayAction happy path — pending #87 catalog backfill', async () => {});
+  // Issue #87: PlayAction happy path — re-enabled after Sabine's
+  // catalog backfill typed every Action/Tactic effect against the
+  // locked Effect DSL. We use `eng-levy-the-fyrd` (action, cost wild:2,
+  // effect `{kind:'draw', count:2}`) as the canonical typed action.
+  //
+  // The deck shuffle is seeded with `newSeed()` per game (non-
+  // deterministic for tests), so we mutate KV directly to install:
+  //   • `eng-levy-the-fyrd` at hand[0] for seat 1
+  //   • two unexhausted `wild` resource tokens to cover the cost
+  // ...then drive PlayAction through the real HTTP handler.
+  it('PlayAction happy path — typed draw effect (eng-levy-the-fyrd)', async () => {
+    const { env, kv, gameCode, token1 } = await setupJoinedGame();
+
+    // Advance start → mobilization → deployment (PlayAction is
+    // deployment-only per phases.ts).
+    await postAction(env, gameCode, {
+      seat: 1,
+      token: token1,
+      expectedVersion: 2,
+      action: { type: 'EndPhase' },
+    });
+    await postAction(env, gameCode, {
+      seat: 1,
+      token: token1,
+      expectedVersion: 3,
+      action: { type: 'EndPhase' },
+    });
+
+    // Install a known action card and the resources needed to pay
+    // its cost directly into the persisted state.
+    const stored = kv.peek<StoredGame>(gameKey(gameCode));
+    expect(stored).not.toBeNull();
+    if (stored === null) return; // narrow for TS
+
+    const ACTION_CARD = 'eng-levy-the-fyrd';
+    const seat1 = stored.state.players[1];
+    expect(seat1).toBeDefined();
+    if (seat1 === undefined) return;
+
+    const newHand = [ACTION_CARD, ...seat1.hand.slice(1)];
+    const newResources = [
+      { id: 'res-test-w1', kind: 'wild' as const, exhausted: false },
+      { id: 'res-test-w2', kind: 'wild' as const, exhausted: false },
+    ];
+    const patched = {
+      ...stored,
+      state: {
+        ...stored.state,
+        players: {
+          ...stored.state.players,
+          1: { ...seat1, hand: newHand, resources: newResources },
+        },
+      },
+    };
+    await kv.put(gameKey(gameCode), JSON.stringify(patched));
+
+    const handLenBefore = newHand.length;
+    const deckLenBefore = seat1.deck.length;
+
+    const res = await postAction(env, gameCode, {
+      seat: 1,
+      token: token1,
+      expectedVersion: 4,
+      action: { type: 'PlayAction', cardId: ACTION_CARD },
+    });
+
+    if (res.status !== 200) {
+      // eslint-disable-next-line no-console
+      console.error('PlayAction failed:', res.status, await res.text());
+    }
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as ActionResponse;
+    expect(body.version).toBe(5);
+    expect(body.state.phase).toBe('deployment');
+
+    // Card moved hand → discard, then draw effect added 2 cards from
+    // deck. Net hand delta: -1 (play) + 2 (draw) = +1.
+    const seat1Hand = body.state.players['1']?.hand;
+    expect(Array.isArray(seat1Hand)).toBe(true);
+    if (Array.isArray(seat1Hand)) {
+      expect(seat1Hand).not.toContain(ACTION_CARD);
+      expect(seat1Hand.length).toBe(handLenBefore - 1 + 2);
+    }
+
+    // Verify deck shrank by 2 (the drawn cards) via KV peek.
+    const after = kv.peek<StoredGame>(gameKey(gameCode));
+    expect(after?.state.players[1]?.deck.length).toBe(deckLenBefore - 2);
+    expect(after?.state.players[1]?.discard).toContain(ACTION_CARD);
+  });
 });
 
 describe('POST /games/:code/actions — auth failures', () => {

@@ -110,9 +110,10 @@
       "imageRef": "byzantines/strategos.png",
       "flavor": "A general of a theme — civil governor in peace, war-leader in season. His word moves a province.",
       "cost": { "wild": 3 },
-      "effect": "PLACEHOLDER: ready one exhausted friendly unit and grant it +1 movement until end of turn. Effect payload is loose (z.unknown) per the Card schema; structured effect DSL deferred per artoo-card-effect-typing.md.",
+      "effect": { "kind": "draw", "count": 1 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Strategos modelled as an action (general's rally) rather than a unit so the deck has at least one leadership-flavored action card distinct from a unit."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Strategos modelled as an action (general's rally) rather than a unit so the deck has at least one leadership-flavored action card distinct from a unit.",
+        "effect.mapping": "#87: original flavor 'ready one exhausted friendly unit and grant +1 movement EoT' has NO mapping in the locked 5-verb Effect DSL (no ready/exhaust verb, and buff-unit-stat.stat does not include movement). Stubbed as {draw, count:1} until a new verb is approved. See .squad/decisions/inbox/sabine-87-mvp6-verb-proposals.md."
       }
     },
     {
@@ -124,9 +125,10 @@
       "flavor": "A jealously guarded recipe — naphtha, quicklime, sulphur, and secrets the empire took to its grave. It clung, it burned, and water made it worse.",
       "cost": { "wild": 3 },
       "playableIn": ["deployment"],
-      "effect": "PLACEHOLDER: deal 2 damage to one enemy unit on a square adjacent to a friendly unit; ignores armor keywords. Effect payload is loose (z.unknown).",
+      "effect": { "kind": "damage", "amount": 2, "target": "opponent-capital" },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment (combat-flavored tactic); the rulebook may class Greek Fire as a naval-only effect or a persistent event."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment (combat-flavored tactic); the rulebook may class Greek Fire as a naval-only effect or a persistent event.",
+        "effect.mapping": "#87: original flavor 'deal 2 damage to enemy unit adjacent to friendly' had no clean DSL fit (no adjacency primitive, no single-arbitrary-unit target). Remapped to siege-flavored 'damage 2 → opponent-capital' which matches the historical defense-of-Constantinople flavor and is the simplest plausible Effect."
       }
     },
     {
@@ -295,9 +297,10 @@
       "imageRef": "byzantines/themata-muster.png",
       "flavor": "The provinces answer the imperial summons. Where Anatolia and Thrace march, the empire marches.",
       "cost": { "wild": 2 },
-      "effect": "PLACEHOLDER: draw 2 cards. Effect payload is loose (z.unknown).",
+      "effect": { "kind": "draw", "count": 2 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Levy the Fyrd' as the deck's basic draw-action."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Levy the Fyrd' as the deck's basic draw-action.",
+        "effect.mapping": "#87: 'draw 2 cards' → {draw, count:2}."
       }
     },
     {
@@ -308,9 +311,10 @@
       "imageRef": "byzantines/imperial-courier.png",
       "flavor": "The cursus publicus — staged horses and signal towers carrying word from the capital to the furthest frontier.",
       "cost": { "wild": 1 },
-      "effect": "PLACEHOLDER: look at the top 3 cards of your deck; keep 1, return the rest to the top in any order. Effect payload is loose (z.unknown).",
+      "effect": { "kind": "draw", "count": 1 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Scry-flavored action gives the deck a tempo / selection tool distinct from raw draw."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Scry-flavored action gives the deck a tempo / selection tool distinct from raw draw.",
+        "effect.mapping": "#87: original 'scry 3, keep 1' flavor has NO verb in the locked 5-verb Effect DSL. Stubbed as {draw, count:1} — strictly weaker than the original flavor but preserves the card as a cheap card-advantage option until a 'scry' or 'look-at-top' verb is approved. See .squad/decisions/inbox/sabine-87-mvp6-verb-proposals.md."
       }
     },
     {
@@ -322,9 +326,16 @@
       "flavor": "Trench, palisade, and a sky full of arrows. Roman engineering, Greek geometry, infantry doctrine refined for a thousand years.",
       "cost": { "wild": 2 },
       "playableIn": ["deployment"],
-      "effect": "PLACEHOLDER: target infantry unit gains +2 health until end of turn. Effect payload is loose (z.unknown).",
+      "effect": {
+        "kind": "buff-unit-stat",
+        "target": { "kind": "units-by-class", "classFilter": "infantry", "ownership": "own" },
+        "stat": "health",
+        "delta": 2,
+        "duration": "end-of-turn"
+      },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Shield Wall' as a defensive deployment-phase tactic, scaled up for the empire's fortification doctrine."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Mirrors English 'Shield Wall' as a defensive deployment-phase tactic, scaled up for the empire's fortification doctrine.",
+        "effect.mapping": "#87: 'target infantry unit +2 health EoT' → buff-unit-stat over units-by-class(infantry, own). Same single-vs-set caveat as eng-shield-wall."
       }
     },
     {
@@ -336,9 +347,10 @@
       "flavor": "A chain across the Golden Horn, a fleet across the strait. No grain ship runs to the besieger; no relief lands at the besieged.",
       "cost": { "wild": 3 },
       "playableIn": ["deployment"],
-      "effect": "PLACEHOLDER: target enemy unit may not move during the opponent's next turn. Effect payload is loose (z.unknown).",
+      "effect": { "kind": "draw", "count": 1 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment; the rulebook may class blockade as a persistent event."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Phase guessed as deployment; the rulebook may class blockade as a persistent event.",
+        "effect.mapping": "#87: original 'prevent enemy movement next turn' flavor has NO verb in the locked 5-verb Effect DSL (no immobilize / prevent-move primitive). Stubbed as {draw, count:1} until a new verb is approved. See .squad/decisions/inbox/sabine-87-mvp6-verb-proposals.md."
       }
     },
     {

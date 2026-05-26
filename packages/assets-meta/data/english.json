@@ -361,9 +361,10 @@
       "imageRef": "english/levy-the-fyrd.png",
       "flavor": "The king's writ summons every able-bodied freeman to his banner. Boots on the road within the week.",
       "cost": { "wild": 2 },
-      "effect": "PLACEHOLDER: draw 2 cards. Effect payload is loose (z.unknown) per the Card schema; structured effect DSL deferred per artoo-card-effect-typing.md.",
+      "effect": { "kind": "draw", "count": 2 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. The English card pool may not include an action card with this name; treat as schema-coverage filler until real data lands."
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. The English card pool may not include an action card with this name; treat as schema-coverage filler until real data lands.",
+        "effect.mapping": "#87: 'Levy the Fyrd' → {draw, count:2} — direct mapping of the placeholder 'draw 2 cards' flavor to the locked Effect DSL."
       }
     },
     {
@@ -375,9 +376,16 @@
       "flavor": "Locked shields, planted feet, the old Saxon discipline. The line holds or the line dies.",
       "cost": { "wild": 1 },
       "playableIn": ["deployment"],
-      "effect": "PLACEHOLDER: target infantry unit gains +1 health until end of turn. Effect payload is loose (z.unknown).",
+      "effect": {
+        "kind": "buff-unit-stat",
+        "target": { "kind": "units-by-class", "classFilter": "infantry", "ownership": "own" },
+        "stat": "health",
+        "delta": 1,
+        "duration": "end-of-turn"
+      },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Deployment-only because the effect modifies a deployed unit; confirm phase against real card text."
+        "stub": "STUB — invented for MVP-2 playtest, refine in #17 OCR pass. Deployment-only because the effect modifies a deployed unit; confirm phase against real card text.",
+        "effect.mapping": "#87: 'target infantry unit +1 health EoT' → buff-unit-stat over units-by-class(infantry, own). Per decisions.md, single-target unit selection defaults to units-by-class (set semantics). If/when a single-unit target with class filter is added to the DSL, this should narrow."
       }
     },
     {
