@@ -104,3 +104,13 @@ Active learnings below.
 
 ### Test mocking pattern (new for this repo)
 - No `vi.mock` precedent existed in this repo. The PlayTactic happy path requires a typed-effect tactic card, but the real catalog only ships string-effect tactics until #87. Introduced `vi.mock('@eoe/assets-meta', ...)` at the top of `playTactic.test.ts` with a top-level await for `import('../applyAction.js')` to wire the mocked module before the rules code loads. This is the first mocking pattern in `packages/rules` — reuse for future handlers that need typed-effect catalog cards before #87 lands.
+
+### 2025-11-21 — MVP-5 backend complete
+
+Shipped 4 PRs covering the MVP-5 backend:
+- **#91 payCost** — pay-first/then-resolve ordering pinned. `temporaryResources` consumed first, main resources next, `wild` falls back across kinds.
+- **#92 ?seat= unredact** — seat-scoped hand reveal validated against the seat's player token. Closes carry-over #37.
+- **#93 effect dispatcher + PlayAction** — central new machine. Five verb handlers (`effectDraw`, `effectDamage`, `effectHealCapital`, `effectGainTempResource`, `effectBuffUnitStat`) live in `packages/rules/src/effects/`. Generic `playCard.ts` and `PlayCard` action variant DELETED.
+- **#94 PlayTactic + EndTurn cleanup** — `temporaryBuffs` field on `UnitInstance` cleared in `drawAndDiscardCleanup`.
+
+**Process lesson — silent-success on #93.** My spawn for PR #93 staged 8 files but ended before commit/push/PR. Coordinator verified the staged work, ran the test suite (green), landed two build fixes, and shipped the PR. **Don't let agent context starve before the `gh pr create` block** — finish with the full ship sequence (test → commit → push → PR) and treat anything earlier as in-flight. If context gets thin, prioritize the PR open over polish.

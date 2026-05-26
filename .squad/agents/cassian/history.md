@@ -98,3 +98,15 @@ Without these, vite can't resolve `@eoe/schema` from the worktree. Worth telling
 - **Seat-scoped GET contract** (`/games/:code?seat=N`, Issue #88): invalid seat (non-1..4) → 400 `{code:'bad_request'}`; valid seat + bearer mismatch → 401 `{code:'unauthorized'}`; success → 200 `{state, version, seat}` with seat N's hand unredacted as `CardId[]`, others as `{count}`. Anonymous GET (no `?seat=`) still redacts all hands — the seat-scoped path is additive, not replacement.
 - **Test 3 (Playwright e2e action-card smoke) dropped per fallback rule.** The english deck is 20 cards (16 unit + 4 non-unit); opening 5-card hand has ~28% chance of zero action cards. No admin seed endpoint exists for e2e. Click-path coverage already lives in `apps/web/src/__tests__/PlayCardUi.needs-confirmation.test.tsx`. Shipped MVP-5 as Test 1 + Test 2 only.
 - **Worktree workflow verified:** Spawned in `c:/GitRepos/squads-demo-89` on `copilot/89-integration-arc`. Pre-existing node_modules junctions worked; vitest ran clean. Stayed in the worktree — never touched the main checkout.
+
+### 2025-11-21 — MVP-5 integration arc shipped
+
+PR #96 shipped — two Miniflare integration tests covering the MVP-5 acceptance arc:
+- `integration-mvp5-action-arc.test.ts` — seed → first turn → PlayAction (draw 2) → assert hand-size delta + moveLog entry.
+- `integration-mvp5-tactic-buff.test.ts` — PlayTactic (buff own unit) → EndTurn → assert `temporaryBuffs` cleared.
+
+Both green at merge.
+
+**Deferred — Playwright two-browser E2E.** The seeded deck shuffles non-deterministically per game (no admin seed endpoint), making it impossible to reliably script "play the Action card that draws 2" from the e2e harness. The current `playable-arc.spec.ts` pattern doesn't apply — that arc was unit-driven, where game state is deterministic from the start.
+
+**Carry-forward — file MVP-6 issue:** add an admin seed endpoint (e.g. `POST /admin/games/:id/seed-deck`) that pins deck order for test runs. Then the two-browser E2E for MVP-5's stop condition becomes scriptable. Worth filing before MVP-6 scope locks so it gets sized in.

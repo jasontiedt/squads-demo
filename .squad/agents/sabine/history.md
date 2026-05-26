@@ -124,3 +124,11 @@
 - MVP-4 was rules + worker + web-shell focused (Wedge schema RFC, Artoo Move/Attack-vs-Capital/win, Cassian arcs/E2E, Lando board/HUD). No new card data or visuals landed.
 - Carry-forward: HRE / Mongols / Norsemen / Ottomans / Scots civ stubs are still the open queue, per the pinned convention. Will pick up after MVP-5 capital-RFC migration or as parallel work if the queue allows.
 
+
+### 2025-11-21 — MVP-5 catalog backfill complete
+
+PR #95 shipped — strict Effect union enforced across Action and Tactic kinds in English catalog. `classFilter` on `Target` survived "Shield Wall" (infantry) and "Longbow Mastery" (archers) without re-theming. Byzantines catalog left as stub per MVP-5 scope.
+
+**Open:** card UI for Tactic / Event / Upgrade / Technology cards deferred to MVP-6 (Lando). My data is ready; the renderer isn't.
+
+**Carry-forward design notes for MVP-6:** when Reactions/Events/Technology/Upgrade land, expect new verbs (`attach-keyword`, `class-wide-passive`, `trigger-on-event`). Until those verbs are in `effects.ts`, those card kinds keep `z.unknown()` carve-outs.
