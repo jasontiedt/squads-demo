@@ -85,7 +85,11 @@ export type RuleErrorCode =
   // the `Effect` discriminated union (still loose `z.unknown()` for
   // catalog cards until #87 migrates them).
   | 'not_an_action_card'
-  | 'effect_not_typed';
+  | 'effect_not_typed'
+  // PlayTactic (#86) — same as PlayAction but rejects non-tactic cards.
+  // `not_a_tactic` parallels `not_an_action_card`; per-card
+  // `playableIn` rejection re-uses the existing `wrong_phase` code.
+  | 'not_a_tactic';
 
 export interface RuleError {
   readonly code: RuleErrorCode;

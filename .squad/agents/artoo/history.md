@@ -89,3 +89,18 @@ Active learnings below.
 - **PR #79 (#78 Attack-vs-Capital):** lifted the deliberate `not_implemented` stub Cassian found mid-flight during #77. Same gates as unit-vs-unit attack; unblocked the capital-zero arc.
 - Rules engine now covers the full MVP-4 action surface. Next: pick up the MVP-5 capital-RFC migration (Wedge's PR #74 sketch).
 
+
+## Learnings — 2025-11-21T17:30:00Z
+
+### PlayTactic (#86) — implementation notes
+- Tactic resolution is structurally identical to PlayAction (#85): hand→discard, payCost, dispatch, atomic rollback on dispatch err. Only catalog kind check differs (`'tactic'` vs `'action'`).
+- Tactics have a per-card `playableIn: array(TacticPhase).min(1)` not present on action cards. The handler enforces it after the kind check, before effect parsing. Re-uses existing `wrong_phase` error code rather than introducing a new one.
+- Added `not_a_tactic` to `RuleErrorCode` in `result.ts` (paralleling `not_an_action_card`).
+
+### EndTurn buff cleanup (#86)
+- Schema's `TemporaryBuff.expires` is currently a single literal `'end-of-turn'`. The defensive filter `b.expires !== 'end-of-turn'` is future-proof against schema relaxation but currently strips ALL temporary buffs.
+- Implementation drops the `temporaryBuffs` field entirely when the filtered array is empty (avoids stable-snapshot churn from `[]` vs `undefined` diffs).
+- Pinned interpretation: cleanup applies to ALL units regardless of owner. The schema header comment narrows to "active player's units", but enemy debuffs need to expire at the caster's EndTurn or they'd linger. Tagged as `needs-confirmation` in the test file.
+
+### Test mocking pattern (new for this repo)
+- No `vi.mock` precedent existed in this repo. The PlayTactic happy path requires a typed-effect tactic card, but the real catalog only ships string-effect tactics until #87. Introduced `vi.mock('@eoe/assets-meta', ...)` at the top of `playTactic.test.ts` with a top-level await for `import('../applyAction.js')` to wire the mocked module before the rules code loads. This is the first mocking pattern in `packages/rules` — reuse for future handlers that need typed-effect catalog cards before #87 lands.
