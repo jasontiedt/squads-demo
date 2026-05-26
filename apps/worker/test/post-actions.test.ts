@@ -201,7 +201,13 @@ describe('POST /games/:code/actions — happy path', () => {
     expect(seat1).toBeDefined();
     if (seat1 === undefined) return;
 
-    const newHand = [ACTION_CARD, ...seat1.hand.slice(1)];
+    // Build hand: ACTION_CARD at slot 0, the rest of the dealt hand
+    // with any other ACTION_CARD copies stripped so the post-play
+    // hand assertion can rely on uniqueness.
+    const newHand = [
+      ACTION_CARD,
+      ...seat1.hand.slice(1).filter((c) => c !== ACTION_CARD),
+    ];
     // Strip ACTION_CARD from the deck so the post-play draw can't
     // accidentally pull it back into the hand — that would defeat the
     // `not.toContain(ACTION_CARD)` assertion below.
