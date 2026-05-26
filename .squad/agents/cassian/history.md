@@ -88,3 +88,13 @@ Without these, vite can't resolve `@eoe/schema` from the worktree. Worth telling
 - Initial spawn on #72 returned silent-success; second pass completed clean. Same recovery pattern as previous sessions.
 - Carry-forward: expand needs-confirmation around the MVP-5 capital-RFC migration (new shape will need fixtures updated).
 
+
+## Learnings — 2025-11-21T18:30:00Z (Issue #89 — MVP-5 acceptance arc)
+
+- **MVP-5 acceptance pattern:** Integration tests live in `apps/worker/test/integration-*.test.ts`. They compose existing unit-level contracts (PlayAction, PlayTactic, EndTurn cleanup, seat-scoped GET redaction) into cohesive end-to-end arcs through the real Worker HTTP surface via MemoryKV. Don't duplicate unit coverage — combine.
+- **Prefer real catalog cards over synthetic state.** `eng-levy-the-fyrd` (action, draw 2) and `eng-shield-wall` (tactic, buff infantry +1 health EoT) are typed against the locked Effect DSL and exercise real dispatch paths. Patch KV to seed hand + resources, not to invent fake cards.
+- **Dispatcher hardcodes `expires:'end-of-turn'`** in `applyBuffUnitStat` regardless of catalog `duration` field. `TemporaryBuff` schema only has the `'end-of-turn'` variant — no non-expiring buffs through PlayTactic. EndTurn cleanup strips buffs from ALL units (own AND enemy, pinned interpretation) and drops the `temporaryBuffs` field entirely when the array empties.
+- **Class-filter dispatch reads `loadCivMeta(owner.civ)`** to resolve a unit's catalog class. To seed enemy infantry, use a real english unit cardId (`eng-watchman`) and set the joining player's civ to english so the dispatch resolves correctly.
+- **Seat-scoped GET contract** (`/games/:code?seat=N`, Issue #88): invalid seat (non-1..4) → 400 `{code:'bad_request'}`; valid seat + bearer mismatch → 401 `{code:'unauthorized'}`; success → 200 `{state, version, seat}` with seat N's hand unredacted as `CardId[]`, others as `{count}`. Anonymous GET (no `?seat=`) still redacts all hands — the seat-scoped path is additive, not replacement.
+- **Test 3 (Playwright e2e action-card smoke) dropped per fallback rule.** The english deck is 20 cards (16 unit + 4 non-unit); opening 5-card hand has ~28% chance of zero action cards. No admin seed endpoint exists for e2e. Click-path coverage already lives in `apps/web/src/__tests__/PlayCardUi.needs-confirmation.test.tsx`. Shipped MVP-5 as Test 1 + Test 2 only.
+- **Worktree workflow verified:** Spawned in `c:/GitRepos/squads-demo-89` on `copilot/89-integration-arc`. Pre-existing node_modules junctions worked; vitest ran clean. Stayed in the worktree — never touched the main checkout.
