@@ -216,4 +216,139 @@ describe('GET /games/:code', () => {
     const body = (await res.json()) as GetResponse;
     expect(body.seat).toBeUndefined();
   });
+
+  // ─── Issue #88: ?seat=N explicit unredact ────────────────────────
+
+  it('?seat=1 with creator Bearer unredacts seat 1, keeps seat 2 redacted', async () => {
+    const { env, kv } = buildEnv();
+    const { gameCode, creatorToken } = await createAndJoin(env);
+    const stored = kv.peek<{
+      state: { players: Record<string, { hand: string[] } | undefined> };
+    }>(`game:${gameCode}`);
+    const trueHand = stored?.state.players['1']?.hand ?? [];
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=1`,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${creatorToken}` },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as GetResponse;
+    expect(body.seat).toBe(1);
+    const ownHand = body.state.players['1']?.hand;
+    expect(Array.isArray(ownHand)).toBe(true);
+    expect(ownHand).toEqual(trueHand);
+    expect(body.state.players['2']?.hand).toEqual({ count: 5 });
+  });
+
+  it('?seat=2 with creator Bearer returns 401 (wrong-seat token)', async () => {
+    const { env } = buildEnv();
+    const { gameCode, creatorToken } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=2`,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${creatorToken}` },
+    });
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('unauthorized');
+  });
+
+  it('?seat=2 with joiner Bearer unredacts seat 2, keeps seat 1 redacted', async () => {
+    const { env, kv } = buildEnv();
+    const { gameCode, joinerToken } = await createAndJoin(env);
+    const stored = kv.peek<{
+      state: { players: Record<string, { hand: string[] } | undefined> };
+    }>(`game:${gameCode}`);
+    const trueHand = stored?.state.players['2']?.hand ?? [];
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=2`,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${joinerToken}` },
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as GetResponse;
+    expect(body.seat).toBe(2);
+    const ownHand = body.state.players['2']?.hand;
+    expect(Array.isArray(ownHand)).toBe(true);
+    expect(ownHand).toEqual(trueHand);
+    expect(body.state.players['1']?.hand).toEqual({ count: 5 });
+  });
+
+  it('no ?seat= param → both hands redacted (regression guard for anon GET)', async () => {
+    const { env } = buildEnv();
+    const { gameCode } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}`,
+      method: 'GET',
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as GetResponse;
+    expect(body.state.players['1']?.hand).toEqual({ count: 5 });
+    expect(body.state.players['2']?.hand).toEqual({ count: 5 });
+    expect(body.seat).toBeUndefined();
+  });
+
+  it('?seat=5 (out of range) returns 400 bad_request', async () => {
+    const { env } = buildEnv();
+    const { gameCode, creatorToken } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=5`,
+      method: 'GET',
+      headers: { Authorization: `Bearer ${creatorToken}` },
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('bad_request');
+  });
+
+  it('?seat=99 (out of range) returns 400 even without bearer', async () => {
+    const { env } = buildEnv();
+    const { gameCode } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=99`,
+      method: 'GET',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('?seat=0 (out of range) returns 400', async () => {
+    const { env } = buildEnv();
+    const { gameCode } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=0`,
+      method: 'GET',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('?seat=abc (non-numeric) returns 400', async () => {
+    const { env } = buildEnv();
+    const { gameCode } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=abc`,
+      method: 'GET',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('?seat=1 without any Authorization header returns 401', async () => {
+    const { env } = buildEnv();
+    const { gameCode } = await createAndJoin(env);
+
+    const res = await call(env, {
+      url: `http://example.com/games/${gameCode}?seat=1`,
+      method: 'GET',
+    });
+    expect(res.status).toBe(401);
+    const body = (await res.json()) as { code: string };
+    expect(body.code).toBe('unauthorized');
+  });
 });
