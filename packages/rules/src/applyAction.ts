@@ -6,6 +6,7 @@ import { drawAndDiscardCleanup } from './draw.js';
 import { move } from './move.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playAction } from './playAction.js';
+import { playTactic } from './playTactic.js';
 import { err, ok, type Result } from './result.js';
 import { scout } from './scout.js';
 
@@ -131,8 +132,29 @@ export function applyAction(
     case 'EndTurn': {
       const { next, wrapped } = rotateSeat(state);
       const cleaned = drawAndDiscardCleanup(state);
+
+      // Issue #86: strip temporary buffs with `expires: 'end-of-turn'`
+      // from every unit. Applied to ALL units (not just the active
+      // seat's) because debuffs can target enemy units; "until end of
+      // turn" canonically means the current player's EndTurn regardless
+      // of unit ownership. See needs-confirmation test in
+      // playTactic.test.ts for the pinned interpretation.
+      const unitsAfterBuffCleanup = cleaned.units.map((u) => {
+        if (u.temporaryBuffs === undefined || u.temporaryBuffs.length === 0) {
+          return u;
+        }
+        const kept = u.temporaryBuffs.filter((b) => b.expires !== 'end-of-turn');
+        if (kept.length === u.temporaryBuffs.length) return u;
+        // Drop the field entirely when empty — matches the optional-
+        // convention used elsewhere (avoids stable-snapshot churn).
+        const { temporaryBuffs: _drop, ...rest } = u;
+        void _drop;
+        return kept.length === 0 ? rest : { ...rest, temporaryBuffs: kept };
+      });
+
       const advanced: GameState = {
         ...cleaned,
+        units: unitsAfterBuffCleanup,
         phase: 'start',
         activePlayer: next,
         turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
@@ -211,6 +233,13 @@ export function applyAction(
     case 'PlayAction':
       return playAction(state, action, actorId);
 
+    // Issue #86: PlayTactic — parallel to PlayAction for Tactic cards.
+    // Same atomic pay → discard → dispatch flow, with an additional
+    // per-card `playableIn` check (Tactics may restrict to mobilization
+    // OR deployment even though the action-type gate accepts both).
+    case 'PlayTactic':
+      return playTactic(state, action, actorId);
+
     // Issue #56: Scout — reveal a face-down tile (MVP-3, no adjacency).
     case 'Scout':
       return scout(state, action, actorId);
@@ -233,7 +262,6 @@ export function applyAction(
     case 'UnitAbility':
     case 'Resupply':
     case 'RecruitDraw':
-    case 'PlayTactic':
     case 'PlayTechnology':
     case 'PlayUpgrade':
     case 'PlayEvent':
