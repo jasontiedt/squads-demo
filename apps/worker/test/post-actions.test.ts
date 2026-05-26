@@ -202,6 +202,10 @@ describe('POST /games/:code/actions — happy path', () => {
     if (seat1 === undefined) return;
 
     const newHand = [ACTION_CARD, ...seat1.hand.slice(1)];
+    // Strip ACTION_CARD from the deck so the post-play draw can't
+    // accidentally pull it back into the hand — that would defeat the
+    // `not.toContain(ACTION_CARD)` assertion below.
+    const newDeck = seat1.deck.filter((c) => c !== ACTION_CARD);
     const newResources = [
       { id: 'res-test-w1', kind: 'wild' as const, exhausted: false },
       { id: 'res-test-w2', kind: 'wild' as const, exhausted: false },
@@ -212,14 +216,14 @@ describe('POST /games/:code/actions — happy path', () => {
         ...stored.state,
         players: {
           ...stored.state.players,
-          1: { ...seat1, hand: newHand, resources: newResources },
+          1: { ...seat1, hand: newHand, deck: newDeck, resources: newResources },
         },
       },
     };
     await kv.put(gameKey(gameCode), JSON.stringify(patched));
 
     const handLenBefore = newHand.length;
-    const deckLenBefore = seat1.deck.length;
+    const deckLenBefore = newDeck.length;
 
     const res = await postAction(env, gameCode, {
       seat: 1,
