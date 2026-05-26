@@ -115,7 +115,7 @@ describe('PlayCard UI — issue #37', () => {
     expect(screen.getByTestId('hand-count').textContent).toBe(String(CARDS.length));
   });
 
-  it('click dispatches { type:"PlayCard", cardId, target:undefined } with current version', async () => {
+  it('click dispatches { type:"PlayAction", cardId } with current version', async () => {
     const postAction = vi.fn().mockResolvedValueOnce({
       state: makeState('STUB42', CARDS.slice(1), { version: 8 }),
       version: 8,
@@ -146,9 +146,8 @@ describe('PlayCard UI — issue #37', () => {
       Parameters<GameApi['postAction']>[0],
     ];
     expect(arg.action).toEqual({
-      type: 'PlayCard',
+      type: 'PlayAction',
       cardId: CARDS[0],
-      target: undefined,
     });
     expect(arg.expectedVersion).toBe(7);
   });
@@ -235,9 +234,8 @@ describe('PlayCard UI — issue #37', () => {
     ];
     expect(secondCall.expectedVersion).toBe(5);
     expect(secondCall.action).toEqual({
-      type: 'PlayCard',
+      type: 'PlayAction',
       cardId: CARDS[0],
-      target: undefined,
     });
     await waitFor(() => {
       expect(useSession.getState().currentGameState?.version).toBe(6);

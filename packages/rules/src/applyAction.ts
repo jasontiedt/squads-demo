@@ -5,7 +5,7 @@ import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
 import { move } from './move.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
-import { playCard } from './playCard.js';
+import { playAction } from './playAction.js';
 import { err, ok, type Result } from './result.js';
 import { scout } from './scout.js';
 
@@ -204,9 +204,12 @@ export function applyAction(
     case 'DeployUnit':
       return deployUnit(state, action, actorId);
 
-    // Issue #36: PlayCard — generic card-play with "draw 1" effect.
-    case 'PlayCard':
-      return playCard(state, action, actorId);
+    // Issue #85: PlayAction — Action-card resolution via typed effect
+    // dispatcher. Pays cost, moves hand→discard, then routes the card's
+    // `effect` payload through `effects/dispatch.ts`. Replaces the old
+    // generic PlayCard handler (deleted in #85).
+    case 'PlayAction':
+      return playAction(state, action, actorId);
 
     // Issue #56: Scout — reveal a face-down tile (MVP-3, no adjacency).
     case 'Scout':
@@ -233,7 +236,6 @@ export function applyAction(
     case 'PlayTactic':
     case 'PlayTechnology':
     case 'PlayUpgrade':
-    case 'PlayAction':
     case 'PlayEvent':
     case 'DiscardEvent':
     case 'PlayReaction':

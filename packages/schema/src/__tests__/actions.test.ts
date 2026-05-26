@@ -14,7 +14,6 @@ import {
   EndTurnAction,
   MoveUnitAction,
   PlayActionCardAction,
-  PlayCardAction,
   PlayEventAction,
   PlayReactionAction,
   PlayTacticAction,
@@ -118,16 +117,13 @@ describe('Mobilization actions — happy parse + reject missing required', () =>
     expect(() => PlayTacticAction.parse({ ...a, cardId: undefined })).toThrow();
   });
 
-  it('PlayCard — cardId required, target optional, rejects extras (strict)', () => {
-    const a = { type: 'PlayCard', cardId: c('eng-tactic-rally') };
-    expect(PlayCardAction.parse(a)).toEqual(a);
-    expect(() => PlayCardAction.parse({ ...a, cardId: undefined })).toThrow();
-    // Optional target accepted (forward-compat for future card effects).
-    const withTarget = { ...a, target: { unitId: u('u1') } };
-    expect(PlayCardAction.parse(withTarget)).toEqual(withTarget);
+  it('PlayAction — cardId required, rejects extras (strict)', () => {
+    const a = { type: 'PlayAction', cardId: c('eng-action-rally') };
+    expect(PlayActionCardAction.parse(a)).toEqual(a);
+    expect(() => PlayActionCardAction.parse({ ...a, cardId: undefined })).toThrow();
     // Strict — unknown keys rejected.
     expect(() =>
-      PlayCardAction.parse({ ...a, extraField: 'nope' }),
+      PlayActionCardAction.parse({ ...a, extraField: 'nope' }),
     ).toThrow();
   });
 });describe('AttackAction refine — exactly one target', () => {
@@ -294,7 +290,6 @@ describe('Action discriminated union', () => {
     { type: 'PlayAction', sample: { type: 'PlayAction', cardId: c('act-1') } },
     { type: 'PlayEvent', sample: { type: 'PlayEvent', cardId: c('evt-1') } },
     { type: 'DiscardEvent', sample: { type: 'DiscardEvent', cardId: c('evt-1') } },
-    { type: 'PlayCard', sample: { type: 'PlayCard', cardId: c('card-x') } },
     {
       type: 'PlayReaction',
       sample: { type: 'PlayReaction', cardId: c('rxn-1'), triggerLogIndex: 0 },

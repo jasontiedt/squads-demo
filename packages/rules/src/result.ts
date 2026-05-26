@@ -78,7 +78,14 @@ export type RuleErrorCode =
   | 'unit_not_found'
   | 'unit_not_yours'
   | 'unit_exhausted'
-  | 'illegal_move';
+  | 'illegal_move'
+  // PlayAction (#85) — effect-dispatch error path. `not_an_action_card`
+  // catches a hand card that isn't `kind: 'action'`. `effect_not_typed`
+  // catches an action card whose `effect` payload doesn't parse against
+  // the `Effect` discriminated union (still loose `z.unknown()` for
+  // catalog cards until #87 migrates them).
+  | 'not_an_action_card'
+  | 'effect_not_typed';
 
 export interface RuleError {
   readonly code: RuleErrorCode;

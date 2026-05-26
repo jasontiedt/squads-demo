@@ -23,7 +23,8 @@ export {
     type PhaseLegality
 } from './phases.js';
 export { payCost } from './payCost.js';
-export { playCard } from './playCard.js';
+export { playAction } from './playAction.js';
+export { dispatchEffect, type EffectContext } from './effects/dispatch.js';
 export { scout } from './scout.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
 export { mulberry32, seedFor } from './rng.js';

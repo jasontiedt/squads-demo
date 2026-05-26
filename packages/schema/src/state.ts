@@ -157,6 +157,28 @@ export type PawnBonus = z.infer<typeof PawnBonus>;
  * `id` is this specific instance (so two copies of the same unit have
  * distinct ids and independent damage / upgrades / pawn bonus).
  */
+/**
+ * A temporary stat modifier on a unit. Buff effects from Action / Tactic
+ * cards (e.g. "+1 melee until end of turn") append to a unit's
+ * `temporaryBuffs` array. The EndTurn cleanup hook strips entries with
+ * `expires: 'end-of-turn'` from the active player's units.
+ *
+ * Issue #85: introduced by the Effect dispatcher to back `buff-unit-stat`.
+ * `delta` is non-zero (zero buffs would be a no-op clutter); the rules
+ * engine enforces this at apply time, the schema only requires `int`.
+ */
+export const TemporaryBuff = z.object({
+  stat: z.enum(['melee', 'ranged', 'health']),
+  delta: z.number().int(),
+  expires: z.literal('end-of-turn'),
+});
+export type TemporaryBuff = z.infer<typeof TemporaryBuff>;
+
+/**
+ * A deployed unit on the board. `cardId` references the catalog card;
+ * `id` is this specific instance (so two copies of the same unit have
+ * distinct ids and independent damage / upgrades / pawn bonus).
+ */
 export const UnitInstance = z.object({
   id: UnitInstanceId,
   cardId: CardId,
@@ -167,6 +189,7 @@ export const UnitInstance = z.object({
   attackMode: AttackMode,
   upgrades: z.array(CardId),
   pawnBonus: PawnBonus.optional(),
+  temporaryBuffs: z.array(TemporaryBuff).optional(),
 });
 export type UnitInstance = z.infer<typeof UnitInstance>;
 

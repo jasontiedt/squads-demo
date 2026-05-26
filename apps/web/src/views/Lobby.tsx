@@ -438,12 +438,14 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
       return;
     }
 
-    // Non-unit (or unknown) card → dispatch PlayCard immediately.
+    // Non-unit (or unknown) card → dispatch PlayAction immediately
+    // (typed action-card play, replaced generic PlayCard in #85).
+    // NOTE: kinds other than `action` will be rejected by the rules
+    // engine; UI for tactic/event/upgrade/technology lands in MVP-6.
     clearSelection();
     void dispatchAction({
-      type: 'PlayCard',
+      type: 'PlayAction',
       cardId: cardId as CardId,
-      target: undefined,
     });
   };
 
