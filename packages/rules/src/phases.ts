@@ -62,11 +62,8 @@ export const ACTION_PHASE_LEGALITY: Readonly<Record<ActionType, ReadonlyArray<Ph
   PlayEvent: ['deployment'],
   DiscardEvent: ['deployment'],
 
-  // PlayCard (MVP-2 / #36): generic card-play, legal in either action
-  // window. Matches Tactic's pattern — card-play isn't tied to the
-  // board-mutation Mobilization or the deployment-only window because
-  // the underlying effect (draw 1, for MVP-2) is phase-agnostic.
-  PlayCard: ['mobilization', 'deployment'],
+  // PlayCard (MVP-2 / #36) was removed in #85; PlayAction (above)
+  // replaces it as the typed action-card play.
 
   // ─── Opponent's turn (reaction window) ───
   // Legal whenever the OPPONENT holds the active turn; phase irrelevant.
