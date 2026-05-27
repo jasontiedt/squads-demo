@@ -1,4 +1,4 @@
-import type { Action, GameState, Tile } from '@eoe/schema';
+import type { Action, GameState, Tile, TileId } from '@eoe/schema';
 import { describe, expect, it } from 'vitest';
 
 import { applyAction } from '../applyAction.js';
@@ -19,7 +19,7 @@ import { baseState, SEAT_1, SEAT_2 } from './fixtures.js';
 
 /** Face-down highland tile at coords (2,2) (2,3) (3,2) (3,3). */
 const faceDownTile: Tile = {
-  id: 't-highland-1',
+  id: 't-highland-1' as TileId,
   kind: 'highland',
   orientation: 0,
   faceDown: true,

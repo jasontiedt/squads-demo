@@ -6,6 +6,7 @@ import type {
   ResourceToken,
   ResourceTokenId,
   Tile,
+  TileId,
   UnitInstance,
 } from '@eoe/schema';
 import { describe, expect, it } from 'vitest';
@@ -77,7 +78,7 @@ function makeUnit(
 /** All-plains 2×2 tile at the given top-left origin. */
 function plainsTile(id: string, origin: { x: number; y: number }): Tile {
   return {
-    id,
+    id: id as TileId,
     kind: 'starting',
     orientation: 0,
     faceDown: false,
