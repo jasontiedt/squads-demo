@@ -9,6 +9,8 @@ import type {
 
 import { drawCard } from '../draw.js';
 import { err, ok, type Result } from '../result.js';
+import { applyAttachKeyword } from './attachKeyword.js';
+import { applyClassWidePassive } from './classWidePassive.js';
 
 // ─────────────────────────── Effect dispatcher (Issue #85) ───────────
 //
@@ -26,6 +28,12 @@ import { err, ok, type Result } from '../result.js';
 //     return `err('not_implemented', ...)`. Implementations follow in
 //     future issues once damage / capital-heal / temp-resource grants
 //     have their own design notes.
+//
+// MVP-6 S2 (#98): extends the union to 7 verbs. Both new verbs are
+// pure registrations (no card-rule lifecycle); see
+// `./attachKeyword.ts` and `./classWidePassive.ts` for shape rationale.
+//   • `attach-keyword`      — appends to `UnitInstance.attachments`.
+//   • `class-wide-passive`  — pushes onto `state.classWidePassives`.
 //
 // Determinism: no RNG, no clock, no I/O. `loadCivMeta` is a compile-time
 // JSON import.
@@ -50,6 +58,10 @@ export function dispatchEffect(
       return applyDraw(state, effect, ctx);
     case 'buff-unit-stat':
       return applyBuffUnitStat(state, effect, ctx);
+    case 'attach-keyword':
+      return applyAttachKeyword(state, effect, ctx);
+    case 'class-wide-passive':
+      return applyClassWidePassive(state, effect, ctx);
     case 'damage':
       return err(
         'not_implemented',
