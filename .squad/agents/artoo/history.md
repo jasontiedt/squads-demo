@@ -12,6 +12,20 @@ Active learnings below.
 
 <!-- Append new learnings below. -->
 
+### 2026-XX-XX: Issue #103 Part A — Admin seed endpoint (PR #110)
+
+- **Worker-only feature.** Spec was tightly scoped: `POST /admin/games/:code/seed` gated by `X-Admin-Secret` header, overwrites both seats' `deck` (in order) and `hand` before any action has been applied. Refused to touch `packages/rules` or `packages/schema` per the issue.
+- **Auth pattern (new in this repo):** `Env.ADMIN_SECRET?: string` — Cloudflare secret, set via `wrangler secret put ADMIN_SECRET`, NOT declared in `wrangler.toml [vars]`. When the binding is unset, the endpoint refuses ALL callers (returns 403 `forbidden`). Production deploys that omit the secret intentionally disable the route. Added a doc comment block in `wrangler.toml` to make this discoverable.
+- **Seed invariant key:** `state.moveLog.length === 0` means seedable. After ANY action has been applied (`EndTurn`, `Move`, etc.) a seed would corrupt history (cards already drawn would vanish from hands → engine state-machine drift). Returns 409 `game_started`. Separately, if seat 2 hasn't joined yet → 409 `not_joined`.
+- **Branded ids at boundaries:** Request body uses `z.array(z.string().min(1))`. `CardId` is `z.string().min(1).brand<'CardId'>()`. I cast `as CardId[]` once at the handler boundary, NOT in the Zod schema — keeps the schema honest (it really IS just strings on the wire) and the rules engine validates card existence at draw time anyway. Don't try to make Zod produce a branded array; cast.
+- **`loadGame` does NO Zod parse** (plain `JSON.parse(raw) as StoredGame`). Means tests can inject synthetic `moveLog` entries via `kv.put(gameKey(code), JSON.stringify(dirty))` without worrying about strict schema validation rejecting the fixture. Saved me writing a real "play one action" fixture for the 409 `game_started` test.
+- **`ActionLogEntry` shape** (in `packages/schema/src/state.ts:337`): `{ at: ISO datetime, seat: Seat, action: Action }`. Synthetic entry for tests: `{ at: '2025-01-01T00:00:00.000Z', seat: 1, action: { type: 'EndTurn' } }`.
+- **`exactOptionalPropertyTypes` + optional `ADMIN_SECRET` in test harness:** Cannot set `{ ADMIN_SECRET: undefined }` — must omit the field entirely. Used conditional spread `...(opts && 'adminSecret' in opts ? opts.adminSecret === undefined ? {} : { ADMIN_SECRET: opts.adminSecret } : { ADMIN_SECRET })`. Ugly but exact-optional-safe.
+- **Strict body schemas catch unknown keys:** `.strict()` on the Zod object means clients can't smuggle extra fields. Test case for `{ ...seedBody(), extra: 'nope' }` → 400 `invalid_body` proves this and serves as living documentation of the contract.
+- **Idempotency test pattern:** `JSON.stringify(kv.peek(...))` twice and compare strings. Cheap, no manual deep-equal, surfaces map-order issues if they ever crop up.
+- **Pre-existing typecheck noise:** `pnpm -F @eoe/worker typecheck` fails on main with BRAND errors in `test/integration-mvp5-*.test.ts`. Not mine — verified by running typecheck against main checkout. Worker test suite still passes (66/66).
+- Tests: worker 55 → 66 (+11).
+
 ### 2026-05-22: Issue #57 — Capital placement + board init extracted to @eoe/rules (PR #61)
 
 - **Moved from worker → `packages/rules/`:** `constants.ts` (`CAPITAL_DEFAULT_HP = 20`, `STARTING_HAND_SIZE = 5`, `MIN_DECK_AFTER_DRAW = 7`), `shuffle.ts` (`shuffleWith<T>`), `initialState.ts` (`buildCreatorState`, `addJoiner`). Worker's `game-init.ts` is now a 14-line re-export shim — call sites unchanged.
