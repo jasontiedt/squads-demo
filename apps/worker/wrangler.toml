@@ -17,3 +17,8 @@ ALLOWED_ORIGINS = "https://jasontiedt.github.io,http://localhost:5173,http://loc
 [[kv_namespaces]]
 binding = "GAMES"
 id = "fc7865669f1247bf9d4a76df50c6029b"
+
+# Admin seed secret (#103). NOT committed — set per-environment via:
+#   wrangler secret put ADMIN_SECRET
+# When the binding is unset/empty the `POST /admin/games/:code/seed`
+# endpoint refuses ALL callers (production deploys SHOULD omit it).

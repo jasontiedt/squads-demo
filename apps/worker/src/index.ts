@@ -11,10 +11,20 @@ import { handleCreateGame } from './routes/create-game.js';
 import { handleJoinGame } from './routes/join-game.js';
 import { handleActions } from './routes/post-action.js';
 import { handleGetGame } from './routes/get-game.js';
+import { handleAdminSeed } from './routes/admin-seed.js';
 
 export interface Env {
   ALLOWED_ORIGINS: string;
   GAMES: KVNamespace;
+  /**
+   * Optional admin secret (#103). When set (via `wrangler secret put
+   * ADMIN_SECRET` per environment), enables `POST /admin/games/:code/seed`
+   * for callers that present a matching `X-Admin-Secret` header.
+   * Production deploys MAY omit this binding to disable the route
+   * entirely; the handler refuses all callers when the secret is
+   * undefined or empty.
+   */
+  ADMIN_SECRET?: string;
 }
 
 export default {
@@ -46,6 +56,13 @@ export default {
     if (request.method === 'POST' && actionsMatch) {
       const code = actionsMatch[1] ?? '';
       return handleActions(request, env.GAMES, code, cors);
+    }
+
+    // POST /admin/games/:code/seed — admin deterministic seed (#103)
+    const adminSeedMatch = pathname.match(/^\/admin\/games\/([^/]+)\/seed$/);
+    if (request.method === 'POST' && adminSeedMatch) {
+      const code = adminSeedMatch[1] ?? '';
+      return handleAdminSeed(request, env.GAMES, code, env.ADMIN_SECRET, cors);
     }
 
     // GET /games/:id — read state (#13)
