@@ -110,10 +110,11 @@ describe('applyAction seat gate', () => {
     for (const phase of ALL_PHASES) {
       const state = withState({ phase, activePlayer: 1 });
       const result = applyAction(state, stubAction('PlayReaction'), SEAT_2);
-      // Gate should pass — implementation returns `not_implemented`.
+      // Gate passes — handler then sees no open window and returns
+      // `no_window_open` (issue #101). Previously was `not_implemented`.
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.error.code).toBe('not_implemented');
+        expect(result.error.code).toBe('no_window_open');
       }
     }
   });

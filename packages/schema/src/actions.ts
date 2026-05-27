@@ -286,6 +286,23 @@ export const PlayReactionAction = z
   .strict();
 export type PlayReactionAction = z.infer<typeof PlayReactionAction>;
 
+/**
+ * PassReaction — explicit pass on the open reaction window. Played by
+ * the `eligibleSeat` to close the window without playing a Reaction
+ * card. MVP-6 S5 (#101).
+ *
+ * No payload — the open window's identity is implicit in
+ * `state.pendingReactionWindow`. Eligibility (window exists +
+ * actor === eligibleSeat) is validated by the handler in
+ * `packages/rules/src/applyAction.ts`.
+ */
+export const PassReactionAction = z
+  .object({
+    type: z.literal('PassReaction'),
+  })
+  .strict();
+export type PassReactionAction = z.infer<typeof PassReactionAction>;
+
 // ─────────────────────────── Phase control ───────────────────────────
 
 export const EndPhaseAction = z
@@ -332,6 +349,7 @@ export const Action = z
     DiscardEventAction,
     // Opponent
     PlayReactionAction,
+    PassReactionAction,
     // Phase control
     EndPhaseAction,
     EndTurnAction,
@@ -370,6 +388,7 @@ export const ACTION_TYPES = [
   'PlayEvent',
   'DiscardEvent',
   'PlayReaction',
+  'PassReaction',
   'EndPhase',
   'EndTurn',
 ] as const;

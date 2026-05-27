@@ -5,6 +5,7 @@ import { Civ } from './civ.js';
 import { ClassWidePassiveModifier, Effect } from './effects.js';
 import { BuildingInstanceId, Seed, TileId, UnitInstanceId } from './ids.js';
 import { ResourceToken, TemporaryResource } from './resources.js';
+import { ReactionTrigger, TriggerContext } from './triggers.js';
 
 // ─────────────────────────── Game state ──────────────────────────────
 //
@@ -364,12 +365,36 @@ const GameMap = z.object({
 });
 
 /**
- * Reaction-window slot. Empty for MVP-1 — schema-shaped so #5's Action
- * union and the rules engine can populate it without a schema change.
+ * Reaction-window slot. MVP-6 S5 (#101) — opened by an action that
+ * emits a matching trigger; cleared by a `PlayReaction` (after the
+ * reaction effect fires) or a `PassReaction` from the eligible seat.
+ *
+ * Singular by design (Wedge lock §4 L4: "one window open at a time
+ * across all seats"). Attempts to open a second window while one
+ * exists are a no-op — see `openReactionWindow` in
+ * `packages/rules/src/reactionWindow.ts`.
+ *
+ * Fields:
+ *   • `trigger` — the typed `ReactionTrigger` (kind + filters). Cards
+ *     match against this on the `kind` discriminator.
+ *   • `triggerContext` — opaque per-window metadata (e.g. attacker
+ *     unit id, damage amount, played card id). Loose `record<string,
+ *     unknown>` for S5; reserved for UI rendering and future
+ *     refinements of eligibility checks.
+ *   • `eligibleSeat` — the seat allowed to play `PlayReaction` /
+ *     `PassReaction` in this window. Typically the non-active seat.
+ *   • `deadline` — optional server-side timeout marker (e.g. poll
+ *     count or unix ms). Not enforced by the rules engine in S5;
+ *     reserved for the Worker's auto-pass path.
  */
-const PendingReactionWindow = z.object({
-  triggeredBy: ActionLogEntry,
-});
+const PendingReactionWindow = z
+  .object({
+    trigger: ReactionTrigger,
+    triggerContext: TriggerContext,
+    eligibleSeat: Seat,
+    deadline: z.number().int().nonnegative().optional(),
+  })
+  .strict();
 
 /**
  * Registered class-wide passive (#98). Technology cards (and any future

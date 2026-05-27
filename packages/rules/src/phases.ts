@@ -67,7 +67,10 @@ export const ACTION_PHASE_LEGALITY: Readonly<Record<ActionType, ReadonlyArray<Ph
 
   // ─── Opponent's turn (reaction window) ───
   // Legal whenever the OPPONENT holds the active turn; phase irrelevant.
+  // MVP-6 S5 (#101): PassReaction parallels PlayReaction — explicit
+  // pass to close the open reaction window without playing a card.
   PlayReaction: ['opponent-turn'],
+  PassReaction: ['opponent-turn'],
 
   // ─── Phase control ───
   // EndPhase walks start → mobilization → deployment → end.

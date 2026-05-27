@@ -305,13 +305,14 @@ describe('needs-confirmation suite invariants', () => {
   });
 
   it('does not depend on any opponent-seat behavior', () => {
-    // Smoke: SEAT_2 reactions should remain gated as `not_implemented`
-    // (see phases.test.ts). This guards against accidental seat-2
-    // coupling sneaking into a pinned-ambiguity fixture.
+    // Smoke: SEAT_2 reactions pass the seat gate and reach the
+    // PlayReaction handler. With no open window the handler returns
+    // `no_window_open` (issue #101). This guards against accidental
+    // seat-2 coupling sneaking into a pinned-ambiguity fixture.
     const state = withState({ phase: 'mobilization', activePlayer: 1 });
     const r = applyAction(state, stub('PlayReaction'), SEAT_2);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error.code).toBe('not_implemented');
+    if (!r.ok) expect(r.error.code).toBe('no_window_open');
   });
 });
 

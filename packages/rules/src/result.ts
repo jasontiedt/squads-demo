@@ -108,7 +108,19 @@ export type RuleErrorCode =
   // the actor already has 3 active events (rulebook §"Events" hard cap);
   // the engine NEVER auto-discards — caller resolves cap pressure.
   | 'not_an_event_card'
-  | 'event_cap_reached';
+  | 'event_cap_reached'
+  // PlayReaction (#101) — MVP-6 S5 opponent reaction window.
+  //   `no_window_open`   — no `pendingReactionWindow` is currently set.
+  //   `not_eligible_seat` — actor isn't the window's `eligibleSeat`
+  //                         (reactions are opponent-windowed).
+  //   `trigger_mismatch`  — the reaction card's `trigger.kind` does
+  //                         not match the open window's trigger.
+  //   `not_a_reaction`    — hand card resolved to a non-reaction card
+  //                         kind (parallels `not_an_action_card`).
+  | 'no_window_open'
+  | 'not_eligible_seat'
+  | 'trigger_mismatch'
+  | 'not_a_reaction';
 
 export interface RuleError {
   readonly code: RuleErrorCode;
