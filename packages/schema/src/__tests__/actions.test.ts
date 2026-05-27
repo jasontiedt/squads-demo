@@ -294,6 +294,7 @@ describe('Action discriminated union', () => {
       type: 'PlayReaction',
       sample: { type: 'PlayReaction', cardId: c('rxn-1'), triggerLogIndex: 0 },
     },
+    { type: 'PassReaction', sample: { type: 'PassReaction' } },
     { type: 'EndPhase', sample: { type: 'EndPhase' } },
     { type: 'EndTurn', sample: { type: 'EndTurn' } },
   ];
