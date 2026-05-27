@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Civ } from './civ.js';
 import { ResourceKind } from './resources.js';
 import { Effect } from './effects.js';
+import { ReactionTrigger } from './triggers.js';
 
 // ─────────────────────────────── Cards ───────────────────────────────
 //
@@ -144,18 +145,22 @@ export type ActionCard = z.infer<typeof ActionCard>;
 
 // ────────────────────────────── Reaction ─────────────────────────────
 //
-// Schema-only stub for MVP-1. Rules engine does NOT resolve reactions
-// yet; the shape exists so that catalog ingestion does not have to be
-// reworked when reactions are turned on. See rulebook §"Reaction" and
-// the open questions in `wedge-rulebook-synthesis.md`.
+// MVP-6 S5 (#101). Trigger taxonomy is now typed via the closed
+// 5-variant `ReactionTrigger` union (`./triggers.ts`). Effect reuses
+// the locked 7-verb `Effect` DSL — Reactions do NOT introduce a new
+// verb (Wedge lock §4 L5 in `wedge-mvp6-scope.md`).
+//
+// Card-rule semantics live in `packages/rules/src/playReaction.ts`:
+// a reaction may only resolve when `state.pendingReactionWindow` is
+// open, the playing seat matches `eligibleSeat`, and the card's
+// `trigger.kind` matches the window's `trigger.kind`.
 
 export const ReactionCard = z.object({
   ...CardCommon,
   kind: z.literal('reaction'),
   cost: CardCost,
-  /** Loose for MVP-1 — trigger taxonomy TBD. */
-  trigger: z.unknown(),
-  effect: z.unknown(),
+  trigger: ReactionTrigger,
+  effect: Effect,
 });
 export type ReactionCard = z.infer<typeof ReactionCard>;
 

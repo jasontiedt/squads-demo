@@ -23,13 +23,20 @@ export {
     nextPhase,
     type PhaseLegality
 } from './phases.js';
+export { passReaction } from './passReaction.js';
 export { payCost } from './payCost.js';
 export { playAction } from './playAction.js';
+export { playReaction } from './playReaction.js';
 export { playTactic } from './playTactic.js';
 export { playTechnology } from './playTechnology.js';
 export { playUpgrade } from './playUpgrade.js';
 export { effectiveStats, type EffectiveStats } from './effectiveStats.js';
 export { playEvent } from './playEvent.js';
+export {
+    closeReactionWindow,
+    eligibleReactions,
+    openReactionWindow,
+} from './reactionWindow.js';
 export { dispatchEffect, type EffectContext } from './effects/dispatch.js';
 export { capitalOf, tileOfSquare, unitsFor, unitsOnTile } from './queries.js';
 export { scout } from './scout.js';

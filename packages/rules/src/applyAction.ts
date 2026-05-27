@@ -5,9 +5,11 @@ import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
 import { eventTick } from './eventTick.js';
 import { move } from './move.js';
+import { passReaction } from './passReaction.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playAction } from './playAction.js';
 import { playEvent } from './playEvent.js';
+import { playReaction } from './playReaction.js';
 import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
@@ -285,6 +287,17 @@ export function applyAction(
     case 'MoveUnit':
       return move(state, action, actorId);
 
+    // Issue #101 (MVP-6 S5): PlayReaction — opponent-turn reaction
+    // resolution. Validates window + eligibility + trigger match, then
+    // pays cost, discards, dispatches effect, closes window.
+    case 'PlayReaction':
+      return playReaction(state, action, actorId);
+
+    // Issue #101 (MVP-6 S5): PassReaction — explicit pass on the open
+    // reaction window. Closes the window; no cost, no effect.
+    case 'PassReaction':
+      return passReaction(state, actorId);
+
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues.
@@ -296,7 +309,6 @@ export function applyAction(
     case 'Resupply':
     case 'RecruitDraw':
     case 'DiscardEvent':
-    case 'PlayReaction':
       return err(
         'not_implemented',
         `${action.type} passed phase/seat gating but its effect handler is not yet implemented`,

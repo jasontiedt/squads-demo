@@ -303,17 +303,16 @@ describe('GameState', () => {
   }
 
   it('accepts pendingReactionWindow when populated', () => {
-    const trigger = {
-      at: '2025-01-01T00:00:00.000Z',
-      seat: 1 as const,
-      action: { type: 'EndPhase' as const },
-    };
     const withWindow: GameState = {
       ...minimalState,
-      pendingReactionWindow: { triggeredBy: trigger },
+      pendingReactionWindow: {
+        trigger: { kind: 'on-card-played' },
+        triggerContext: { cardId: 'eng-action-foo', playedBy: 1 },
+        eligibleSeat: 2,
+      },
     };
-    expect(GameState.parse(withWindow).pendingReactionWindow?.triggeredBy.action.type).toBe(
-      'EndPhase',
+    expect(GameState.parse(withWindow).pendingReactionWindow?.trigger.kind).toBe(
+      'on-card-played',
     );
   });
 });

@@ -66,8 +66,10 @@ const sampleReaction = {
   id: 'r-1',
   name: 'Counter-Spell',
   cost: {},
-  trigger: { on: 'play' },
-  effect: 'placeholder',
+  // Typed via #101 — closed 5-trigger taxonomy.
+  trigger: { kind: 'on-card-played' as const },
+  // Typed via locked Effect DSL (#83/#87).
+  effect: { kind: 'draw' as const, count: 1 },
 };
 
 const sampleEvent = {
@@ -235,11 +237,18 @@ describe('ReactionCard (stub)', () => {
     expect(Card.safeParse(sampleReaction).success).toBe(true);
   });
 
-  it('accepts an arbitrary trigger payload (loose for MVP-1)', () => {
+  it('rejects an unknown trigger kind (closed at 5 via #101)', () => {
     expect(
-      Card.safeParse({ ...sampleReaction, trigger: ['anything', 1, null] })
+      Card.safeParse({ ...sampleReaction, trigger: { kind: 'on-eclipse' } })
         .success,
-    ).toBe(true);
+    ).toBe(false);
+  });
+
+  it('rejects a non-typed effect payload (Effect DSL locked)', () => {
+    expect(
+      Card.safeParse({ ...sampleReaction, effect: 'placeholder prose' })
+        .success,
+    ).toBe(false);
   });
 });
 
