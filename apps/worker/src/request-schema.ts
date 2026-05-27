@@ -41,3 +41,20 @@ export const PostActionBody = z
   })
   .strict();
 export type PostActionBody = z.infer<typeof PostActionBody>;
+
+/**
+ * POST /admin/games/:code/seed — admin-only deterministic seed of seat
+ * A + B decks and opening hands. Used by Playwright e2e to pin
+ * card-draw RNG out of the test flow. Gated by `X-Admin-Secret` in the
+ * route; invariant enforced there is that the game has not yet had any
+ * action applied (state.moveLog must be empty).
+ */
+export const AdminSeedBody = z
+  .object({
+    deckOrder: z.array(z.string().min(1)),
+    opponentDeckOrder: z.array(z.string().min(1)),
+    hand: z.array(z.string().min(1)),
+    opponentHand: z.array(z.string().min(1)),
+  })
+  .strict();
+export type AdminSeedBody = z.infer<typeof AdminSeedBody>;
