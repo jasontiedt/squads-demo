@@ -76,7 +76,8 @@ const sampleEvent = {
   name: 'Plague',
   cost: { gold: 3 },
   persistent: true as const,
-  effect: 'placeholder',
+  ticksRemaining: 3,
+  effect: { kind: 'draw' as const, count: 1 },
 };
 
 const sampleCivilization = {

@@ -140,9 +140,11 @@
       "flavor": "Emperor of the Romans, equal to the apostles, autocrat of the world. His face on every coin, his name in every prayer.",
       "cost": { "wild": 4 },
       "persistent": true,
-      "effect": "PLACEHOLDER: while active, your capital generates +1 gold each Mobilization phase. Effect payload is loose (z.unknown).",
+      "ticksRemaining": 3,
+      "effect": { "kind": "heal-capital", "amount": 1, "target": "self" },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Basileus modelled as a persistent event (the emperor's reign affecting the realm) rather than a unit or upgrade; the rulebook may have a different mechanical home for emperor-themed cards."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Basileus modelled as a persistent event (the emperor's reign affecting the realm) rather than a unit or upgrade; the rulebook may have a different mechanical home for emperor-themed cards.",
+        "effect.mapping": "#100 (MVP-6 S4): original prose flavor 'while active, your capital generates +1 gold each Mobilization phase' has NO clean DSL fit (no per-turn-resource verb, no recurring tick firing in MVP-6). Backfilled as on-play {heal-capital, amount:1, target:self-capital} — emperor's coronation blesses the realm. Per-tick recurring effect firing deferred to MVP-7; the event still sits in activeEvents for its ticksRemaining duration but only fires on-play. ticksRemaining=3 chosen as a reasonable mid-game presence."
       }
     },
     {
@@ -390,9 +392,11 @@
       "flavor": "Born in the Porphyra chamber, draped in imperial purple from the cradle. The succession is secure; the realm rejoices, briefly.",
       "cost": { "wild": 2 },
       "persistent": true,
-      "effect": "PLACEHOLDER: while active, the first card you play each turn costs 1 less wild (minimum 0). Effect payload is loose (z.unknown).",
+      "ticksRemaining": 3,
+      "effect": { "kind": "draw", "count": 1 },
       "_needsConfirmation": {
-        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Second persistent event in the Byzantine deck alongside Basileus; the rulebook caps active events at 3 per player so two stub events leaves headroom."
+        "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Second persistent event in the Byzantine deck alongside Basileus; the rulebook caps active events at 3 per player so two stub events leaves headroom.",
+        "effect.mapping": "#100 (MVP-6 S4): original prose 'while active, the first card you play each turn costs 1 less wild' has NO cost-reduction verb in the locked Effect DSL. Backfilled as on-play {draw, count:1} — the heir's announcement boosts court intelligence. Cost-reduction taxonomy + per-tick recurring firing both deferred to MVP-7. ticksRemaining=3 keeps the event live for a few turns."
       }
     }
   ]

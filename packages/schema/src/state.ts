@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Action, AttackMode } from './actions.js';
 import { CardId } from './cards.js';
 import { Civ } from './civ.js';
-import { ClassWidePassiveModifier } from './effects.js';
+import { ClassWidePassiveModifier, Effect } from './effects.js';
 import { BuildingInstanceId, Seed, TileId, UnitInstanceId } from './ids.js';
 import { ResourceToken, TemporaryResource } from './resources.js';
 
@@ -122,12 +122,24 @@ export type UnitField = z.infer<typeof UnitField>;
  *   §"Setup" line 77 and §"Long Game" line 324). Schema accepts any
  *   non-negative integer; the rules engine seeds the starting value.
  * - `hand` capped at 7 (rulebook §"End of Turn"). Hard cap.
- * - `activeEvents` capped at 3 (rulebook §"Events").
+ * - `activeEvents` capped at 3 (rulebook §"Events"). Each entry carries
+ *   the source `cardId`, an integer `ticksRemaining` counter (decremented
+ *   at end of the owner's turn — MVP-6 S4), and the typed on-play `effect`
+ *   parsed off the source card. Expired events (tick → 0) flow back into
+ *   `discard`. Per-tick recurring effect firing is out of scope for MVP-6;
+ *   see decisions for MVP-7.
  * - `firstPlayerSecondPlayerWild` — turn-1 freebie for seat 2 per
  *   rulebook. Optional: omitted ≡ false. With `exactOptionalPropertyTypes`
  *   that means `{...}` and `{..., firstPlayerSecondPlayerWild: false}`
  *   are both valid.
  */
+export const ActiveEvent = z.object({
+  cardId: CardId,
+  ticksRemaining: z.number().int().min(0),
+  effect: Effect,
+});
+export type ActiveEvent = z.infer<typeof ActiveEvent>;
+
 export const Player = z.object({
   seat: Seat,
   civ: Civ,
@@ -138,7 +150,7 @@ export const Player = z.object({
   discard: z.array(CardId),
   resources: z.array(ResourceToken),
   temporaryResources: z.array(TemporaryResource),
-  activeEvents: z.array(CardId).max(3),
+  activeEvents: z.array(ActiveEvent).max(3),
   unitField: UnitField,
   civCardId: CardId,
   firstPlayerSecondPlayerWild: z.boolean().optional(),

@@ -3,9 +3,11 @@ import type { Action, GameState, Seat } from '@eoe/schema';
 import { attack } from './attack.js';
 import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
+import { eventTick } from './eventTick.js';
 import { move } from './move.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playAction } from './playAction.js';
+import { playEvent } from './playEvent.js';
 import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
@@ -154,9 +156,17 @@ export function applyAction(
         return kept.length === 0 ? rest : { ...rest, temporaryBuffs: kept };
       });
 
+      // ─── Event tick (#100, MVP-6 S4) ───
+      // Decrement `ticksRemaining` on every entry in the ENDING seat's
+      // `activeEvents`. Expired events (counter → 0) flow into discard.
+      // Per-tick recurring effect firing is deferred to MVP-7.
+      const tickedState = eventTick(
+        { ...cleaned, units: unitsAfterBuffCleanup },
+        state.activePlayer,
+      );
+
       const advanced: GameState = {
-        ...cleaned,
-        units: unitsAfterBuffCleanup,
+        ...tickedState,
         phase: 'start',
         activePlayer: next,
         turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
@@ -255,6 +265,14 @@ export function applyAction(
     case 'PlayTechnology':
       return playTechnology(state, action, actorId);
 
+    // Issue #100 (MVP-6 S4): PlayEvent — persistent event resolution.
+    // Mirrors PlayAction/PlayTactic atomic flow but the card lands in
+    // `Player.activeEvents` (cap 3) instead of discard, and the on-play
+    // effect dispatches once. Per-turn ticking is handled by
+    // `eventTick` from the EndTurn cleanup chain above.
+    case 'PlayEvent':
+      return playEvent(state, action, actorId);
+
     // Issue #56: Scout — reveal a face-down tile (MVP-3, no adjacency).
     case 'Scout':
       return scout(state, action, actorId);
@@ -277,7 +295,6 @@ export function applyAction(
     case 'UnitAbility':
     case 'Resupply':
     case 'RecruitDraw':
-    case 'PlayEvent':
     case 'DiscardEvent':
     case 'PlayReaction':
       return err(
