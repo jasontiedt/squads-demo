@@ -451,6 +451,37 @@ export const Board = ({
                     : undefined
                 }
               />
+              {/* Attachment badge (issue #102): show count chip in the
+                  top-right of the marker when the unit has any upgrade
+                  cards attached. Pointer-events disabled so it doesn't
+                  steal clicks from the underlying unit circle. */}
+              {u.upgrades.length > 0 && (
+                <g
+                  data-testid={`unit-attachment-badge-${u.id}`}
+                  data-attachment-count={u.upgrades.length}
+                  pointerEvents="none"
+                >
+                  <circle
+                    cx={cx + CELL * 0.22}
+                    cy={cy - CELL * 0.22}
+                    r={CELL * 0.11}
+                    fill="#fffbe6"
+                    stroke="#5a4a00"
+                    strokeWidth={1.5}
+                  />
+                  <text
+                    x={cx + CELL * 0.22}
+                    y={cy - CELL * 0.22}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={CELL * 0.14}
+                    fontWeight={700}
+                    fill="#5a4a00"
+                  >
+                    {u.upgrades.length}
+                  </text>
+                </g>
+              )}
             </g>
           );
         })}
