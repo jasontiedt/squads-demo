@@ -492,81 +492,380 @@ Game ends immediately on either trigger. (4-player team: triggers on either play
 
 ---
 
-## MVP-5 closeout — 2025-11-21
+## MVP-6 scope — 2026-05-27
 
-### 2025-11-21: Effect DSL locked — typed verbs for Action and Tactic cards
+*Wedge's scope document, preserved verbatim. Originally titled "MVP-6 scope — Cards Respond".*
 
-**By:** Wedge (Lead/Architect) — via Scribe merge — PR #90, closes #83
-**What:** Replaced `effect: z.unknown()` on Action and Tactic card kinds with a strict Zod discriminated union of five verbs: `draw`, `damage`, `heal-capital`, `gain-temporary-resource`, `buff-unit-stat`. Locked the `Target` taxonomy: `'self-capital' | 'opponent-capital' | { kind: 'unit', unitId } | { kind: 'units-by-class', classFilter, ownership }`. Technology, Upgrade, Reaction, and Event keep `effect: z.unknown()` for MVP-5 — their handlers remain `not_implemented`. The Effect DSL lives in `packages/schema/src/effects.ts` and is imported by `cards.ts`. Schema-breaking change accepted; no production KV state existed yet.
-**Why:** Every other MVP-5 slice depended on a stable, narrow vocabulary. `effect: z.unknown()` had been the implicit blocker since MVP-1 — it left `PlayAction`/`PlayTactic` as stubs, forced Sabine to encode designer intent as prose, and blocked Lando's PlayCard UI. Locking now (with zero production blast radius) was a free move.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (merged into archive below).
+**Date:** 2026-05-27
+**Author:** Wedge (Lead / Architect)
+**Audience:** Brady, Artoo, Lando, Sabine, Cassian, @copilot
+**Status:** APPROVED — 2026-05-27 by Brady
+**Supersedes:** `.squad/decisions/inbox/wedge-capital-units-shape.md` (folded into S1 — see §5)
 
-### 2025-11-21: MVP-5 scope — "Cards Do Things"
+---
 
-**By:** Wedge (Lead/Architect) — via Scribe merge — closes #83-#89
-**What:** MVP-5 shipped its stop condition: Player A plays an Action card (cost paid, hand → discard, `draw 2` resolves) and a Tactic card (own unit gains a temporary stat buff that clears at EndTurn). Worker re-validates both; opponent observes state via polling. Two card kinds in scope (Action, Tactic); Technology, Upgrade, Reaction, Event deferred to MVP-6. Seven slices shipped across six PRs: S1 Effect DSL (#90), S2 payCost (#91), S6 seat-scoped hand unredact (#92), S3 dispatcher + PlayAction (#93), S4 PlayTactic + EndTurn buff cleanup (#94), S5 catalog typed effects (#95), S7 integration arc (#96).
-**Why:** Theme was "smallest move that makes a card affect game state beyond the discard+draw stub." Two card kinds covered the stop condition without forcing the dispatcher to anticipate Reactions/Events/passive Tech.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (merged).
+## 1. Stop condition
 
-### 2025-11-21: payCost handler — pay-first, then resolve
+> MVP-6 ships when two browsers can play a full turn arc in which Player A plays an Upgrade (attached to a unit), Player B plays a Reaction during A's next Attack (mitigating damage via the locked trigger taxonomy), an Event sits on the board ticking down across turns, and the whole arc is provable via a deterministic Playwright e2e driven by an admin-seeded deck.
 
-**By:** Artoo (Backend) — PR #91, closes #84
-**What:** `payCost(state, seat, cost): Result<GameState>` in `packages/rules/src/payCost.ts`. Exhausts unexhausted resource tokens matching the cost's resource kinds; consumes `temporaryResources` first (cheaper), then main resources, with `wild` falling back across any kind. Returns `err('insufficient_resources')` if the cost cannot be paid. Pure and deterministic. Ordering pinned in test: if cost succeeds but the downstream effect fails, the rules engine returns the pre-payment state (`Result.err` carries no partial mutation).
-**Why:** Every non-unit handler that follows needs cost-payment as a primitive. Pulling it into its own slice let it land in parallel with the S1 RFC.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S2).
+One sentence, one observable behavior. The four card kinds deferred from MVP-5 — Reaction, Event, Technology, Upgrade — all become *playable* in MVP-6 (handler + UI + dispatcher coverage). Reactions are the architectural keystone; everything else is in scope because the alternative is another half-built kind blocking MVP-7.
 
-### 2025-11-21: Seat-scoped hand unredact via `?seat=` query param
+## 2. Theme
 
-**By:** Artoo (Backend) — PR #92, closes #88
-**What:** `GET /games/:id?seat=X` on the Worker now returns the unredacted hand for the requesting seat (validated against the seat's player token in the `Authorization` header); opponents' hands stay redacted. Card images and IDs are visible only to the owning seat. Miniflare integration test covers happy path + wrong-token rejection.
-**Why:** Unblocks the two-browser stop condition — without it the human cannot see their own hand to choose a card. Carry-over from MVP-4 (#37). Independent of the Effect DSL work.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S6).
+MVP-5 made cards affect state when played (`PlayAction`, `PlayTactic` → dispatcher → 5 Effect verbs). MVP-6 makes cards **respond** — to game events (Reactions), to time (Events), to a class (Technology), and to a unit (Upgrade). The dispatcher pattern is now proven; adding verbs and wiring handlers is mechanical. The remaining hard problem is **triggers** — when does the engine pause to ask "anyone want to react?". That's S5, the centerpiece slice.
 
-### 2025-11-21: Effect dispatcher + PlayAction — generic PlayCard deleted
+## 3. Numbered slices
 
-**By:** Artoo (Backend) — PR #93, closes #85
-**What:** New `packages/rules/src/effects/` module with `dispatchEffect(state, effect, ctx): Result<GameState>` pattern-matching on `effect.kind`. Per-verb handlers: `effectDraw`, `effectDamage`, `effectHealCapital`, `effectGainTempResource`, `effectBuffUnitStat`. `ctx` carries `actorSeat`, `cardId`, and optional `chosenTarget` for picker-driven effects. `PlayAction` wired in `applyAction.ts`: lookup `card.effect` → `payCost` → move hand → discard → `dispatchEffect`. The MVP-2 generic `playCard.ts` handler and the `PlayCard` action variant are DELETED — no vestigial second path. **Process note:** Artoo's spawn experienced a silent-success — files were staged but commit/push/PR did not happen. Coordinator recovered, landed build fixes, and shipped the PR. Lesson recorded in Artoo's history.
-**Why:** This is the central new machine. Once it existed, S4 (PlayTactic) became a thin wrapper. Removing the generic stub closes the dual-path risk before card UI work begins in MVP-6.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S3).
+Seven slices. Three waves. See §7 for sequencing.
 
-### 2025-11-21: PlayTactic handler + temporary buffs cleared at EndTurn
+---
 
-**By:** Artoo (Backend) — PR #94, closes #86
-**What:** `PlayTactic` wired in `applyAction.ts`, reusing the S3 dispatcher. Phase gate validates the card's `playableIn` includes `state.phase` (Tactic legal in Mobilization + Deployment). Temporary buffs live on `UnitInstance` as an optional `temporaryBuffs?: Array<{stat, delta, expires: 'end-of-turn'}>` field (NOT separate buff entities — keeps state diffs small for polling). Cleanup runs in `drawAndDiscardCleanup` on EndTurn. Cross-seat duration semantics ("end of turn" when targeting opponent unit) flagged as `needs-confirmation` and deferred to MVP-6 — MVP-5 cards target own units only.
-**Why:** Tactics are the second card kind in the stop condition. They exercise the time-bound effect path that Reactions/Events will later generalize.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S4).
+### S1 — Capital tile + siege state + `queries.ts` (Foundation)
 
-### 2025-11-21: English catalog backfill — typed effects on Action + Tactic cards
+**Owner:** Artoo
+**Wave:** 1
 
-**By:** Sabine (Catalog/Design) — PR #95, closes #87
-**What:** Replaced prose `PLACEHOLDER:` strings on the 4 non-unit English cards (and 1-2 stop-condition additions) with typed `Effect` payloads conforming to the S1 union. `classFilter` on `Target` (locked in S1 as `{ kind: 'units-by-class', classFilter, ownership }`) covers "Shield Wall" (infantry) and "Longbow Mastery" (archers) without re-theming. Byzantines catalog stays stub. Cards that don't fit MVP-5's five verbs keep prose placeholders, schema permits this only for Technology/Upgrade/Reaction/Event.
-**Why:** Without typed effect data, S3/S4 had nothing to dispatch. Also forced a sanity check on the locked vocab — `classFilter` survived contact with real card text.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S5).
+**Spec.** Fold the dangling `wedge-capital-units-shape.md` RFC, trimmed to MVP-6's needs. Add a branded `TileId` to `packages/schema/src/ids.ts`. Promote `Tile.id` from `z.string()` to `TileId` in `state.ts`. Extend `CapitalInstance` with `tileId: TileId` (denormalized link to containing tile) and `siegeState: 'open' | 'sieged' | 'fallen'` (defaults `'open'` at init, transitions to `'fallen'` when capital HP reaches 0). Ship `packages/rules/src/queries.ts` with four pure helpers: `unitsFor(state, seat)`, `unitsOnTile(state, tileId)`, `capitalOf(state, seat)`, `tileOfSquare(state, coord)`. `state.units` stays flat — no per-player array shape.
 
-### 2025-11-21: MVP-5 acceptance arc — Miniflare integration test
+**Why this is the foundation slice.** S4 (Events that affect "all units on a tile"), S5 (Reaction triggers that reference an attack's location), and S3 (`effectiveStats` lookups iterating over per-seat units) all need these helpers. Without them, four handlers reinvent the same iterate-filter idioms. The schema delta is additive — no field removal, no client/worker breakage, no production blast radius (no live games).
 
-**By:** Cassian (Tester/QA) — PR #96, closes #89
-**What:** Two Miniflare integration tests in `apps/worker/test/`: `integration-mvp5-action-arc.test.ts` drives seed → first turn → PlayAction (draw 2) → assert hand-size delta + moveLog entry. `integration-mvp5-tactic-buff.test.ts` drives PlayTactic (buff own unit) → EndTurn → assert `temporaryBuffs` cleared on the targeted unit. Both green at merge.
-**Why:** Executable definition of "MVP-5 done."
-**Open:** Playwright two-browser E2E was NOT shipped this MVP. The seeded deck shuffles non-deterministically per game (no admin seed endpoint exists), making it impossible to script "play the Action card that draws 2" reliably from the e2e harness. MVP-6 issue to file: add an admin seed endpoint that pins deck order for test runs.
-**Source:** `.squad/decisions/inbox/wedge-mvp5-scope.md` (S7).
+**Acceptance criteria.**
+- `TileId` branded in `ids.ts`; `Tile.id` is `TileId` throughout the schema.
+- `SiegeState` enum exported from `state.ts`.
+- `CapitalInstance` carries `tileId` and `siegeState`; `.strict()` preserved.
+- `initialState.ts` seeds capitals with correct `tileId` (computed via `tileOfSquare`) and `siegeState: 'open'`.
+- `attack.ts` sets `siegeState: 'fallen'` when capital HP transitions to 0 (single source of truth — win condition still gates on `capitalHp === 0`).
+- `packages/rules/src/queries.ts` exists with the four named exports, all pure, no I/O.
+- New tests in `__tests__/queries.test.ts` cover each helper.
+- Existing tests pass without modification beyond fixture updates.
 
-### 2025-11-21: MVP-5 cross-cutting locks (carried into MVP-6)
+**Inputs.** Existing schema (`state.ts`, `ids.ts`), existing `initialState.ts`, existing `attack.ts`.
 
-**By:** Wedge (Lead/Architect) — via Scribe merge — cross-cutting from `wedge-mvp5-scope.md`
-**What:** Six rules locked for MVP-5 carry forward unchanged:
-1. **Effect DSL is closed at 5 verbs.** Adding `attach-keyword`, `class-wide-passive`, `trigger-on-event` waits for MVP-6 (dispatcher pattern is now proven, adding verbs is mechanical).
-2. **Targets are picker-driven, not declarative.** Client includes `unitId` in the action payload when the effect targets a unit — consistent with Move/Attack.
-3. **Temporary buffs live on `UnitInstance.temporaryBuffs`,** not as separate buff entities. Cleared by `drawAndDiscardCleanup` on EndTurn.
-4. **Cost-payment ordering: pay-first, then resolve.** Cost failure → no state change. Effect failure after cost → engine returns pre-payment state (caller discards on err).
-5. **`PlayAction`/`PlayTactic` reuse existing schema slots** in the `Action` union — no new variants.
-6. **The generic `PlayCard` handler and action variant are deleted** (not kept as a parallel path).
-**Why:** These are the durable architectural decisions from MVP-5 — they survive MVP-6 unless explicitly revisited.
+**Outputs.**
+- `packages/schema/src/ids.ts` (+`TileId`)
+- `packages/schema/src/state.ts` (+`SiegeState`, +`CapitalInstance.tileId`/`siegeState`, `Tile.id: TileId`)
+- `packages/rules/src/queries.ts` (NEW)
+- `packages/rules/src/initialState.ts` (updated)
+- `packages/rules/src/attack.ts` (sets `siegeState`)
+- `packages/rules/src/__tests__/queries.test.ts` (NEW)
+- `packages/rules/src/__tests__/initialState.test.ts` (asserts new fields)
+- Test fixtures updated for new capital shape.
 
-### 2025-11-21: Reactions / Events / Technology / Upgrade — deferred to MVP-6
+---
+
+### S2 — Effect DSL extension: `attach-keyword` + `class-wide-passive`
+
+**Owner:** Wedge (architecture) + Artoo (impl review)
+**Wave:** 1
+
+**Spec.** Add two new verbs to the locked Effect DSL union in `packages/schema/src/effects.ts`:
+
+- `{ kind: 'attach-keyword', keyword: string, statDeltas?: Array<{stat, delta}> }` — for Upgrade cards. Applied to a unit, persists for the unit's lifetime, contributes to `effectiveStats`.
+- `{ kind: 'class-wide-passive', classFilter: UnitClass, statDeltas: Array<{stat, delta}> }` — for Technology cards. Applies to all units of a class, server-wide-per-game, owned by the playing seat.
+
+Both verbs are **schema-only** in this slice — no handler wiring (that lands in S3). This slice exists to make the DSL walkback explicit: MVP-5's lock "Effect DSL is closed at 5 verbs" is **revised** to 7 verbs for MVP-6. Adding `trigger-on-event` (the Reaction verb) is **not** in scope — Reactions express their behavior via the existing 5 Effect verbs once their trigger fires, with the trigger metadata living on the Reaction card schema, not in the Effect union. See L1.
+
+**Acceptance criteria.**
+- `effects.ts` exports the extended discriminated union with 7 verbs.
+- Zod parser accepts both new verbs in isolation.
+- No card data uses these verbs yet (that's S3's job).
+- Existing 5-verb cards parse unchanged.
+
+**Inputs.** `packages/schema/src/effects.ts` (locked at 5 verbs from MVP-5 S1).
+
+**Outputs.**
+- `packages/schema/src/effects.ts` (extended union)
+- `packages/schema/src/__tests__/effects.test.ts` (parses for both new verbs)
+
+---
+
+### S3 — `PlayUpgrade` + `PlayTechnology` handlers + `effectiveStats` helper
+
+**Owner:** Artoo
+**Wave:** 2 (depends on S1 + S2)
+
+**Spec.** Two new handlers, one shared read helper.
+
+- **`PlayUpgrade`** in `applyAction.ts`: phase-gated (Mobilization), card → `payCost` → dispatch `attach-keyword` → push `cardId` onto `UnitInstance.attachments: UpgradeId[]` on the chosen target unit. New field on `UnitInstance`: `attachments?: UpgradeId[]` (optional, defaults `[]` at deploy). Attachments live and die with the unit (L7).
+- **`PlayTechnology`** in `applyAction.ts`: phase-gated (Mobilization), card → `payCost` → dispatch `class-wide-passive` → push `{cardId, owner, effect}` onto new `state.activeTechnologies: Array<...>`. Permanent until a future MVP destroys it (L8). No cap.
+- **`effectiveStats(unit, state)`** in `packages/rules/src/effects/stats.ts`: pure function returning `{attack, defense, hp}`. Combines: unit's base stats + active `attach-keyword` effects on `unit.attachments` + `temporaryBuffs` + matching `class-wide-passive` from `state.activeTechnologies` (filter by owner + classFilter). All handlers that read unit stats (Attack damage calc, target validation) MUST route through this (L9).
+
+**Why bundled.** Upgrade and Technology are siblings: both add persistent passive effects, both extend `effectiveStats`. Splitting into two slices doubles the handler-pattern boilerplate without revealing new architecture. Sized together this is one focused PR.
+
+**Acceptance criteria.**
+- `PlayUpgrade` handler wired in `applyAction.ts`, returns `Result<GameState>`.
+- `PlayTechnology` handler wired in `applyAction.ts`.
+- `UnitInstance.attachments?: UpgradeId[]` field added (additive; existing units default `[]`).
+- `state.activeTechnologies: Array<{cardId, owner, effect}>` field added (additive).
+- `effectiveStats(unit, state)` exists and is called from `attack.ts` (damage calc) and any target validation that reads stats. No direct `unit.attack` reads remain in handler code.
+- Tests: `PlayUpgrade` smoke (attaches keyword, persists across turn boundary), `PlayTechnology` smoke (passive applies to all matching units), `effectiveStats` unit test covering base + attachment + temp buff + active tech composition.
+- Upgrade attached to a unit that gets destroyed disappears with the unit (no zombie attachments).
+
+**Inputs.** S1 queries (`unitsFor` for class-passive resolution), S2 Effect DSL extension.
+
+**Outputs.**
+- `packages/schema/src/state.ts` (+`UnitInstance.attachments`, +`state.activeTechnologies`)
+- `packages/rules/src/applyAction.ts` (`PlayUpgrade`, `PlayTechnology` wired)
+- `packages/rules/src/effects/effectUpgrade.ts` (NEW)
+- `packages/rules/src/effects/effectTechnology.ts` (NEW)
+- `packages/rules/src/effects/stats.ts` (NEW — `effectiveStats`)
+- `packages/rules/src/attack.ts` (routes stat reads through `effectiveStats`)
+- Tests for all of the above.
+
+---
+
+### S4 — `PlayEvent` handler + ≤3-active limit + per-turn tick
+
+**Owner:** Artoo
+**Wave:** 2 (depends on S1)
+
+**Spec.** `PlayEvent` in `applyAction.ts`, phase-gated (Mobilization). Card → `payCost` → push `{cardId, owner, effect, ticksRemaining}` onto `state.activeEvents: Array<...>`. Cap enforced **per seat at 3** (L5): play attempt with 3 already active for the playing seat → `err('event_cap_reached')` (UX is responsible for prompting discard; engine never auto-discards). Event effects fire on `playEvent` (immediate on-play effect using existing 5 Effect verbs) **and** persist on the board — but MVP-6 keeps per-tick effects simple: when `ticksRemaining` hits 0 the event moves to discard. Recurring per-tick effects ("draw 1 each turn") are explicit `needs-confirmation` and **deferred to MVP-7**. Tick decrements run in `drawAndDiscardCleanup` at EndTurn (same cleanup phase as temporary buffs — see MVP-5 lock 3).
+
+**Acceptance criteria.**
+- `PlayEvent` handler wired, returns `Result<GameState>`.
+- `state.activeEvents` field present (additive); seeded `[]` at init.
+- Cap enforced: 3 active events per seat hard limit; rejection returns specific error code `event_cap_reached`.
+- Event card schema gains `ticksRemaining: z.number().int().min(1)` (replaces vague duration on Event card kind).
+- EndTurn cleanup decrements all active events for the seat ending their turn; events at 0 move to that seat's discard pile.
+- Smoke test: play event, end turn three times, event leaves play on the right turn.
+- Cap test: at 3 events, fourth play returns `event_cap_reached`.
+
+**Inputs.** S1 queries (none strictly required, but `capitalOf` exists for events that target capitals); locked Effect DSL (no new verbs needed — events use the existing 5 for their on-play effect).
+
+**Outputs.**
+- `packages/schema/src/state.ts` (+`state.activeEvents`)
+- `packages/schema/src/cards.ts` (Event card carries `ticksRemaining`)
+- `packages/rules/src/applyAction.ts` (`PlayEvent` wired)
+- `packages/rules/src/effects/effectEvent.ts` (NEW)
+- `packages/rules/src/phases.ts` (EndTurn cleanup decrements + expires events)
+- Tests.
+
+---
+
+### S5 — `PlayReaction` + trigger taxonomy + opponent-window state
+
+**Owner:** Wedge (architecture decisions inline below) + Artoo (impl)
+**Wave:** 2 (depends on S1; **architecturally hardest**)
+
+**Spec.** This is the centerpiece slice. Three intertwined pieces:
+
+1. **Trigger taxonomy** (L1, closed at 5 — mirroring the Effect DSL approach):
+   ```ts
+   export const ReactionTrigger = z.discriminatedUnion('kind', [
+     z.object({ kind: z.literal('on-attack-declared'), against: z.enum(['self', 'opponent']) }),
+     z.object({ kind: z.literal('on-damage-dealt'), to: z.enum(['self-unit', 'self-capital']) }),
+     z.object({ kind: z.literal('on-unit-destroyed'), unitClass: UnitClass.optional() }),
+     z.object({ kind: z.literal('on-card-played'), cardKind: CardKind.optional() }),
+     z.object({ kind: z.literal('on-phase-end'), phase: Phase }),
+   ]);
+   ```
+   Lives on the Reaction card schema as `trigger: ReactionTrigger`. The Reaction's `effect` is one of the existing 5 Effect DSL verbs — Reactions don't need a new Effect verb, they need a new **dispatch context** (the trigger window).
+
+2. **Opponent-window state** (L4): new field `state.pendingReactionWindow?: { trigger: ReactionTriggerEvent, originActionId: string, eligibleSeat: Seat, expiresAtPoll: number }`. Singular — one window open at a time across all seats. Worker re-validates: an Action that would emit a trigger while a window is already open is rejected as `err('window_already_open')`. Set when an action emits a matching trigger; cleared when (a) eligible seat plays a `PlayReaction`, (b) eligible seat plays explicit `PassReaction` action, or (c) `expiresAtPoll` is reached (server-side timeout — see L3 for non-nesting).
+
+3. **`PlayReaction` handler** (and **new** `PassReaction` action variant). Phase-agnostic (carry-over from MVP-1: Reactions gate on `actorId !== activePlayer`). Action requires `state.pendingReactionWindow` to exist AND the playing seat to match `pendingReactionWindow.eligibleSeat` AND the card's `trigger.kind` to match `pendingReactionWindow.trigger.kind`. On success: `payCost` → dispatch the card's `effect` → clear `pendingReactionWindow` → resume the original triggering action (the queued effect that opened the window now completes). `PassReaction`: clear window, resume.
+
+**Reaction-on-reaction does NOT nest (L3).** A reaction's effect resolves directly without opening a new window. The original action's window allows exactly one reaction per eligible seat, then the original action completes. This closes a combinatorial explosion now; revisit if real cards force it.
+
+**Server owns dispatch (L2).** Trigger detection, window opening, eligibility, and timeout all live worker-side in `applyAction`. Client UX renders the window when polling sees `pendingReactionWindow` set; the client only decides what to *show*, never whether the window is *legal*.
+
+**Acceptance criteria.**
+- `ReactionTrigger` discriminated union exported from `packages/schema/src/effects.ts` (or a new sibling `triggers.ts`).
+- Reaction card kind in `cards.ts` gains typed `trigger: ReactionTrigger`; `effect` stays the existing 5-verb DSL.
+- `state.pendingReactionWindow` field present (additive, optional).
+- `PlayReaction` and `PassReaction` action variants in the `Action` union.
+- `applyAction.ts`: actions that emit triggers (Attack at minimum) detect them and set `pendingReactionWindow`. The triggering action's effect is queued (not applied yet) and resumes after the window resolves.
+- `PlayReaction` validates: window open, eligibility, trigger kind match; rejects with specific error codes (`no_open_window`, `wrong_seat_for_window`, `wrong_trigger_kind`).
+- `PassReaction` clears the window and resumes the queued action.
+- Window timeout: integration test asserts that after N polls (N TBD by impl, suggest 30 = ~2.5 min at 5s poll), the window auto-passes.
+- Integration test in `apps/worker/test/`: A attacks B → window opens (only B is `eligibleSeat`) → B plays a damage-mitigation Reaction → attack damage is reduced → window closes → action log shows both events in order.
+
+**Inputs.** S1 queries (for trigger metadata: which tile was attacked, etc.), no new Effect verbs.
+
+**Outputs.**
+- `packages/schema/src/triggers.ts` (NEW — `ReactionTrigger` union)
+- `packages/schema/src/cards.ts` (Reaction card kind typed `trigger`)
+- `packages/schema/src/actions.ts` (`PlayReaction`, `PassReaction` variants)
+- `packages/schema/src/state.ts` (+`pendingReactionWindow`)
+- `packages/rules/src/applyAction.ts` (`PlayReaction`, `PassReaction`, queue-and-resume mechanism)
+- `packages/rules/src/attack.ts` (emits `on-attack-declared`, `on-damage-dealt`, `on-unit-destroyed` events)
+- `packages/rules/src/phases.ts` (EndPhase emits `on-phase-end`)
+- `packages/rules/src/effects/effectReaction.ts` (NEW — dispatches via existing 5 Effect verbs)
+- Integration test: full window arc.
+
+---
+
+### S6 — Card-play UI for non-unit cards + Reaction window modal
+
+**Owner:** Lando (impl), Sabine (visual consult)
+**Wave:** 3 (depends on S3, S4, S5 handler signatures)
+
+**Spec.** Lobby's `handleCardClick` currently routes unit cards through deploy-pickers and falls through to `PlayAction` for everything else. Replace the fall-through with kind-aware routing:
+
+- **Action** → existing `PlayAction` dispatch (unchanged from MVP-5; verify still works).
+- **Tactic** → if effect needs a unit target, enter `select-unit-for-tactic` picker mode (reuse existing pick-unit machinery from Move/Attack); on pick, dispatch `PlayTactic` with `unitId`.
+- **Upgrade** → enter `select-unit-for-upgrade` picker; on pick, dispatch `PlayUpgrade` with `unitId`.
+- **Technology** → no picker needed (class-wide); dispatch `PlayTechnology` immediately, show toast confirming which class got the buff.
+- **Event** → no picker needed (board-wide); dispatch `PlayEvent` immediately, render event token in a new "active events" rail on the board.
+- **Reaction** → cards are **not playable from the normal hand-click flow**. Instead, when polling reveals `state.pendingReactionWindow` is set and the local seat is `eligibleSeat`, a modal opens listing the seat's eligible Reaction cards (filtered by `trigger.kind` match). Modal has "Play [reaction]" buttons + "Pass" button. Dispatch `PlayReaction` or `PassReaction`. Modal auto-dismisses when window clears via polling.
+
+Sabine consults on: event-rail visual, reaction-modal visual hierarchy, attachment indicator on units that carry upgrades.
+
+**Acceptance criteria.**
+- Clicking a Tactic card with a unit-target effect enters picker mode; clicking a unit dispatches `PlayTactic`.
+- Clicking an Upgrade enters picker mode; clicking a unit dispatches `PlayUpgrade`; unit visibly shows attachment.
+- Clicking a Technology dispatches immediately; toast or HUD reflects which class is buffed.
+- Clicking an Event dispatches immediately; active-events rail shows the event with `ticksRemaining`.
+- When `pendingReactionWindow` opens, the eligible seat's UI shows a modal with eligible Reaction cards + Pass.
+- No client-side legality decisions — modal asks server via `PlayReaction`/`PassReaction` and lets the server reject.
+- All flows have at least one happy-path Vitest test in `apps/web/src/__tests__/`.
+
+**Inputs.** S3 handler signatures, S4 handler signature, S5 handler + window state shape.
+
+**Outputs.**
+- `apps/web/src/views/Lobby.tsx` (kind-aware `handleCardClick`, new picker modes)
+- `apps/web/src/components/ReactionWindowModal.tsx` (NEW)
+- `apps/web/src/components/ActiveEventsRail.tsx` (NEW)
+- `apps/web/src/components/UnitAttachmentBadge.tsx` (NEW or component change)
+- `apps/web/src/__tests__/Lobby.tactic-picker.test.tsx`, `Lobby.upgrade-picker.test.tsx`, `ReactionWindowModal.test.tsx`, etc.
+
+---
+
+### S7 — Admin seed endpoint + two-browser Playwright e2e
+
+**Owner:** Artoo (endpoint) + Cassian (e2e)
+**Wave:** 3 (e2e depends on S6 UI; endpoint can land in Wave 1)
+
+**Spec.** Two coupled pieces — bundled because the e2e is the executable definition of MVP-6 done, and it cannot exist without the endpoint.
+
+**Part A — Admin seed endpoint.** `POST /admin/games/:code/seed` on the Worker. Body: `{ deckOrder: Array<CardId>, opponentDeckOrder: Array<CardId>, hand: Array<CardId>, opponentHand: Array<CardId> }`. Gated by `X-Admin-Secret` header matching `env.ADMIN_SECRET` (L10). Returns 403 if header missing or wrong, 404 if game not found, 409 if game has already had any actions applied (admin-seed only valid on a freshly created game). Writes seeded deck/hand state directly into the KV record, bypassing the normal `applyAction` re-shuffle.
+
+**Part B — Playwright two-browser e2e.** New spec `apps/e2e/tests/mvp6-reaction-arc.spec.ts`. Two browser contexts. Setup: POST `/games`, then POST `/admin/games/:code/seed` with a known deck pinning the right cards into both hands. Arc: A logs in, deploys a unit, plays an Upgrade on it; ends turn. B logs in, sees A's upgraded unit, plays a Tactic to buff their own unit; A's turn → A attacks B's unit (declares attack) → B's UI sees the Reaction modal → B plays a damage-mitigation Reaction → assert via polling that the attack resolved with reduced damage. Assert via DOM state (action log, unit HP), not network sniffing.
+
+**Acceptance criteria.**
+- `POST /admin/games/:code/seed` exists, gated by `X-Admin-Secret`.
+- Endpoint returns 403/404/409 in the documented cases.
+- Worker integration test in `apps/worker/test/admin-seed.test.ts` covers happy + each rejection.
+- `mvp6-reaction-arc.spec.ts` exists, deterministically green when run with `pnpm e2e`.
+- `pnpm e2e` is wired into CI on the PR that lands S7.
+- Documentation: `apps/e2e/README.md` updated with seed-endpoint usage.
+
+**Inputs.** S5 (window mechanic), S6 (clickable UI), all other handlers (must actually work end-to-end).
+
+**Outputs.**
+- `apps/worker/src/routes/admin.ts` (NEW)
+- `apps/worker/src/index.ts` (router wires `/admin/*`)
+- `apps/worker/wrangler.toml` (`ADMIN_SECRET` declared as a vars entry; secret set via `wrangler secret put` in real env)
+- `apps/worker/test/admin-seed.test.ts` (NEW)
+- `apps/e2e/tests/mvp6-reaction-arc.spec.ts` (NEW)
+- `apps/e2e/README.md` (updated)
+
+---
+
+## 4. Locks
+
+Decisive interpretations of ambiguous mechanics. These are NOT proposals — they are pinned for MVP-6 and carry forward unless explicitly revisited.
+
+**L1. Reaction trigger taxonomy is CLOSED at 5 triggers for MVP-6.** `on-attack-declared`, `on-damage-dealt`, `on-unit-destroyed`, `on-card-played`, `on-phase-end`. Same shape and discipline as the Effect DSL closure from MVP-5. Adding a sixth trigger waits for MVP-7 once we see whether real cards demand one. Reactions do **not** get their own Effect verbs — their on-fire effect is one of the existing 5 verbs locked in MVP-5 (Effect DSL grew to 7 via S2 — see §3).
+
+**L2. Server owns reaction-window dispatch.** Worker is authoritative for trigger detection, window opening, eligibility checks, and timeout. Client UX renders the window from polled state but never decides legality. Same principle as MVP-1's "Worker re-validates every action."
+
+**L3. Reaction windows do NOT nest.** A Reaction's effect resolves directly without opening a new window for the opponent to counter-react. The original action's window allows at most one Reaction per eligible seat; then the original action completes. Combinatorial cap. Revisit only if a real card forces it.
+
+**L4. Opponent-window state lives at `GameState.pendingReactionWindow` (singular).** Exactly one window open at a time across all seats. An Action that would emit a trigger while a window is already open is rejected as `err('window_already_open')`. The simplest correct shape.
+
+**L5. Events are capped at 3 active per seat.** Play attempt at cap returns `err('event_cap_reached')`. The engine never auto-discards to make room; UX is responsible for prompting the seat to discard one first. Cap is per-seat (each seat can have up to 3 of their own events on the board concurrently, max 6 total in a 2-player game).
+
+**L6. Event ticks fire at EndTurn cleanup, same cycle as temporary buffs.** Decrement `ticksRemaining`; events at 0 move to that seat's discard pile. Per-tick recurring effects ("draw 1 each turn") are `needs-confirmation` and **deferred to MVP-7** — MVP-6 events have an on-play effect and a duration, not per-tick effects.
+
+**L7. Upgrade attachments persist on `UnitInstance.attachments: UpgradeId[]`.** They live and die with the unit. Unit destroyed → attachments removed with it (no return to deck or hand). Multiple attachments per unit are allowed; the rulebook doesn't limit this and we don't either.
+
+**L8. Technology passives live on `state.activeTechnologies` (uncapped, permanent).** No "destroy technology" mechanic exists in MVP-6. Once played, a Technology's class-wide passive applies to all matching units owned by the playing seat for the rest of the game. Closing the loop on "destroy technology" waits for MVP-7+.
+
+**L9. `effectiveStats(unit, state)` is the single read path for a unit's current stats.** Composes: base stats + `attach-keyword` effects from `unit.attachments` + `temporaryBuffs` + matching `class-wide-passive` from `state.activeTechnologies`. **All handlers MUST route stat reads through it** — no direct `unit.attack`/`unit.defense`/`unit.hp` access in handler code. Adding a new modifier source (future MVP) becomes one helper edit, not a hunt across the rules engine.
+
+**L10. Admin seed endpoint requires `X-Admin-Secret` header matching `env.ADMIN_SECRET`.** Returns 403 if the env var is unset in any environment (this is the production safety: prod doesn't set the secret, so the endpoint is always 403 in prod). Returns 409 if the target game has already had any actions applied (admin-seed is only valid pre-first-action). Every successful admin call is logged with seat-redacted body to Workers observability.
+
+## 5. Resolution of `wedge-capital-units-shape.md` RFC
+
+**Resolution: FOLD into S1, trimmed to MVP-6's needs. The RFC dies as a separate document.**
+
+**Rationale.** The MVP-4 closeout in my own history (entry "Locked architecture (MVP-1)" → MVP-4 paragraph) claimed *"Capital-RFC #69 (PR #74 — pinned `CapitalInstance.tileId` + `siegeState`, kept `state.units` flat; helpers `unitsFor`/`unitsOnTile`/`capitalOf`/`tileOfSquare`)"*. I went to verify against the current schema and the claim is **false**:
+
+- `packages/schema/src/state.ts` has no `siegeState` field anywhere.
+- `packages/schema/src/state.ts` has no `tileId` on `CapitalInstance`.
+- `packages/schema/src/ids.ts` exports no `TileId` brand (only `UnitInstanceId`, `BuildingInstanceId`, `Seed`).
+- `packages/rules/src/queries.ts` does not exist.
+
+Either PR #74 didn't actually merge what its description said, or my history overclaimed during MVP-4 wrap-up. Either way: the RFC is genuinely dangling. It still has real value — every reason it gave in 2026-05-23 holds today, and MVP-6 is the first MVP where **multiple slices need the helpers it proposes** (S3 needs `unitsFor` for class-wide passives, S4 and S5 need `tileOfSquare`, S5 needs `capitalOf` for trigger metadata). Folding it into MVP-6 as the foundation slice is the right move.
+
+**What changes from the original RFC.**
+- Drops the "for MVP-5" framing in favor of "MVP-6 S1 foundation."
+- Keeps all four helpers as proposed (`unitsFor`, `unitsOnTile`, `capitalOf`, `tileOfSquare`).
+- Keeps the `TileId` brand + `Tile.id: TileId` promotion.
+- Keeps `CapitalInstance.tileId` and `SiegeState` enum + `CapitalInstance.siegeState`.
+- Confirms `state.units` stays flat — the RFC's rejection of per-player arrays still stands; MVP-6's S3 `effectiveStats` further validates the flat shape (a per-player array doesn't help when class-wide passives need to scan all units across both seats).
+- The MVP-4 history line is incorrect on the record. I'll fix it in my history append as part of this scope's after-work.
+
+## 6. Out of scope for MVP-6
+
+Explicit declines so nobody silently expands:
+
+- **Byzantine catalog backfill.** Byzantines stay stub through MVP-6. Sabine has the S6 UI consult; another catalog slice would over-commit her this cycle.
+- **A second civ-defining mechanic** (trade resources, tile-control, etc.). MVP-7 candidate.
+- **Multiplayer matchmaking** (lobby browser, ELO, named accounts). Game-code joining stays the only entry path.
+- **Persistent accounts / OAuth.** Anonymous-token model from MVP-1 unchanged.
+- **Reaction-on-reaction chains** (L3). Pinned closed.
+- **Per-tick recurring Event effects** (L6). Deferred to MVP-7.
+- **"Destroy Technology" mechanics** (L8). Deferred to MVP-7+.
+- **Cross-seat tactic duration semantics** ("end of turn" when targeting opponent unit). Still `needs-confirmation` from MVP-5. MVP-6 cards do not target opponent units with `temporaryBuffs`.
+- **Realtime polling / WebSockets.** Polling stays the only sync mechanism. The reaction window's timeout is in *poll-ticks*, not wall-clock — consistent with MVP-1's no-realtime lock.
+- **CI integration of `pnpm e2e`** beyond the single MVP-6 spec landing in S7. Full e2e coverage on every PR is a MVP-7 concern.
+
+## 7. Suggested sequence
+
+Three waves. Within a wave, slices ship in parallel (different owners, disjoint files). Each wave gate is: prior wave green in CI.
+
+**Wave 1 — Foundation (parallel-safe):**
+- **S1** (Artoo) — Capital tile + queries
+- **S2** (Wedge) — DSL extension (schema-only)
+- **S7-a** (Artoo, scoped subset) — admin seed endpoint only, no e2e yet. Lands as a partial S7 PR; the e2e half waits for Wave 3.
+
+**Wave 2 — Handlers (parallel-safe, depend on Wave 1):**
+- **S3** (Artoo) — Upgrade + Technology + `effectiveStats`
+- **S4** (Artoo) — Event handler + cap + tick
+- **S5** (Wedge + Artoo) — Reaction handler + trigger taxonomy + window
+
+> Wave 2 has Artoo on three slices. They can ship sequentially (S5 last — it's the hardest) or split: S3+S4 to Artoo, S5 to @copilot under Wedge's review. Lead's call when execution starts; recommendation is S3 first (cleanest pattern, validates the dispatcher generalization), S4 second (similar shape), S5 third (window dispatch is novel).
+
+**Wave 3 — Integration (depends on Wave 2):**
+- **S6** (Lando + Sabine) — Card-play UI + Reaction modal
+- **S7-b** (Cassian) — Playwright two-browser e2e, depending on S6 + S7-a
+
+The stop condition (§1) lands when Wave 3 is green.
+
+---
+
+## 8. Issue numbers
+
+Opened 2026-05-27 against `jasontiedt/squads-demo`. All carry the `mvp-6` label plus a `squad:{owner}` routing label.
+
+| Slice | Issue | Owner label | Title |
+|-------|-------|-------------|-------|
+| S1 | [#97](https://github.com/jasontiedt/squads-demo/issues/97) | `squad:artoo` | Capital tile + siege state + queries.ts (foundation) |
+| S2 | [#98](https://github.com/jasontiedt/squads-demo/issues/98) | `squad:wedge` | Effect DSL extension — attach-keyword + class-wide-passive verbs |
+| S3 | [#99](https://github.com/jasontiedt/squads-demo/issues/99) | `squad:artoo` | PlayUpgrade + PlayTechnology handlers + effectiveStats |
+| S4 | [#100](https://github.com/jasontiedt/squads-demo/issues/100) | `squad:artoo` | PlayEvent handler + ≤3-active cap + per-turn tick |
+| S5 | [#101](https://github.com/jasontiedt/squads-demo/issues/101) | `squad:artoo` | PlayReaction + trigger taxonomy + opponent-window state |
+| S6 | [#102](https://github.com/jasontiedt/squads-demo/issues/102) | `squad:lando` | Card-play UI for non-unit cards + Reaction window modal |
+| S7 | [#103](https://github.com/jasontiedt/squads-demo/issues/103) | `squad:artoo` | Admin seed endpoint + two-browser Playwright e2e |
+
+---
+
+## Capital units shape RFC — resolution
+
+### 2026-05-27: `wedge-capital-units-shape.md` RFC folded into MVP-6 S1 (foundation slice)
 
 **By:** Wedge (Lead/Architect) — via Scribe merge
-**What:** No `PlayReaction`, `PlayEvent`, `PlayTechnology`, or `PlayUpgrade` handler shipped in MVP-5. These kinds keep `effect: z.unknown()` and their `applyAction.ts` handlers remain `not_implemented`. Brady confirmed deferral during MVP-5 scoping.
-**Why:** Reactions add ~3 slices (trigger taxonomy, opponent-window state, dispatcher branch). Bundling them with the dispatcher would have stretched MVP-5 past 10 slices.
-**MVP-6 candidate scope:** Reactions (trigger taxonomy + opponent window), Events (≤3 active limit + persistent effects), Technology (class-wide passive buffs), Upgrade (attach-to-unit keyword effects), card-play UI for non-unit cards (Lando), admin seed endpoint for deterministic e2e (carry-over from PR #96 deferral).
-
+**What:** The dangling RFC (`TileId` brand, `CapitalInstance.tileId`/`siegeState`, `queries.ts` helpers, flat `state.units`) is folded into MVP-6 S1 as the foundation slice and ships under issue #97. The RFC dies as a separate document; see the MVP-6 scope §1 / §5 above for full rationale and acceptance criteria.
+**Source:** `.squad/decisions/inbox/wedge-capital-units-shape.md` (deleted on merge).
