@@ -102,7 +102,13 @@ export type RuleErrorCode =
   | 'not_an_upgrade'
   | 'not_a_technology'
   | 'target_not_yours'
-  | 'upgrade_class_mismatch';
+  | 'upgrade_class_mismatch'
+  // PlayEvent (#100, MVP-6 S4) — `not_an_event_card` parallels
+  // `not_an_action_card`. `event_cap_reached` rejects the play when
+  // the actor already has 3 active events (rulebook §"Events" hard cap);
+  // the engine NEVER auto-discards — caller resolves cap pressure.
+  | 'not_an_event_card'
+  | 'event_cap_reached';
 
 export interface RuleError {
   readonly code: RuleErrorCode;

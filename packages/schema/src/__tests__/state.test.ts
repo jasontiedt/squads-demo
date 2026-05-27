@@ -114,7 +114,12 @@ describe('Player', () => {
   });
 
   it('rejects activeEvents > 3', () => {
-    const events: CardId[] = [cid('e1'), cid('e2'), cid('e3'), cid('e4')];
+    const mkEvt = (id: string) => ({
+      cardId: cid(id),
+      ticksRemaining: 3,
+      effect: { kind: 'draw' as const, count: 1 },
+    });
+    const events = [mkEvt('e1'), mkEvt('e2'), mkEvt('e3'), mkEvt('e4')];
     expect(() => Player.parse({ ...minimalPlayer, activeEvents: events })).toThrow();
   });
 

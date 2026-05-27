@@ -167,7 +167,20 @@ export const EventCard = z.object({
   cost: CardCost,
   /** Pinned to `true` — Events are persistent by definition (rulebook §"Event"). */
   persistent: z.literal(true),
-  effect: z.unknown(),
+  /**
+   * Default duration (in end-of-owner-turn ticks) when this event lands
+   * in `Player.activeEvents`. Locked-in via MVP-6 S4 (issue #100) —
+   * replaces the prior vague "duration" prose. The runtime active-event
+   * entry stores its own `ticksRemaining` counter so the catalog value
+   * is read-once at play time.
+   */
+  ticksRemaining: z.number().int().min(1),
+  /**
+   * Typed on-play effect, dispatched ONCE when the event resolves
+   * (MVP-6 S4). Per-tick recurring effect firing is out of scope
+   * for MVP-6 and deferred to MVP-7.
+   */
+  effect: Effect,
 });
 export type EventCard = z.infer<typeof EventCard>;
 
