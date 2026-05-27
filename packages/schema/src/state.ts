@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Action, AttackMode } from './actions.js';
 import { CardId } from './cards.js';
 import { Civ } from './civ.js';
+import { ClassWidePassiveModifier } from './effects.js';
 import { BuildingInstanceId, Seed, TileId, UnitInstanceId } from './ids.js';
 import { ResourceToken, TemporaryResource } from './resources.js';
 
@@ -175,6 +176,23 @@ export const TemporaryBuff = z.object({
 export type TemporaryBuff = z.infer<typeof TemporaryBuff>;
 
 /**
+ * A keyword attachment on a unit. MVP-6 S2 (#98) introduces this to back
+ * the `attach-keyword` effect (Upgrade cards). Each entry records the
+ * keyword string plus an optional reference to the catalog Upgrade card
+ * that placed it — S3 uses `sourceUpgradeId` for the
+ * "removed when upgrade leaves play" lifecycle. Lifecycle is not
+ * enforced here: the schema only describes the shape.
+ *
+ * Same `cardId` (Upgrade) MAY appear twice with the same `keyword` on a
+ * single unit; deduplication is a card-rules concern, not a schema one.
+ */
+export const UnitAttachment = z.object({
+  keyword: z.string().min(1),
+  sourceUpgradeId: CardId.optional(),
+});
+export type UnitAttachment = z.infer<typeof UnitAttachment>;
+
+/**
  * A deployed unit on the board. `cardId` references the catalog card;
  * `id` is this specific instance (so two copies of the same unit have
  * distinct ids and independent damage / upgrades / pawn bonus).
@@ -190,6 +208,13 @@ export const UnitInstance = z.object({
   upgrades: z.array(CardId),
   pawnBonus: PawnBonus.optional(),
   temporaryBuffs: z.array(TemporaryBuff).optional(),
+  /**
+   * Keyword attachments (#98). Parallel to `upgrades` (which holds the
+   * raw catalog ids of attached Upgrade cards) but typed for the rules
+   * engine: each entry is a single keyword granted to the unit. One
+   * Upgrade card may register multiple attachments.
+   */
+  attachments: z.array(UnitAttachment).optional(),
 });
 export type UnitInstance = z.infer<typeof UnitInstance>;
 
@@ -335,6 +360,25 @@ const PendingReactionWindow = z.object({
 });
 
 /**
+ * Registered class-wide passive (#98). Technology cards (and any future
+ * source) push entries here when their `class-wide-passive` effect
+ * fires. The future `effectiveStats` helper (S3) reads this array,
+ * filters by `seat` + `ownership` + catalog `class`, and folds the
+ * modifier into each affected unit. Permanent for MVP-6 per the
+ * Technology lock; no removal verb yet.
+ */
+export const ClassWidePassiveRegistration = z.object({
+  /** Seat that registered the passive; resolves 'own' vs 'opponent'. */
+  seat: Seat,
+  /** Catalog id of the source Technology card, if known. */
+  sourceTechId: CardId.optional(),
+  classFilter: z.string().min(1),
+  ownership: z.enum(['own', 'opponent', 'all']),
+  modifier: ClassWidePassiveModifier,
+});
+export type ClassWidePassiveRegistration = z.infer<typeof ClassWidePassiveRegistration>;
+
+/**
  * Canonical persistence shape. The Worker writes one of these per gameId
  * to KV; the rules engine takes one in and returns one out.
  *
@@ -354,6 +398,12 @@ export const GameState = z.object({
   map: GameMap,
   moveLog: z.array(ActionLogEntry),
   pendingReactionWindow: PendingReactionWindow.optional(),
+  /**
+   * Class-wide passive registry (#98). Append-only for MVP-6; entries
+   * persist for the rest of the game (technologies are permanent per
+   * scope lock). Omitted when no technology has fired its effect yet.
+   */
+  classWidePassives: z.array(ClassWidePassiveRegistration).optional(),
   /**
    * Set when `phase === 'ended'`. Carries the seat of the player who
    * won (see #55 — win condition at EndTurn). Absent during play.

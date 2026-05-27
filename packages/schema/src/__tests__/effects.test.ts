@@ -7,6 +7,8 @@ import {
   HealCapitalEffect,
   GainTemporaryResourceEffect,
   BuffUnitStatEffect,
+  AttachKeywordEffect,
+  ClassWidePassiveEffect,
   EFFECT_KINDS,
   UnitInstanceId,
 } from '../index.js';
@@ -27,6 +29,8 @@ describe('Effect DSL', () => {
       'heal-capital',
       'gain-temporary-resource',
       'buff-unit-stat',
+      'attach-keyword',
+      'class-wide-passive',
     ]);
   });
 
@@ -214,6 +218,118 @@ describe('Effect DSL', () => {
           kind: 'units-by-class',
           classFilter: 'cavalry',
           ownership: 'neutral',
+        }),
+      ).toThrow();
+    });
+  });
+
+  // ── MVP-6 S2 (#98) ─────────────────────────────────────────────────
+
+  describe('attach-keyword', () => {
+    it('parses a valid attachment to a unit', () => {
+      const e = {
+        kind: 'attach-keyword',
+        target: { kind: 'unit', unitId: someUnitId },
+        keyword: 'first-strike',
+      };
+      expect(AttachKeywordEffect.parse(e)).toEqual(e);
+      expect(Effect.parse(e).kind).toBe('attach-keyword');
+    });
+    it('rejects a non-unit target (capital)', () => {
+      expect(() =>
+        AttachKeywordEffect.parse({
+          kind: 'attach-keyword',
+          target: 'self-capital',
+          keyword: 'first-strike',
+        }),
+      ).toThrow();
+    });
+    it('rejects a class-set target', () => {
+      expect(() =>
+        AttachKeywordEffect.parse({
+          kind: 'attach-keyword',
+          target: { kind: 'all-own-units' },
+          keyword: 'pierce',
+        }),
+      ).toThrow();
+    });
+    it('rejects an empty keyword', () => {
+      expect(() =>
+        AttachKeywordEffect.parse({
+          kind: 'attach-keyword',
+          target: { kind: 'unit', unitId: someUnitId },
+          keyword: '',
+        }),
+      ).toThrow();
+    });
+  });
+
+  describe('class-wide-passive', () => {
+    it('parses a stat-delta modifier', () => {
+      const e = {
+        kind: 'class-wide-passive',
+        classFilter: 'infantry',
+        ownership: 'own',
+        modifier: { kind: 'stat-delta', stat: 'melee', delta: 1 },
+      };
+      expect(ClassWidePassiveEffect.parse(e)).toEqual(e);
+      expect(Effect.parse(e).kind).toBe('class-wide-passive');
+    });
+    it('parses a keyword modifier', () => {
+      const e = {
+        kind: 'class-wide-passive',
+        classFilter: 'cavalry',
+        ownership: 'all',
+        modifier: { kind: 'keyword', keyword: 'charge' },
+      };
+      expect(ClassWidePassiveEffect.parse(e)).toEqual(e);
+    });
+    it('accepts opponent ownership', () => {
+      const e = {
+        kind: 'class-wide-passive',
+        classFilter: 'archers',
+        ownership: 'opponent',
+        modifier: { kind: 'stat-delta', stat: 'ranged', delta: -1 },
+      };
+      expect(ClassWidePassiveEffect.parse(e)).toEqual(e);
+    });
+    it('rejects unknown ownership', () => {
+      expect(() =>
+        ClassWidePassiveEffect.parse({
+          kind: 'class-wide-passive',
+          classFilter: 'infantry',
+          ownership: 'neutral',
+          modifier: { kind: 'stat-delta', stat: 'melee', delta: 1 },
+        }),
+      ).toThrow();
+    });
+    it('rejects empty classFilter', () => {
+      expect(() =>
+        ClassWidePassiveEffect.parse({
+          kind: 'class-wide-passive',
+          classFilter: '',
+          ownership: 'own',
+          modifier: { kind: 'stat-delta', stat: 'melee', delta: 1 },
+        }),
+      ).toThrow();
+    });
+    it('rejects stat-delta with delta === 0', () => {
+      expect(() =>
+        ClassWidePassiveEffect.parse({
+          kind: 'class-wide-passive',
+          classFilter: 'infantry',
+          ownership: 'own',
+          modifier: { kind: 'stat-delta', stat: 'melee', delta: 0 },
+        }),
+      ).toThrow();
+    });
+    it('rejects unknown modifier kind', () => {
+      expect(() =>
+        ClassWidePassiveEffect.parse({
+          kind: 'class-wide-passive',
+          classFilter: 'infantry',
+          ownership: 'own',
+          modifier: { kind: 'cost-reduction', amount: 1 },
         }),
       ).toThrow();
     });

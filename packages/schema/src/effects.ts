@@ -88,6 +88,73 @@ export const BuffUnitStatEffect = z.object({
 });
 export type BuffUnitStatEffect = z.infer<typeof BuffUnitStatEffect>;
 
+// ─────────────────────── MVP-6 S2: DSL extension ─────────────────────
+//
+// Issue #98 walks the locked 5-verb DSL to 7. The two new verbs cover
+// Upgrade and Technology cards — both deferred from MVP-5 — without
+// re-opening any other primitive. After this slice the DSL is closed
+// again at 7 for the remainder of MVP-6.
+//
+//   • `attach-keyword`      — Upgrade cards attach a keyword (e.g.
+//     'first-strike', 'pierce') to a specific deployed unit. Target
+//     is restricted to `{ kind: 'unit' }`; capital and set selectors
+//     are not meaningful for unit-level attachments.
+//   • `class-wide-passive`  — Technology cards register a persistent
+//     stat or keyword modifier that applies to every unit matching a
+//     class filter + ownership. No target field — the registration
+//     payload IS the selector. The future `effectiveStats` helper (S3)
+//     reads from `GameState.classWidePassives` and composes deltas.
+//
+// Lifecycle (attachment removal on unit death, technology dispel) is
+// S3's problem; the schema only describes the shape and the dispatcher
+// only performs the apply.
+
+/**
+ * Modifier carried by a class-wide-passive registration. A discriminated
+ * union so future modifier kinds (e.g. cost reduction) plug in by
+ * extending this union, not by re-shaping `class-wide-passive` itself.
+ */
+const ClassWideStatDelta = z.object({
+  kind: z.literal('stat-delta'),
+  stat: z.enum(['melee', 'ranged', 'health']),
+  delta: z.number().int().refine((n) => n !== 0, { message: 'delta must be non-zero' }),
+});
+const ClassWideKeyword = z.object({
+  kind: z.literal('keyword'),
+  keyword: z.string().min(1),
+});
+export const ClassWidePassiveModifier = z.discriminatedUnion('kind', [
+  ClassWideStatDelta,
+  ClassWideKeyword,
+]);
+export type ClassWidePassiveModifier = z.infer<typeof ClassWidePassiveModifier>;
+
+export const AttachKeywordEffect = z.object({
+  kind: z.literal('attach-keyword'),
+  /** Upgrades attach to one unit; capital/class-set targets rejected. */
+  target: z.object({
+    kind: z.literal('unit'),
+    unitId: UnitInstanceId,
+  }),
+  keyword: z.string().min(1),
+});
+export type AttachKeywordEffect = z.infer<typeof AttachKeywordEffect>;
+
+export const ClassWidePassiveEffect = z.object({
+  kind: z.literal('class-wide-passive'),
+  classFilter: z.string().min(1),
+  /**
+   * Which units the registration applies to. Resolved at read time
+   * against the registering seat (recorded on the state entry):
+   *   • 'own'      — units owned by the registering seat
+   *   • 'opponent' — units owned by any other seat
+   *   • 'all'      — every unit on the board regardless of owner
+   */
+  ownership: z.enum(['own', 'opponent', 'all']),
+  modifier: ClassWidePassiveModifier,
+});
+export type ClassWidePassiveEffect = z.infer<typeof ClassWidePassiveEffect>;
+
 // ─────────────────────── Discriminated union ─────────────────────────
 
 export const Effect = z.discriminatedUnion('kind', [
@@ -96,6 +163,8 @@ export const Effect = z.discriminatedUnion('kind', [
   HealCapitalEffect,
   GainTemporaryResourceEffect,
   BuffUnitStatEffect,
+  AttachKeywordEffect,
+  ClassWidePassiveEffect,
 ]);
 export type Effect = z.infer<typeof Effect>;
 
@@ -106,5 +175,7 @@ export const EFFECT_KINDS = [
   'heal-capital',
   'gain-temporary-resource',
   'buff-unit-stat',
+  'attach-keyword',
+  'class-wide-passive',
 ] as const;
 export type EffectKind = (typeof EFFECT_KINDS)[number];
