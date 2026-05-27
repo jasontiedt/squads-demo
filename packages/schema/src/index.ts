@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TileId } from './ids.js';
 
 export * from './ids.js';
 export * from './resources.js';
@@ -78,7 +79,7 @@ export type TileOrientation = z.infer<typeof TileOrientation>;
 
 /** A 2×2 tile. `squares` always holds exactly 4 entries (the tile's quadrants). */
 export const Tile = z.object({
-  id: z.string().min(1),
+  id: TileId,
   kind: TileKind,
   orientation: TileOrientation,
   faceDown: z.boolean(),

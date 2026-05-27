@@ -29,6 +29,7 @@ import {
   type Player,
   type Seed,
   type Tile,
+  type TileId,
 } from '@eoe/schema';
 import {
   CAPITAL_DEFAULT_HP,
@@ -51,7 +52,7 @@ import { shuffleWith } from './shuffle.js';
 
 function seat1StartingTile(): Tile {
   return {
-    id: 't-start-p1',
+    id: 't-start-p1' as TileId,
     kind: 'starting',
     orientation: 0,
     faceDown: false,
@@ -66,7 +67,7 @@ function seat1StartingTile(): Tile {
 
 function seat2StartingTile(): Tile {
   return {
-    id: 't-start-p2',
+    id: 't-start-p2' as TileId,
     kind: 'starting',
     orientation: 0,
     faceDown: false,
@@ -153,14 +154,23 @@ function buildPlayer(seat: 1 | 2, civ: Civ, seed: Seed): Player {
   return player;
 }
 
-/** Capital `BuildingInstance` for a given seat. */
+/** Capital `BuildingInstance` for a given seat.
+ *
+ *  MVP-6 S1 (#97): carries `tileId` (the starting tile that contains
+ *  the capital's anchor square) and `siegeState: 'open'` at init.
+ *  Tile ids are the same deterministic per-seat constants used by
+ *  `seat1StartingTile` / `seat2StartingTile`, so the link is stable.
+ */
 function buildCapital(seat: 1 | 2): BuildingInstance {
+  const tileId = (seat === 1 ? 't-start-p1' : 't-start-p2') as TileId;
   return {
     id: `bld-cap-p${seat}` as BuildingInstanceId,
     type: 'capital',
     owner: seat,
     square: CAPITAL_SQUARE[seat],
     damage: 0,
+    tileId,
+    siegeState: 'open',
   };
 }
 

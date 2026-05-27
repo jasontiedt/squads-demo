@@ -6,6 +6,7 @@ import {
   type Player,
   type Seed,
   type Tile,
+  type TileId,
   type UnitInstance,
 } from '@eoe/schema';
 
@@ -51,6 +52,8 @@ const englishCapital: BuildingInstance = {
   owner: 1,
   square: { x: 0, y: 0 },
   damage: 0,
+  tileId: 't-eng-start' as TileId,
+  siegeState: 'open',
 };
 
 const byzantinesCapital: BuildingInstance = {
@@ -59,10 +62,12 @@ const byzantinesCapital: BuildingInstance = {
   owner: 2,
   square: { x: 5, y: 5 },
   damage: 0,
+  tileId: 't-byz-start' as TileId,
+  siegeState: 'open',
 };
 
 const englishStartingTile: Tile = {
-  id: 't-eng-start',
+  id: 't-eng-start' as TileId,
   kind: 'starting',
   orientation: 0,
   faceDown: false,
@@ -75,7 +80,7 @@ const englishStartingTile: Tile = {
 };
 
 const byzantinesStartingTile: Tile = {
-  id: 't-byz-start',
+  id: 't-byz-start' as TileId,
   kind: 'starting',
   orientation: 0,
   faceDown: false,

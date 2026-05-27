@@ -3,6 +3,7 @@ import type {
   CardId,
   GameState,
   Tile,
+  TileId,
   UnitInstance,
 } from '@eoe/schema';
 import { describe, expect, it } from 'vitest';
@@ -61,7 +62,7 @@ function plainsBoardTile(): Tile {
   // Build a 4-square tile that covers (0..1, 0..1) and rely on extra
   // tiles below to cover the rest of the board.
   return {
-    id: 't-plains-0',
+    id: 't-plains-0' as TileId,
     kind: 'starting',
     orientation: 0,
     faceDown: false,
@@ -87,7 +88,7 @@ function tileAt(
   opts: { faceDown?: boolean } = {},
 ): Tile {
   return {
-    id,
+    id: id as TileId,
     kind: 'starting',
     orientation: 0,
     faceDown: opts.faceDown ?? false,

@@ -21,6 +21,17 @@ export type UnitInstanceId = z.infer<typeof UnitInstanceId>;
 export const BuildingInstanceId = z.string().min(1).brand<'BuildingInstanceId'>();
 export type BuildingInstanceId = z.infer<typeof BuildingInstanceId>;
 
+/**
+ * Branded id for a Tile on the board.
+ *
+ * MVP-6 S1 (issue #97): promoted from a free `z.string()` on `Tile.id`
+ * so capital-tile membership (`CapitalInstance.tileId`) and helpers
+ * (`tileOfSquare`, `unitsOnTile`) carry a typed link rather than a
+ * coincidence of string equality. RFC: `wedge-capital-units-shape.md`.
+ */
+export const TileId = z.string().min(1).brand<'TileId'>();
+export type TileId = z.infer<typeof TileId>;
+
 /** Branded RNG seed. Engine takes deterministic seeds — no Math.random. */
 export const Seed = z.string().min(1).brand<'Seed'>();
 export type Seed = z.infer<typeof Seed>;

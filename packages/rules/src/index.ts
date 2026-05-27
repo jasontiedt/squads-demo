@@ -25,6 +25,7 @@ export {
 export { payCost } from './payCost.js';
 export { playAction } from './playAction.js';
 export { dispatchEffect, type EffectContext } from './effects/dispatch.js';
+export { capitalOf, tileOfSquare, unitsFor, unitsOnTile } from './queries.js';
 export { scout } from './scout.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
 export { mulberry32, seedFor } from './rng.js';

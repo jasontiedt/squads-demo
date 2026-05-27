@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Action, AttackMode } from './actions.js';
 import { CardId } from './cards.js';
 import { Civ } from './civ.js';
-import { BuildingInstanceId, Seed, UnitInstanceId } from './ids.js';
+import { BuildingInstanceId, Seed, TileId, UnitInstanceId } from './ids.js';
 import { ResourceToken, TemporaryResource } from './resources.js';
 
 // ─────────────────────────── Game state ──────────────────────────────
@@ -79,7 +79,7 @@ const TileOrientation = z.union([
 ]);
 
 const Tile = z.object({
-  id: z.string().min(1),
+  id: TileId,
   kind: TileKind,
   orientation: TileOrientation,
   faceDown: z.boolean(),
@@ -235,7 +235,33 @@ export const BarracksInstance = z
   })
   .strict();
 
-/** Capital: starting building; HP tracked on the matching `Player`. */
+/**
+ * Siege state for a capital — RFC `wedge-capital-units-shape.md`, MVP-6 S1.
+ *
+ *   • `open`   — no besieger on the capital's tile. Default at init.
+ *   • `sieged` — opponent has triggered a siege effect against this
+ *                capital (mechanics for transitioning live in later
+ *                MVP-6 slices — Reaction triggers, Event handlers).
+ *   • `fallen` — capital HP has reached 0. Set by `attack.ts` when the
+ *                capital takes lethal damage. Win condition still gates
+ *                on `Player.capitalHp <= 0` (single source of truth);
+ *                this enum exists so handlers can ask "is this capital
+ *                dead?" given only a `BuildingInstance` reference.
+ *
+ * Lock L7-style enumeration: closed at 3 values for MVP-6. Adding a
+ * fourth state waits for a real card that needs it.
+ */
+export const SiegeState = z.enum(['open', 'sieged', 'fallen']);
+export type SiegeState = z.infer<typeof SiegeState>;
+
+/**
+ * Capital: starting building; HP tracked on the matching `Player`.
+ *
+ * MVP-6 S1 (issue #97): gains `tileId` (denormalized link to the
+ * containing tile — capitals don't move post-init so denormalization
+ * is safe) and `siegeState` (defaults `'open'` at init; `attack.ts`
+ * transitions to `'fallen'` on lethal hit in a follow-up slice).
+ */
 export const CapitalInstance = z
   .object({
     id: BuildingInstanceId,
@@ -243,8 +269,11 @@ export const CapitalInstance = z
     owner: Seat,
     square: Coord,
     damage: z.number().int().min(0),
+    tileId: TileId,
+    siegeState: SiegeState,
   })
   .strict();
+export type CapitalInstance = z.infer<typeof CapitalInstance>;
 
 export const BuildingInstance = z.discriminatedUnion('type', [
   CampInstance,

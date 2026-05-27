@@ -10,6 +10,7 @@ import {
   PawnBonus,
   Player,
   Seed,
+  type TileId,
   TurnPhase,
   UnitInstance,
   UnitInstanceId,
@@ -193,6 +194,8 @@ describe('BuildingInstance (discriminated union)', () => {
     owner: 1,
     square: corner,
     damage: 0,
+    tileId: 't-cap-tile' as TileId,
+    siegeState: 'open',
   };
 
   it('round-trips Camp / Barracks / Capital', () => {
