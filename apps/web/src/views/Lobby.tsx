@@ -13,6 +13,8 @@ import {
 } from '../api/client.js';
 import { navigate } from '../router/hash.js';
 import { Board } from '../components/board/Board.js';
+import { ActiveEventsRail } from '../components/ActiveEventsRail.js';
+import { ReactionWindowModal } from '../components/ReactionWindowModal.js';
 import { ResourceBank } from '../components/hud/ResourceBank.js';
 import { TurnIndicator } from '../components/hud/TurnIndicator.js';
 import { WinnerBanner } from '../components/hud/WinnerBanner.js';
@@ -63,15 +65,21 @@ const TOAST_TTL_MS = 4000;
 
 type ActionMode = 'move' | 'attack-melee' | 'attack-ranged' | 'scout';
 
+/** Which on-board picker the user is in after selecting a card.
+ *  Issue #102 added `upgrade-target` so the same selection slot serves
+ *  both deploy and upgrade flows. Tactic / action / event / technology
+ *  cards never enter `card-selected` — they dispatch immediately.    */
+type CardPickerKind = 'deploy' | 'upgrade-target';
+
 type SelectionState =
   | { kind: 'idle' }
   | { kind: 'unit-selected'; unitId: string; mode: ActionMode }
-  | { kind: 'card-selected'; cardId: string };
+  | { kind: 'card-selected'; cardId: string; pickerKind: CardPickerKind };
 
 type SelectionEvent =
   | { type: 'clear' }
   | { type: 'select-unit'; unitId: string; mode: ActionMode }
-  | { type: 'select-card'; cardId: string }
+  | { type: 'select-card'; cardId: string; pickerKind: CardPickerKind }
   | { type: 'set-mode'; mode: ActionMode };
 
 const initialSelection: SelectionState = { kind: 'idle' };
@@ -86,7 +94,11 @@ const selectionReducer = (
     case 'select-unit':
       return { kind: 'unit-selected', unitId: ev.unitId, mode: ev.mode };
     case 'select-card':
-      return { kind: 'card-selected', cardId: ev.cardId };
+      return {
+        kind: 'card-selected',
+        cardId: ev.cardId,
+        pickerKind: ev.pickerKind,
+      };
     case 'set-mode':
       if (s.kind !== 'unit-selected') return s;
       return { ...s, mode: ev.mode };
@@ -324,7 +336,11 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
         }
       }
     } else if (selection.kind === 'card-selected') {
-      legalTargets = computeDeployTargets(state, membership.seat);
+      if (selection.pickerKind === 'deploy') {
+        legalTargets = computeDeployTargets(state, membership.seat);
+      }
+      // upgrade-target picker uses unit clicks, not square clicks; no
+      // square-level legal-target set is computed here.
     }
   }
 
@@ -333,6 +349,23 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
   /** Click on any unit marker. */
   const handleUnitClick = (u: UnitInstance): void => {
     if (state === null || !yourTurn || actionInFlight) return;
+
+    // Upgrade picker: clicking an own unit attaches the selected
+    // upgrade card to it (issue #102).
+    if (
+      selection.kind === 'card-selected' &&
+      selection.pickerKind === 'upgrade-target' &&
+      u.owner === membership.seat
+    ) {
+      const cardId = selection.cardId as CardId;
+      clearSelection();
+      void dispatchAction({
+        type: 'PlayUpgrade',
+        cardId,
+        targetUnitId: u.id as UnitInstance['id'],
+      });
+      return;
+    }
 
     // If user clicks an own unit while idle → select it (default mode: move).
     if (u.owner === membership.seat) {
@@ -403,6 +436,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
     }
 
     if (selection.kind === 'card-selected') {
+      if (selection.pickerKind !== 'deploy') return;
       if (!legalTargets.has(key)) return;
       const cardId = selection.cardId as CardId;
       clearSelection();
@@ -414,12 +448,24 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
     }
   };
 
-  /** Click on a card in the hand strip. Behavior depends on card kind:
-   *  - `unit` cards → enter Deploy mode (select-card, wait for capital
-   *    square click → DeployUnit).
-   *  - All other kinds (tactic / action / event / upgrade / technology)
-   *    and cards not in the catalog → dispatch `PlayCard` directly
-   *    (target: undefined; rules engine validates).  */
+  /** Click on a card in the hand strip. Behavior is kind-aware
+   *  (issue #102 — MVP-6 S6):
+   *
+   *  | kind        | flow                                            |
+   *  |-------------|-------------------------------------------------|
+   *  | unit        | enter Deploy picker → DeployUnit on square      |
+   *  | upgrade     | enter Upgrade picker → PlayUpgrade on own unit  |
+   *  | action      | dispatch `PlayAction` immediately               |
+   *  | tactic      | dispatch `PlayTactic` immediately (no payload)  |
+   *  | technology  | dispatch `PlayTechnology` immediately           |
+   *  | event       | dispatch `PlayEvent` immediately                |
+   *  | reaction    | no-op (reaction cards play via reaction modal)  |
+   *  | civilization| no-op (passive, not playable from hand)         |
+   *  | unknown     | dispatch `PlayAction` (back-compat — legacy
+   *                  tests + hand-rolled card IDs not in catalog).   |
+   *
+   *  Toggle-off: clicking a card while it's already the active picker
+   *  clears the selection. */
   const handleCardClick = (cardId: string): void => {
     if (!cardsClickable || state === null) return;
 
@@ -428,25 +474,75 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
     const catalog = loadCivMeta(civ);
     const card = catalog.find((c) => c.id === cardId);
 
-    if (card !== undefined && card.kind === 'unit') {
-      // Deploy flow: stash card selection, wait for square click.
-      if (selection.kind === 'card-selected' && selection.cardId === cardId) {
-        clearSelection();
-        return;
-      }
-      dispatchSelection({ type: 'select-card', cardId });
+    // Toggle off any matching active picker first.
+    if (
+      selection.kind === 'card-selected' &&
+      selection.cardId === cardId
+    ) {
+      clearSelection();
       return;
     }
 
-    // Non-unit (or unknown) card → dispatch PlayAction immediately
-    // (typed action-card play, replaced generic PlayCard in #85).
-    // NOTE: kinds other than `action` will be rejected by the rules
-    // engine; UI for tactic/event/upgrade/technology lands in MVP-6.
-    clearSelection();
-    void dispatchAction({
-      type: 'PlayAction',
-      cardId: cardId as CardId,
-    });
+    if (card === undefined) {
+      // Back-compat: unknown cards (legacy test stubs, custom catalogs)
+      // dispatch `PlayAction`. The engine validates server-side.
+      clearSelection();
+      void dispatchAction({
+        type: 'PlayAction',
+        cardId: cardId as CardId,
+      });
+      return;
+    }
+
+    switch (card.kind) {
+      case 'unit':
+        dispatchSelection({
+          type: 'select-card',
+          cardId,
+          pickerKind: 'deploy',
+        });
+        return;
+      case 'upgrade':
+        dispatchSelection({
+          type: 'select-card',
+          cardId,
+          pickerKind: 'upgrade-target',
+        });
+        return;
+      case 'action':
+        clearSelection();
+        void dispatchAction({
+          type: 'PlayAction',
+          cardId: cardId as CardId,
+        });
+        return;
+      case 'tactic':
+        clearSelection();
+        void dispatchAction({
+          type: 'PlayTactic',
+          cardId: cardId as CardId,
+        });
+        return;
+      case 'technology':
+        clearSelection();
+        void dispatchAction({
+          type: 'PlayTechnology',
+          cardId: cardId as CardId,
+        });
+        return;
+      case 'event':
+        clearSelection();
+        void dispatchAction({
+          type: 'PlayEvent',
+          cardId: cardId as CardId,
+        });
+        return;
+      case 'reaction':
+      case 'civilization':
+        // Reactions play via the reaction-window modal; civilization
+        // cards are passive. Both are no-ops from the hand strip.
+        return;
+    }
   };
 
   /** Action-mode buttons (Move / Attack / Scout) only meaningful when a
@@ -648,17 +744,56 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
       )}
 
       {state && (
-        <Board
-          state={state}
-          selectedUnitId={
-            selection.kind === 'unit-selected' ? selection.unitId : undefined
-          }
-          legalTargets={legalTargets}
-          legalTargetUnitIds={legalTargetUnitIds}
-          onSquareClick={handleSquareClick}
-          onUnitClick={handleUnitClick}
-          onClearSelection={clearSelection}
-        />
+        <>
+          {/* Opponent active-events rail (issue #102 — MVP-6 S6).
+              We show the first non-self seat with active events. */}
+          {(() => {
+            const opponentSeats = ([1, 2, 3, 4] as const).filter(
+              (s) => s !== membership.seat,
+            );
+            for (const s of opponentSeats) {
+              const p = state.players[s];
+              if (p === undefined) continue;
+              if (p.activeEvents.length === 0) continue;
+              return (
+                <ActiveEventsRail
+                  key={`rail-top-${s}`}
+                  seat={s}
+                  civ={p.civ}
+                  activeEvents={p.activeEvents}
+                  label={`Seat ${s} events`}
+                  position="top"
+                />
+              );
+            }
+            return null;
+          })()}
+          <Board
+            state={state}
+            selectedUnitId={
+              selection.kind === 'unit-selected' ? selection.unitId : undefined
+            }
+            legalTargets={legalTargets}
+            legalTargetUnitIds={legalTargetUnitIds}
+            onSquareClick={handleSquareClick}
+            onUnitClick={handleUnitClick}
+            onClearSelection={clearSelection}
+          />
+          {/* Own active-events rail. */}
+          {(() => {
+            const own = state.players[membership.seat];
+            if (own === undefined) return null;
+            return (
+              <ActiveEventsRail
+                seat={membership.seat}
+                civ={own.civ}
+                activeEvents={own.activeEvents}
+                label="Your events"
+                position="bottom"
+              />
+            );
+          })()}
+        </>
       )}
 
       {state && (
@@ -687,6 +822,26 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
           gameCode={gameCode}
           winner={state.winner}
           viewerSeat={membership.seat}
+        />
+      )}
+
+      {/* Reaction window modal (issue #102 — MVP-6 S6). Self-renders
+          to null when the local seat isn't eligible. */}
+      {state && (
+        <ReactionWindowModal
+          state={state}
+          localSeat={membership.seat}
+          disabled={actionInFlight}
+          onPlayReaction={(cardId, triggerLogIndex) =>
+            void dispatchAction({
+              type: 'PlayReaction',
+              cardId,
+              triggerLogIndex,
+            })
+          }
+          onPassReaction={() =>
+            void dispatchAction({ type: 'PassReaction' })
+          }
         />
       )}
     </main>
