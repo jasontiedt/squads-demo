@@ -7,6 +7,8 @@ import { move } from './move.js';
 import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playAction } from './playAction.js';
 import { playTactic } from './playTactic.js';
+import { playTechnology } from './playTechnology.js';
+import { playUpgrade } from './playUpgrade.js';
 import { err, ok, type Result } from './result.js';
 import { scout } from './scout.js';
 
@@ -240,6 +242,19 @@ export function applyAction(
     case 'PlayTactic':
       return playTactic(state, action, actorId);
 
+    // Issue #99 (MVP-6 S3): PlayUpgrade — attach an Upgrade card to a
+    // deployed unit. Same atomic pay → discard → dispatch flow as
+    // PlayAction/PlayTactic, plus target-unit ownership + class-
+    // restriction gates.
+    case 'PlayUpgrade':
+      return playUpgrade(state, action, actorId);
+
+    // Issue #99 (MVP-6 S3): PlayTechnology — register a class-wide
+    // passive. No action-level target — the effect carries its own
+    // selector (classFilter + ownership).
+    case 'PlayTechnology':
+      return playTechnology(state, action, actorId);
+
     // Issue #56: Scout — reveal a face-down tile (MVP-3, no adjacency).
     case 'Scout':
       return scout(state, action, actorId);
@@ -262,8 +277,6 @@ export function applyAction(
     case 'UnitAbility':
     case 'Resupply':
     case 'RecruitDraw':
-    case 'PlayTechnology':
-    case 'PlayUpgrade':
     case 'PlayEvent':
     case 'DiscardEvent':
     case 'PlayReaction':

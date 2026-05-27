@@ -89,7 +89,20 @@ export type RuleErrorCode =
   // PlayTactic (#86) — same as PlayAction but rejects non-tactic cards.
   // `not_a_tactic` parallels `not_an_action_card`; per-card
   // `playableIn` rejection re-uses the existing `wrong_phase` code.
-  | 'not_a_tactic';
+  | 'not_a_tactic'
+  // PlayUpgrade / PlayTechnology (#99, MVP-6 S3) — same family as
+  // `not_a_tactic` / `not_an_action_card`. PlayUpgrade additionally
+  // gates the target unit:
+  //   `target_not_yours`        — target unit exists but is not owned
+  //                               by the actor (Upgrades attach to own
+  //                               units only at the card-rules layer).
+  //   `upgrade_class_mismatch`  — card's `restrictedToClass` set does
+  //                               not intersect the target unit's
+  //                               class set.
+  | 'not_an_upgrade'
+  | 'not_a_technology'
+  | 'target_not_yours'
+  | 'upgrade_class_mismatch';
 
 export interface RuleError {
   readonly code: RuleErrorCode;
