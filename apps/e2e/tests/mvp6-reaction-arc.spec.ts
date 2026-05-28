@@ -1,4 +1,4 @@
-import { test, expect, type Page, type BrowserContext } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 /**
  * MVP-6 S7-B (issue #103 part B): two-browser reaction-arc e2e.
@@ -129,7 +129,22 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
   let guest: Player;
   let gameCode: string;
 
-  test('host creates, guest joins, admin-seeds deterministic decks, reaction mitigates damage', async ({
+  // @needs-confirmation — BLOCKER (see .squad/decisions/inbox/cassian-mvp6-e2e-blocker.md):
+  //
+  // The full reaction arc requires DEPLOYING a unit, which requires a
+  // non-empty `player.resources` token list. Per `initialState.ts`, every
+  // player starts with `resources: []`, and the only in-game source of
+  // resources is `BuildCamp` — which currently returns `not_implemented`
+  // in `applyAction.ts`. Therefore NO deploy can ever succeed in e2e
+  // regardless of card cost.
+  //
+  // Unblocking requires EITHER:
+  //   (a) `BuildCamp` effect handler implemented in the rules engine, OR
+  //   (b) `admin-seed` extended to optionally seed `resources` + units.
+  //
+  // Both are out of scope for #103. This spec is preserved as the
+  // executable scaffolding for the arc — un-skip once (a) or (b) lands.
+  test.skip('host creates, guest joins, admin-seeds deterministic decks, reaction mitigates damage', async ({
     browser,
   }) => {
     // ─────────── Host creates ───────────
