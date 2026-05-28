@@ -139,3 +139,7 @@ Both green at merge.
 - Recommended follow-up: once unit-testid is confirmed, the spec should pass through attack + reaction-window without further changes.
 
 **Tester-wearing-dev-hat reminder:** This is test-only code (e2e spec + 1 config tweak + 1 fixture card). No rules/worker/schema mutation.
+
+### 2026-05-28: MVP-6 shipped — S7-B as scaffolding (PR #111)
+
+PR #111 merged. ~365-line reaction-arc spec lives in `apps/e2e/tests/mvp6-reaction-arc.spec.ts`, `test.skip`-ed with `@needs-confirmation`. Diagnosis on the blocker (superseded the original cost-swap hypothesis): `Board.tsx` testids are correct; the real blocker is empty starting resources + `BuildCamp` not_implemented. Follow-ups filed for MVP-7: **#112** (BuildCamp handler) and **#113** (admin-seed resources/units backdoor). Either lands → un-skip. Verified-correct admin-seed body shape pinned in decisions.md: `{ deckOrder, opponentDeckOrder, hand, opponentHand }` (not `{ hostDeck, guestDeck }`). Also pinned: `apps/e2e/node_modules` must be junctioned in worktree setup; default 6-path list misses it.

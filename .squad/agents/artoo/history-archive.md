@@ -76,3 +76,50 @@ Older entries archived from `history.md` by Scribe to keep the active file under
 ---
 
 For active history, see `history.md` in this directory.
+
+## Archived 2026-05-28 by Scribe (history.md ≥ 15KB) — MVP-3 + MVP-4 detail blocks
+
+### 2026-05-22: Issue #57 — Capital placement + board init extracted to @eoe/rules (PR #61)
+
+- **Moved from worker → `packages/rules/`:** `constants.ts` (`CAPITAL_DEFAULT_HP = 20`, `STARTING_HAND_SIZE = 5`, `MIN_DECK_AFTER_DRAW = 7`), `shuffle.ts` (`shuffleWith<T>`), `initialState.ts` (`buildCreatorState`, `addJoiner`). Worker's `game-init.ts` is now a 14-line re-export shim — call sites unchanged.
+- **Capital ids:** `bld-cap-p1` / `bld-cap-p2` (issue spec). HP = 20 (long-game default per rulebook §324). Anchor squares (0,0) and (5,5); MVP-4 will randomize.
+- **Production HP changed 10 → 20.** Test fixtures kept at 10 — they're round-trip sample data, not init-output assertions. Touching them is cosmetic.
+- **Issue-vs-schema reconciliation:** Issue text mentioned `tileId`/`siegeState` on `BuildingInstance` and per-player `units[]`. None exist in current schema. Did NOT add them. Decision filed at `.squad/decisions/inbox/artoo-capital-init.md` (merged) noting schema RFC needed before siege card effects.
+- **Worktree gotcha:** pnpm-installed `apps/worker/node_modules/@eoe/<pkg>` were REAL directory copies (not symlinks) in worktrees. New files invisible to the worker until `rmdir /S /Q` + re-`mklink /J` with **absolute paths** (relative paths resolve against cmd CWD, not link location).
+- Tests: rules 121 → 136 (+15), worker 43 → 44 (+1).
+
+### 2026-05-22: Issue #56 — Scout action handler (PR #62, silent-success)
+
+- **Files:** `scout.ts`, +2 error codes (`tile_not_found`, `tile_already_revealed`), wired into `applyAction`, 11 tests.
+- **Shape lesson:** Spawn prompt guessed `tileId: TileId` but `ScoutAction` is `{ type, unitId, target: Coord }`. Resolved containing tile by walking `state.map.tiles[*].squares[*].coord` — matches the rest of the engine (everything speaks Coords).
+- **Decision pinned (overrode prompt):** Rules engine does NOT bump `state.version` — Worker owns version. Declined the prompt's "Return Ok with bumped version" instruction.
+- **MVP-3 simplifications:** no adjacency rule, no card cost, no per-turn cap, `unitId` not validated (`@needs-confirmation`), no re-orientation step.
+- **Defensive target check:** existing `phases.test.ts` table-driven test stubs Scout as `{ type: 'Scout' }` with no `target`. Added guard at the top returning `tile_not_found` if `target` missing/malformed.
+- **Silent-success:** finished file writes but spawn returned empty. Coordinator filesystem-checked + ran tests + opened PR.
+- **Cross-worktree terminal noise:** Multiple concurrent worktrees in the same shell can cross-contaminate output. Pipe vitest to `/tmp/<task>-test.log` via `nohup ... &` and tail the file for clean reads.
+
+### 2026-05-22: Issues #53/#54/#55 + hotfix #63 + CI #64
+
+- **#53 DeployUnit (PR #59):** Mobilization-phase gated, pays cost via catalog lookup, places on `state.units` with `owner: Seat`, `exhausted: false`. 14 tests.
+- **#63 Hotfix:** deployUnit tests migrated from removed `byz-unit-placeholder` to real `eng-watchman`. Reinforces `artoo-test-fixtures-use-real-catalog.md` decision.
+- **#64 CI gap:** Added `.github/workflows/unit-tests.yml` running `pnpm -r test` on every PR.
+- **#54 Attack (PR #65):** target square → damage → kill / capital damage / siege flag. **Reuses `UnitInstance.exhausted`** for "already acted" gating; no `actedThisTurn` schema mutation. Decision: `.squad/decisions/inbox/artoo-attack-acted-tracking.md`.
+- **#55 Win condition (PR #66, silent-success):** `applyAction` post-mutation hook checks capital HP ≤ 0 OR no opponent units → sets `state.winner: Seat | null`.
+
+### 2025-05-23 — Issue #68: Capital-HP win condition
+
+- **Schema reality:** Issue text said `BuildingInstance.health <= 0` but HP lives on `Player.capitalHp`. `BuildingInstance` only carries `damage`. Implemented win check against `Player.capitalHp <= 0`.
+- **Attack still did NOT damage capitals at that point** — `attack.ts:86` returned `not_implemented` for building targets. Win condition testable only via synthetic state until #79.
+- **Win precedence via code ordering.** Units-eliminated check runs first and `return`s if it fires; capital-HP check unreachable on that turn. No flag, no extra branching.
+- **4-player corner rule.** Game ends ONLY when EXACTLY ONE occupied seat has `capitalHp > 0`. Single dead capital in 4-player game ≠ game end.
+
+### 2026-05-23 — Issue #78: Attack against Capital damages capitalHp (PR #79)
+
+- **Lifted the MVP-4 stub.** Branched off `attackBuilding()` helper mirroring unit-target validation but writing to `Player.capitalHp`.
+- **HP lives on `Player.capitalHp`, not on the building** — consistent with #68. `BuildingInstance.damage` deliberately not updated to keep the source of truth single.
+- **No clamp at 0.** `capitalHp` allowed to go negative; #68's `<= 0` check still registers as dead.
+- **Capital never removed from `state.buildings`.** Persists at any HP; win declaration via `Player.capitalHp` on EndTurn.
+- **Non-capital buildings stayed `not_implemented`** at the time. Camp/Barracks target rejection pinned with a test.
+- **Cassian's playable-arc Arc 2 unskipped.** Full action-driven capital-zero arc chains through `applyAction` with no shortcuts.
+- **Tests:** attack.test.ts 25 → 39 (+11 capital-target). playable-arc.test.ts 4 → 5 passing. Rules suite 251 → 262 passing, 21 skipped.
+- **No new error codes.** Reused existing taxonomy; `RuleErrorCode` stable.

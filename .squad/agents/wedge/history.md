@@ -9,6 +9,10 @@
 
 <!-- Append new learnings below. Pre-MVP-5 entries archived to history-archive.md on 2025-11-21. -->
 
+### 2026-05-28 — MVP-7 scope proposal drafted (HEAD b3d0714)
+
+MVP-7 scope proposal drafted (HEAD b3d0714). Theme: "Economy & Buildings" — close the BuildCamp → Start-of-Turn regen → pay cost → Deploy loop end-to-end. Stop condition: `apps/e2e/tests/mvp6-reaction-arc.spec.ts` un-skipped and CI-green driven through real economy (no admin-seed touching resources/units). 7 stories: #112 BuildCamp+regen (already filed), #113 admin-seed extension (already filed), plus 5 new — BuildBarracks+adjacent-deploy, Resupply, RecruitDraw, HUD economy panel, e2e un-skip. Items 1/2/4/5 marked @copilot-eligible 🟢. Cut vs hypothesis: RelocateBuilding / SwitchAttackMode / UnitAbility / DiscardEvent stay stubs — none gate the loop, defer to MVP-8. Artifact: `.squad/proposals/mvp-7-scope.md`.
+
 ## Synopsis (pre-2025-11-21) — see history-archive.md for verbose entries
 
 - **Locked architecture (MVP-1):** GH Pages frontend + Cloudflare Workers + KV backend (no realtime; polling 5s/30s/60s tiered). Anonymous `gameCode` + per-player `playerToken`; worker stores `tokenHash`. Pure-TS `applyAction(state, action, actorId)` in `/packages/rules` is the single source of truth, imported by client (instant feedback) and worker (authoritative — worker verdict wins). Optimistic concurrency via `version` field. Repo layout: `apps/{web,worker}` + `packages/{schema,rules,assets-meta}`. 2 players normal, up to 4 max.
@@ -40,3 +44,7 @@ MVP-5 ("Cards Do Things") shipped. The locks held:
 - **Reactions / Events / Technology / Upgrade deferred to MVP-6** as scoped.
 
 **Next:** MVP-6 scope kickoff. Likely candidates: Reactions (trigger taxonomy + opponent-window state), Events (≤3 active + persistent effects), Technology (class-wide passive buffs), Upgrade (attach-to-unit keyword effects), card-play UI (Lando, non-unit cards), admin seed endpoint for deterministic e2e (Cassian carry-over). The dispatcher pattern is proven — adding verbs is now mechanical, which should help size MVP-6 honestly.
+
+### 2026-05-28: MVP-6 shipped (S1–S7, 8 PRs)
+
+MVP-6 closed in one session. S1 #97/PR#104, S2 #98/PR#105 (my DSL extension), S3 #99/PR#106, S4 #100/PR#107, S5 #101/PR#108, S6 #102/PR#109, S7-A #103/PR#110 all green and live. S7-B #103/PR#111 (reaction-arc e2e) shipped as `test.skip` scaffolding — blocked because BuildCamp returns `not_implemented` and `player.resources` starts empty, so no UI deploy can land. Follow-ups filed: **#112** (implement BuildCamp) and **#113** (extend admin-seed to seed resources/units, recommended first — test-only, cheaper). Either is a clean MVP-7 starter to un-skip the e2e and validate the full reaction window end-to-end.

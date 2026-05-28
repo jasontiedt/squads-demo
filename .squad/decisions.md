@@ -137,6 +137,31 @@
 **What:** MVP-4 closed in one coordinated session. 7 PRs merged: #74 (schema RFC, Wedge), #75 (Move handler), #76 (Capital-HP win condition), #77 (integration tests, Cassian), #79 (Attack-vs-Capital, Artoo — lifted #78 blocker), #80 (interactive board, Lando), #81 (HUD, Lando), #82 (E2E baseline, Cassian). Blocker #78 surfaced during #77 arc testing (Attack-vs-building stubbed) and was fixed mid-flight by Artoo (#79), unblocking the skipped capital-zero arc. Multiple silent-success agent recoveries handled by coordinator (Lando on #71 / interactive board, agent on #78, Cassian on initial #72 attempt). Worktree `squads-demo-71` orphaned on disk due to file lock — harmless, will clean on next reboot. **Implication:** Rules engine + worker contract + web client now playable end-to-end through the capital-zero arc. Next: MVP-5 capital RFC migration (apply the locked shape from #69), PlayCard UI worker unredact follow-through.
 **Source:** Session log `.squad/log/2026-05-23T19-30-00Z-mvp4-shipped.md`.
 
+### 2026-05-28T20:40:00Z: MVP-6 reaction-arc e2e blocker — diagnosed, shipped as scaffolding
+
+**By:** Cassian (Tester / QA) — via Copilot — issue #103 part B, PR #111
+**What:** The MVP-6 two-browser reaction-arc Playwright spec (`apps/e2e/tests/mvp6-reaction-arc.spec.ts`) cannot execute end-to-end today because no in-game path produces resources. `Board.tsx:410-450` correctly renders deployed units as `<g data-testid="unit-${u.id}">` (selector `[data-testid^="unit-"]` is right), but `player.resources` starts as `[]` (`packages/rules/src/initialState.ts:145`) and the only in-game resource source is `BuildCamp`, which still returns `not_implemented` (`packages/rules/src/applyAction.ts:304`). The cost-swap hypothesis from the original blocker doc is moot — no deploy can land via the UI regardless of card cost. Shipped the full ~365-line spec (create/join, admin-seed, phase advance, deploy click, attack target, reaction modal assertion, capital HP delta) as executable scaffolding marked `test.skip(...)` with a `@needs-confirmation` block pointing to this decision. Includes `byz-imperial-shield` fixture reaction card (cost wild:1, on-damage-dealt → heal-capital self 2, marked `_needsConfirmation`) and a `playwright.config.ts` update so wrangler dev passes `--var ADMIN_SECRET:test-admin-secret`. **Unblock path (out of scope for #103):** EITHER (a) implement `BuildCamp` effect handler in the rules engine — filed as #112, OR (b) extend `admin-seed` to optionally seed `resources` + pre-deployed `units` on either player record — filed as #113. (b) is cheaper and test-only; recommended first. **Verified facts pinned for the next agent:** admin seed endpoint is `POST /admin/games/:code/seed`, header `X-Admin-Secret: <secret>`, body fields are `{ deckOrder, opponentDeckOrder, hand, opponentHand }` (**NOT** `{ hostDeck, guestDeck }` as the original blocker doc claimed), returns `{ ok: true, version }` at 200. The `target-legal-*` overlay rect has `pointer-events: none` — click the underlying `[data-target-legal="true"]` cell instead. `apps/e2e/node_modules` must be junctioned during worktree setup; the default 6-path junction list misses it.
+**Source:** `.squad/decisions/inbox/cassian-mvp6-e2e-blocker-resolved.md` (merged, supersedes original `cassian-mvp6-e2e-blocker.md` which is deleted on merge).
+
+### 2026-05-28: MVP-6 shipped — reactions, attach-keyword DSL, capital-tile foundation, admin seed
+
+**By:** Wedge (Lead) — coordinated via Squad coordinator
+**What:** MVP-6 closed in one coordinated session. 8 PRs across 7 slices, all green:
+
+| Slice | Issue | PR | Commit | Owner |
+|-------|-------|----|----|-------|
+| S1 — Capital tile + queries (foundation) | #97 | #104 | `bad61eb` | Artoo |
+| S2 — Effect DSL: attach-keyword + class-wide passive | #98 | #105 | `f718121` | Wedge |
+| S3 — PlayUpgrade + PlayTechnology + `effectiveStats` | #99 | #106 | `3ac1cc3` | Artoo |
+| S4 — PlayEvent + ≤3-active cap + per-turn tick | #100 | #107 | `294d37e` | Artoo |
+| S5 — PlayReaction + trigger taxonomy + opponent window | #101 | #108 | `42160c2` | Artoo |
+| S6 — Card-play UI + Reaction modal | #102 | #109 | `1240087` | Lando |
+| S7-A — Admin seed endpoint | #103 | #110 | `60fbca4` | Artoo |
+| S7-B — Two-browser reaction-arc e2e (scaffolding, `test.skip`) | #103 | #111 | `b3d0714` | Cassian |
+
+S7-B shipped as executable scaffolding only (see the immediately-prior entry); it is `test.skip`-ed pending #112 (BuildCamp handler) or #113 (extend admin-seed to seed resources/units). All other slices are fully live in main. **Implication:** Rules engine now covers attach-keyword passives, three new card-kind handlers (Upgrade, Technology, Event), reactions with an opponent-window state machine, and the admin-seed test backdoor. Web client renders the reaction window modal. Next: MVP-7 scope proposal from Wedge — likely starts with one of #112 / #113 to unskip the reaction-arc e2e.
+**Source:** Session log `.squad/log/2026-05-28T204000Z-mvp6-shipped.md`.
+
 ## Governance
 
 - All meaningful changes require team consensus
