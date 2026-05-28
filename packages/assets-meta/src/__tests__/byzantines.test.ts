@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { Card } from '@eoe/schema';
-import { loadCivMeta } from '../index.js';
+import { describe, expect, it } from 'vitest';
 import byzantinesData from '../../data/byzantines.json' with { type: 'json' };
+import { loadCivMeta } from '../index.js';
 
 const THEMED_STUB_NAMES = [
   'Cataphract',
@@ -15,8 +15,8 @@ const THEMED_STUB_NAMES = [
 describe("loadCivMeta('byzantines') — 20-card stub deck for issue #58 (MVP-3)", () => {
   const cards = loadCivMeta('byzantines');
 
-  it('returns exactly 20 cards (6 themed stubs + 14 generic stubs)', () => {
-    expect(cards).toHaveLength(20);
+  it('returns exactly 21 cards (6 themed stubs + 14 generic stubs + 1 e2e fixture: byz-imperial-shield)', () => {
+    expect(cards).toHaveLength(21);
   });
 
   it('every entry parses against the Card schema', () => {

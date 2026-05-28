@@ -398,6 +398,20 @@
         "stub": "STUB — invented for MVP-3 playtest, refine in #17 OCR pass. Second persistent event in the Byzantine deck alongside Basileus; the rulebook caps active events at 3 per player so two stub events leaves headroom.",
         "effect.mapping": "#100 (MVP-6 S4): original prose 'while active, the first card you play each turn costs 1 less wild' has NO cost-reduction verb in the locked Effect DSL. Backfilled as on-play {draw, count:1} — the heir's announcement boosts court intelligence. Cost-reduction taxonomy + per-tick recurring firing both deferred to MVP-7. ticksRemaining=3 keeps the event live for a few turns."
       }
+    },
+    {
+      "kind": "reaction",
+      "id": "byz-imperial-shield",
+      "name": "Imperial Shield",
+      "civ": "byzantines",
+      "imageRef": "byzantines/imperial-shield.png",
+      "flavor": "The basileus' bodyguard interposes. Damage that would have cracked the walls is blunted on lacquered shields.",
+      "cost": { "wild": 1 },
+      "trigger": { "kind": "on-damage-dealt" },
+      "effect": { "kind": "heal-capital", "amount": 2, "target": "self" },
+      "_needsConfirmation": {
+        "fixture": "E2E FIXTURE — invented for MVP-6 S7-B (issue #103 part B). The Byzantine deck had no reaction card in the catalog; this stub gives the two-browser reaction-arc e2e something deterministic to play. on-damage-dealt + heal-capital(self, 2) approximates damage mitigation by healing back after the hit. Refine in #17 OCR pass or via a real catalog reaction card."
+      }
     }
   ]
 }

@@ -110,3 +110,32 @@ Both green at merge.
 **Deferred — Playwright two-browser E2E.** The seeded deck shuffles non-deterministically per game (no admin seed endpoint), making it impossible to reliably script "play the Action card that draws 2" from the e2e harness. The current `playable-arc.spec.ts` pattern doesn't apply — that arc was unit-driven, where game state is deterministic from the start.
 
 **Carry-forward — file MVP-6 issue:** add an admin seed endpoint (e.g. `POST /admin/games/:id/seed-deck`) that pins deck order for test runs. Then the two-browser E2E for MVP-5's stop condition becomes scriptable. Worth filing before MVP-6 scope locks so it gets sized in.
+
+## Learnings — 2026-05-27 (Issue #103 part B — MVP-6 reaction-arc e2e)
+
+**Status:** PR opened **with failing test** — blocked on missing board-DOM testid for deployed unit. See `.squad/decisions/inbox/cassian-mvp6-e2e-blocker.md`.
+
+**What works end-to-end in the spec (verified live in worker logs):**
+1. Two-context Playwright setup with `tab-create` / `tab-join` flows and `selectOption('english')` / `selectOption('byzantines')` (NOT `{label: regex}` — `selectOption` rejects regex labels).
+2. URL hash regex `#/g/([A-Z2-9]{6})` for extracting the game code.
+3. `POST /admin/games/:code/seed` with `X-Admin-Secret: test-admin-secret` header and `{hostDeck, guestDeck}` body returns 200 → both clients pick up the seeded version via the 2s Lobby poll.
+4. `playwright.config.ts` webServer command needs `--var ADMIN_SECRET:test-admin-secret` to make the admin path callable from tests.
+
+**Critical DOM pin (cost me one iteration):**
+- The `target-legal-*` rect has `pointer-events:none` and the underlying `cell-{x}-{y}` rect is what receives clicks. Use `[data-target-legal="true"]` to click the legal cell. **Do not** click `[data-testid^="target-legal-"]`.
+
+**Fixture decision (filed for review):**
+- Added `byz-imperial-shield` reaction card to `packages/assets-meta/data/byzantines.json` with `_needsConfirmation` metadata. Effect: `heal-capital amount:2 target:self` on `on-damage-dealt`. This is an **invented test fixture**, not a canonical card. Historians should flag/replace once a real Byzantine reaction card exists.
+
+**Worktree gotcha (one more package):**
+- `apps/e2e/node_modules` was NOT in the previously-junctioned set (rules/schema/assets-meta/worker/web). Required:
+  ```
+  cmd //c "mklink /J <worktree>/apps/e2e/node_modules <main>/apps/e2e/node_modules"
+  ```
+- **Squad action:** add `apps/e2e` to the auto-junction list at worktree-create.
+
+**Unresolved blocker:**
+- After Host clicks card + legal cell, no `[data-testid^="unit-"]` appears within 5s. Either deploy isn't applying or the deployed unit uses a different testid prefix. Sabine needs to confirm the board's deployed-unit DOM testid.
+- Recommended follow-up: once unit-testid is confirmed, the spec should pass through attack + reaction-window without further changes.
+
+**Tester-wearing-dev-hat reminder:** This is test-only code (e2e spec + 1 config tweak + 1 fixture card). No rules/worker/schema mutation.

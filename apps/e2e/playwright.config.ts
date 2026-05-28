@@ -46,7 +46,7 @@ export default defineConfig({
   webServer: [
     {
       // Worker: Miniflare-backed KV, no production deploy needed.
-      command: 'npx wrangler dev --port 8787 --local',
+      command: 'npx wrangler dev --port 8787 --local --var ADMIN_SECRET:test-admin-secret',
       cwd: '../worker',
       port: 8787,
       reuseExistingServer: !process.env.CI,
