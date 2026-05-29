@@ -106,9 +106,12 @@ describe('Mobilization actions — happy parse + reject missing required', () =>
     expect(() => ResupplyAction.parse({ type: 'Resupply' })).toThrow();
   });
 
-  it('RecruitDraw — empty payload', () => {
-    const a = { type: 'RecruitDraw' };
+  it('RecruitDraw — payload.count required', () => {
+    const a = { type: 'RecruitDraw', payload: { count: 2 } };
     expect(RecruitDrawAction.parse(a)).toEqual(a);
+    expect(() => RecruitDrawAction.parse({ type: 'RecruitDraw' })).toThrow();
+    expect(() => RecruitDrawAction.parse({ type: 'RecruitDraw', payload: { count: 0 } })).toThrow();
+    expect(() => RecruitDrawAction.parse({ type: 'RecruitDraw', payload: { count: 1.5 } })).toThrow();
   });
 
   it('PlayTactic', () => {
@@ -279,7 +282,7 @@ describe('Action discriminated union', () => {
     { type: 'SwitchAttackMode', sample: { type: 'SwitchAttackMode', unitId: u('u1') } },
     { type: 'UnitAbility', sample: { type: 'UnitAbility', unitId: u('u1'), abilityKey: 'k' } },
     { type: 'Resupply', sample: { type: 'Resupply', unitId: u('u1') } },
-    { type: 'RecruitDraw', sample: { type: 'RecruitDraw' } },
+    { type: 'RecruitDraw', sample: { type: 'RecruitDraw', payload: { count: 1 } } },
     { type: 'PlayTactic', sample: { type: 'PlayTactic', cardId: c('card-1') } },
     { type: 'DeployUnit', sample: { type: 'DeployUnit', cardId: c('eng-knight'), square } },
     { type: 'PlayTechnology', sample: { type: 'PlayTechnology', cardId: c('tech-1') } },
