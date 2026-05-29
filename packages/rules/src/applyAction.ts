@@ -1,6 +1,8 @@
 import type { Action, GameState, Seat } from '@eoe/schema';
 
 import { attack } from './attack.js';
+import { buildCamp } from './buildCamp.js';
+import { refreshCampTokens } from './campResources.js';
 import { deployUnit } from './deployUnit.js';
 import { drawAndDiscardCleanup } from './draw.js';
 import { eventTick } from './eventTick.js';
@@ -167,8 +169,32 @@ export function applyAction(
         state.activePlayer,
       );
 
-      const advanced: GameState = {
+      const nextPlayer = tickedState.players[next];
+      const nextPlayersUnits = tickedState.units.map((unit) =>
+        unit.owner === next ? { ...unit, exhausted: false } : unit,
+      );
+      const campsForNextPlayer = tickedState.buildings.filter(
+        (building): building is Extract<GameState['buildings'][number], { type: 'camp' }> =>
+          building.type === 'camp' && building.owner === next,
+      );
+      const refreshedNextPlayer =
+        nextPlayer === undefined
+          ? undefined
+          : {
+              ...nextPlayer,
+              resources: refreshCampTokens(nextPlayer.resources, campsForNextPlayer),
+            };
+      const startReadyState: GameState = {
         ...tickedState,
+        units: nextPlayersUnits,
+        players:
+          refreshedNextPlayer === undefined
+            ? tickedState.players
+            : { ...tickedState.players, [next]: refreshedNextPlayer },
+      };
+
+      const advanced: GameState = {
+        ...startReadyState,
         phase: 'start',
         activePlayer: next,
         turn: wrapped ? cleaned.turn + 1 : cleaned.turn,
@@ -302,6 +328,8 @@ export function applyAction(
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues.
     case 'BuildCamp':
+      return buildCamp(state, action, actorId);
+
     case 'BuildBarracks':
     case 'RelocateBuilding':
     case 'SwitchAttackMode':
