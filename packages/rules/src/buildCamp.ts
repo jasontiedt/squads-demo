@@ -1,6 +1,5 @@
 import {
   BuildingInstanceId,
-  ResourceTokenId,
   type Action,
   type BuildingInstance,
   type GameState,
@@ -9,7 +8,7 @@ import {
   type TerrainType,
 } from '@eoe/schema';
 
-import { resourceKindForCampTerrain } from './campResources.js';
+import { campTokenId, resourceKindForCampTerrain } from './campResources.js';
 import { err, ok, type Result } from './result.js';
 
 type BuildCampAction = Extract<Action, { type: 'BuildCamp' }>;
@@ -97,12 +96,7 @@ export function buildCamp(
     );
   }
 
-  const ownedCampCount = state.buildings.reduce(
-    (count, building) =>
-      count + (building.owner === actorId && building.type === 'camp' ? 1 : 0),
-    0,
-  );
-  const campId = BuildingInstanceId.parse(`camp-${state.turn}-${actorId}-${ownedCampCount}`);
+  const campId = BuildingInstanceId.parse(`camp-${state.turn}-${actorId}-${state.version}`);
 
   const newCamp: BuildingInstance = {
     id: campId,
@@ -114,7 +108,7 @@ export function buildCamp(
   };
 
   const newToken: ResourceToken = {
-    id: ResourceTokenId.parse(`resource-${campId}`),
+    id: campTokenId(campId),
     kind: resourceKind,
     exhausted: false,
     sourceCampId: campId,

@@ -170,7 +170,7 @@ export function applyAction(
       );
 
       const nextPlayer = tickedState.players[next];
-      const nextPlayersUnits = tickedState.units.map((unit) =>
+      const nextPlayerUnits = tickedState.units.map((unit) =>
         unit.owner === next ? { ...unit, exhausted: false } : unit,
       );
       const campsForNextPlayer = tickedState.buildings.filter(
@@ -186,7 +186,7 @@ export function applyAction(
             };
       const startReadyState: GameState = {
         ...tickedState,
-        units: nextPlayersUnits,
+        units: nextPlayerUnits,
         players:
           refreshedNextPlayer === undefined
             ? tickedState.players

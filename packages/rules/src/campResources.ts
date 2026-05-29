@@ -18,6 +18,10 @@ export function resourceKindForCampTerrain(terrain: TerrainType): ResourceKind |
   return CAMP_TERRAIN_TO_RESOURCE_KIND[terrain] ?? null;
 }
 
+export function campTokenId(campId: BuildingInstanceId): ResourceTokenId {
+  return ResourceTokenId.parse(`resource-${campId}`);
+}
+
 export function refreshCampTokens(
   resources: ReadonlyArray<ResourceToken>,
   camps: ReadonlyArray<{ id: BuildingInstanceId; terrain: TerrainType }>,
@@ -36,7 +40,7 @@ export function refreshCampTokens(
     const existing = resources.find((token) => token.sourceCampId === camp.id);
     return [
       {
-        id: existing?.id ?? ResourceTokenId.parse(`resource-${camp.id}`),
+        id: existing?.id ?? campTokenId(camp.id),
         kind,
         exhausted: false,
         sourceCampId: camp.id,
