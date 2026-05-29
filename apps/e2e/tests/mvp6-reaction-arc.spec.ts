@@ -10,7 +10,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
  *  2. Both seats are deterministically seeded via the admin-seed
  *     endpoint: seat 1 gets 3 Wild resources plus a Welsh-Infantry
  *     already on the board; seat 2 gets Imperial Shield in hand.
- *  3. Host advances to deployment, then ends turn.
+ *  3. Host advances through the remaining turn phases, then ends turn.
  *  4. Guest cycles their turn (no card play needed for the arc).
  *  5. Host attacks the Guest's capital with the seeded unit.
  *  6. Guest sees the ReactionWindowModal (data-testid present).
@@ -51,6 +51,8 @@ const HOST_RESOURCES = [
   { id: 'tok-seed-host-wild-2', kind: 'wild', exhausted: false },
   { id: 'tok-seed-host-wild-3', kind: 'wild', exhausted: false },
 ];
+
+const GUEST_RESOURCES = [{ id: 'tok-seed-guest-wild-1', kind: 'wild', exhausted: false }];
 
 const HOST_UNITS = [
   {
@@ -194,6 +196,7 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
         opponentHand: GUEST_HAND,
         resources: {
           seat1: HOST_RESOURCES,
+          seat2: GUEST_RESOURCES,
         },
         units: {
           seat1: HOST_UNITS,
@@ -212,22 +215,34 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
     await expect(guestPage.locator('[data-testid="card-byz-imperial-shield"]')).toBeVisible();
     await expect(hostPage.locator('[data-testid="unit-seed-host-welsh-0"]')).toBeVisible();
 
-    // ─────────── Host: advance to deployment, then end turn ───────────
-    await advanceToPhase(hostPage, 'deployment');
+    // ─────────── Host: advance through turn phases, then end turn ───────────
+    await advanceToPhase(hostPage, 'end');
     await endTurn(hostPage);
     await waitForActivePlayer(hostPage, 2);
     await waitForActivePlayer(guestPage, 2);
 
     // ─────────── Guest: cycle turn ───────────
-    await advanceToPhase(guestPage, 'deployment');
+    await advanceToPhase(guestPage, 'end');
     await endTurn(guestPage);
     await waitForActivePlayer(hostPage, 1);
     await waitForActivePlayer(guestPage, 1);
+    await hostPage.reload();
+    await expect(hostPage.locator('[data-testid="lobby"]')).toBeVisible();
+    await expect(hostPage.locator('[data-testid="phase"]')).toHaveText('start', {
+      timeout: POLL_BUDGET_MS,
+    });
 
     // ─────────── Host: attack guest capital ───────────
-    await advanceToPhase(hostPage, 'mobilization');
+    const attackStartVersion = Number(
+      await hostPage.locator('[data-testid="lobby"]').getAttribute('data-version'),
+    );
+    await hostPage.locator('[data-testid="end-phase-btn"]').click();
+    await waitForVersion(hostPage, attackStartVersion + 1);
+    await expect(hostPage.locator('[data-testid="phase"]')).toHaveText('mobilization', {
+      timeout: POLL_BUDGET_MS,
+    });
     // Click own unit → enter attack-melee → click guest's capital cell.
-    const ownUnit = hostPage.locator('[data-testid^="unit-"]').first();
+    const ownUnit = hostPage.locator('[data-testid="unit-seed-host-welsh-0"]');
     await ownUnit.click();
     await hostPage.locator('[data-testid="action-mode-attack-melee"]').click();
     const attackTarget = hostPage.locator('[data-target-legal="true"]').first();
@@ -241,7 +256,7 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
     });
 
     // Guest plays Imperial Shield.
-    await guestPage.locator('[data-testid="reaction-play-byz-imperial-shield"]').click();
+    await guestPage.locator('[data-testid="reaction-play-byz-imperial-shield"]').first().click();
 
     // Modal closes.
     await expect(guestPage.locator('[data-testid="reaction-window-modal"]')).toBeHidden({

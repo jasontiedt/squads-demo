@@ -20,6 +20,7 @@ import { TurnIndicator } from '../components/hud/TurnIndicator.js';
 import { WinnerBanner } from '../components/hud/WinnerBanner.js';
 import {
   computeAttackUnitTargets,
+  computeAttackBuildingTargets,
   computeAvailableAttackModes,
   computeDeployTargets,
   computeMoveTargets,
@@ -315,6 +316,12 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
             legalTargets = computeMoveTargets(state, selectedUnit, civ);
             break;
           case 'attack-melee':
+            legalTargets = computeAttackBuildingTargets(
+              state,
+              selectedUnit,
+              civ,
+              'melee',
+            );
             legalTargetUnitIds = computeAttackUnitTargets(
               state,
               selectedUnit,
@@ -323,6 +330,12 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
             );
             break;
           case 'attack-ranged':
+            legalTargets = computeAttackBuildingTargets(
+              state,
+              selectedUnit,
+              civ,
+              'ranged',
+            );
             legalTargetUnitIds = computeAttackUnitTargets(
               state,
               selectedUnit,
@@ -430,6 +443,25 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
           type: 'Scout',
           unitId: unit.id,
           target: { x: c.x, y: c.y },
+        });
+      } else if (
+        selection.mode === 'attack-melee' ||
+        selection.mode === 'attack-ranged'
+      ) {
+        const capital = state.buildings.find(
+          (building) =>
+            building.type === 'capital' &&
+            building.owner !== membership.seat &&
+            building.square.x === c.x &&
+            building.square.y === c.y,
+        );
+        if (capital === undefined) return;
+        clearSelection();
+        void dispatchAction({
+          type: 'Attack',
+          attackerUnitId: unit.id,
+          targetBuildingId: capital.id,
+          mode: selection.mode === 'attack-melee' ? 'melee' : 'ranged',
         });
       }
       return;

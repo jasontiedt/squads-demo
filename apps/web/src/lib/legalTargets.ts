@@ -175,6 +175,32 @@ export const computeAttackUnitTargets = (
   return out;
 };
 
+export const computeAttackBuildingTargets = (
+  state: PublicGameState,
+  attacker: UnitInstance,
+  civ: Civ,
+  mode: 'melee' | 'ranged',
+): ReadonlySet<string> => {
+  const out = new Set<string>();
+  if (attacker.exhausted) return out;
+
+  const card = findUnitCard(civ, attacker.cardId);
+  if (card === undefined || card.kind !== 'unit') return out;
+  const stat = mode === 'melee' ? card.melee : card.ranged;
+  if (stat <= 0) return out;
+
+  for (const building of state.buildings) {
+    if (building.type !== 'capital') continue;
+    if (building.owner === attacker.owner) continue;
+    const cheb = chebyshev(attacker.square, building.square);
+    if (mode === 'melee' && cheb !== 1) continue;
+    if (mode === 'ranged' && cheb < 2) continue;
+    out.add(coordKey(building.square));
+  }
+
+  return out;
+};
+
 // ─────────────────────────── Scout ──────────────────────────────────
 
 /**
@@ -231,9 +257,9 @@ export const computeDeployTargets = (
 
 /**
  * Which attack modes the unit *could* use right now (non-zero stat AND
- * at least one in-range enemy). Used by the UI to decide whether to
- * show a mode toggle. Returns a set: `'melee'`, `'ranged'`, both, or
- * neither.
+ * at least one in-range enemy unit OR capital). Used by the UI to
+ * decide whether to show a mode toggle. Returns a set: `'melee'`,
+ * `'ranged'`, both, or neither.
  */
 export const computeAvailableAttackModes = (
   state: PublicGameState,
@@ -242,7 +268,10 @@ export const computeAvailableAttackModes = (
 ): ReadonlySet<'melee' | 'ranged'> => {
   const out = new Set<'melee' | 'ranged'>();
   for (const mode of ['melee', 'ranged'] as const) {
-    if (computeAttackUnitTargets(state, attacker, civ, mode).size > 0) {
+    if (
+      computeAttackUnitTargets(state, attacker, civ, mode).size > 0 ||
+      computeAttackBuildingTargets(state, attacker, civ, mode).size > 0
+    ) {
       out.add(mode);
     }
   }

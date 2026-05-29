@@ -10,6 +10,7 @@ import { isOpponentTurnAction, isPhaseLegal, nextPhase } from './phases.js';
 import { playAction } from './playAction.js';
 import { playEvent } from './playEvent.js';
 import { playReaction } from './playReaction.js';
+import { openReactionWindow } from './reactionWindow.js';
 import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
@@ -279,9 +280,30 @@ export function applyAction(
     case 'Scout':
       return scout(state, action, actorId);
 
-    // Issue #54: Attack — unit attacks another unit (MVP-3, no capital).
-    case 'Attack':
-      return attack(state, action, actorId);
+    // Issue #54: Attack — unit or capital attack. A successful hit opens
+    // the opponent's `on-damage-dealt` reaction window.
+    case 'Attack': {
+      const attacked = attack(state, action, actorId);
+      if (!attacked.ok) return attacked;
+      const eligibleSeat = ([1, 2, 3, 4] as const).find(
+        (seat) => seat !== actorId && attacked.value.players[seat] !== undefined,
+      );
+      if (eligibleSeat === undefined) return attacked;
+      return ok(
+        openReactionWindow(
+          attacked.value,
+          { kind: 'on-damage-dealt' },
+          {
+            actionType: 'Attack',
+            actorSeat: actorId,
+            ...(action.targetUnitId !== undefined
+              ? { targetUnitId: action.targetUnitId }
+              : { targetBuildingId: action.targetBuildingId }),
+          },
+          eligibleSeat,
+        ),
+      );
+    }
 
     // Issue #67: MoveUnit — Chebyshev movement on the 6×6 board.
     case 'MoveUnit':
