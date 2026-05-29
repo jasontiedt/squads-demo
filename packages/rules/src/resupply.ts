@@ -13,6 +13,10 @@ export function resupply(
   action: ResupplyAction,
   actorId: Seat,
 ): Result<GameState> {
+  // Action payload is currently unused: MVP-7 Resupply operates on the
+  // actor's existing resource tokens only. Keep the parameter wired so a
+  // future rule can validate or consume `unitId` without changing the
+  // handler signature.
   void action;
 
   const player = state.players[actorId];

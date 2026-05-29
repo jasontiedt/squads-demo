@@ -151,17 +151,20 @@ describe('Resupply', () => {
   // @needs-confirmation: Does Resupply always discard exactly 1 card, or
   // can the cost vary by civ/effect once the OCR is confirmed?
   // Default: discard exactly the top 1 card from the actor deck.
+  // This stays skipped on purpose even though the live suite currently
+  // relies on the same default: it is the explicit confirmation pin to
+  // unskip once the OCR-backed rule is settled.
   it.skip('pins the current MVP default that Resupply costs N=1 discarded card', () => {
     const state = resupplyState({
-      resources: [token('rt-food-1', 'food', true)],
-      deck: ['top-card', 'next-card'],
+      resources: [token('rt-food-1', 'food', false)],
+      deck: ['cost-card', 'still-on-deck'],
     });
 
     const result = applyAction(state, resupplyAction(), SEAT_1);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.players[SEAT_1]?.deck).toEqual([cid('next-card')]);
-    expect(result.value.players[SEAT_1]?.discard).toEqual([cid('top-card')]);
+    expect(result.value.players[SEAT_1]?.deck).toEqual([cid('still-on-deck')]);
+    expect(result.value.players[SEAT_1]?.discard).toEqual([cid('cost-card')]);
   });
 });
