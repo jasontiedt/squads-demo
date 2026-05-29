@@ -25,8 +25,12 @@ import { ALL_PHASES, SEAT_1, SEAT_2, withState } from './fixtures.js';
 
 function stubAction(type: ActionType): Action {
   // The gate only inspects `action.type`. We deliberately bypass Zod
-  // parsing here — the goal is to test gating, not parsing. Cast
-  // through `unknown` because each variant has its own required body.
+  // parsing here — the goal is to test gating, not parsing. A few
+  // implemented handlers read required fields, so we include minimal
+  // payload for those action shapes.
+  if (type === 'RecruitDraw') {
+    return { type, payload: { count: 1 } } as unknown as Action;
+  }
   return { type } as unknown as Action;
 }
 

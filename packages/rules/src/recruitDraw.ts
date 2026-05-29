@@ -18,10 +18,7 @@ export function recruitDraw(
     );
   }
 
-  const count = action.payload?.count;
-  if (typeof count !== 'number' || !Number.isInteger(count) || count < 1) {
-    return err('unknown_action', 'RecruitDraw requires payload.count >= 1');
-  }
+  const count = action.payload.count;
 
   if (player.deck.length < count) {
     return err(
@@ -33,9 +30,6 @@ export function recruitDraw(
   let working = state;
   for (let i = 0; i < count; i++) {
     const next = drawCard(working, actorId);
-    if (next.drawn === null) {
-      return err('deck_empty', `deck is empty during RecruitDraw (draw ${i + 1} of ${count})`);
-    }
     working = next.state;
   }
 
