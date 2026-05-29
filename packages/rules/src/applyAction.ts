@@ -16,6 +16,7 @@ import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
 import { err, ok, type Result } from './result.js';
+import { resupply } from './resupply.js';
 import { scout } from './scout.js';
 
 // ─────────────────────────── applyAction ─────────────────────────────
@@ -327,6 +328,9 @@ export function applyAction(
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues.
+    case 'Resupply':
+    return resupply(state, action, actorId);
+
     case 'BuildCamp':
       return buildCamp(state, action, actorId);
 
@@ -334,10 +338,9 @@ export function applyAction(
     case 'RelocateBuilding':
     case 'SwitchAttackMode':
     case 'UnitAbility':
-    case 'Resupply':
     case 'RecruitDraw':
     case 'DiscardEvent':
-      return err(
+    return err(
         'not_implemented',
         `${action.type} passed phase/seat gating but its effect handler is not yet implemented`,
       );

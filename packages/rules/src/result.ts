@@ -44,6 +44,7 @@ export type RuleErrorCode =
   | 'wrong_phase'
   | 'not_your_turn'
   | 'unknown_action'
+  | 'deck_too_thin'
   | 'card_not_in_hand'
   | 'card_not_in_catalog'
   | 'card_not_unit'
