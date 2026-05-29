@@ -78,6 +78,7 @@ export type RuleErrorCode =
   | 'unit_not_found'
   | 'unit_not_yours'
   | 'unit_exhausted'
+  | 'invalid_build_square'
   | 'illegal_move'
   // PlayAction (#85) — effect-dispatch error path. `not_an_action_card`
   // catches a hand card that isn't `kind: 'action'`. `effect_not_typed`
