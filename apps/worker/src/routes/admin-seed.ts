@@ -19,7 +19,7 @@
 import { errorBody, json } from '../http.js';
 import { loadGame, saveGame } from '../kv-store.js';
 import { AdminSeedBody } from '../request-schema.js';
-import { type CardId } from '@eoe/schema';
+import { type CardId, type UnitInstance } from '@eoe/schema';
 
 export async function handleAdminSeed(
   request: Request,
@@ -57,7 +57,7 @@ export async function handleAdminSeed(
       cors,
     );
   }
-  const { deckOrder, opponentDeckOrder, hand, opponentHand } = parsed.data;
+  const { deckOrder, opponentDeckOrder, hand, opponentHand, resources, units } = parsed.data;
 
   // 3) Lookup.
   const stored = await loadGame(kv, gameCode);
@@ -93,6 +93,15 @@ export async function handleAdminSeed(
     );
   }
 
+  const existingSeat1Units = stored.state.units.filter((unit) => unit.owner === 1);
+  const existingSeat2Units = stored.state.units.filter((unit) => unit.owner === 2);
+  const existingOtherUnits = stored.state.units.filter((unit) => unit.owner !== 1 && unit.owner !== 2);
+  const nextUnits: UnitInstance[] = [
+    ...(units?.seat1?.map((unit) => ({ ...unit, owner: 1 as const })) ?? existingSeat1Units),
+    ...(units?.seat2?.map((unit) => ({ ...unit, owner: 2 as const })) ?? existingSeat2Units),
+    ...existingOtherUnits,
+  ];
+
   // 6) Mutate. CardId is a branded string at the type layer; the body
   //    arrives as plain strings, cast at the boundary. The rules engine
   //    does not validate card existence on draw — invalid ids surface
@@ -106,13 +115,16 @@ export async function handleAdminSeed(
         ...seatA,
         deck: deckOrder as CardId[],
         hand: hand as CardId[],
+        resources: resources?.seat1 ?? seatA.resources,
       },
       2: {
         ...seatB,
         deck: opponentDeckOrder as CardId[],
         hand: opponentHand as CardId[],
+        resources: resources?.seat2 ?? seatB.resources,
       },
     },
+    units: nextUnits,
   };
 
   await saveGame(kv, gameCode, { ...stored, state: nextState });

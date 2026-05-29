@@ -70,6 +70,44 @@ function seedBody(): Record<string, unknown> {
   };
 }
 
+function resourceSeeds() {
+  return {
+    seat1: [
+      { id: 'tok-seat1-wild-1', kind: 'wild', exhausted: false },
+      { id: 'tok-seat1-wild-2', kind: 'wild', exhausted: false },
+      { id: 'tok-seat1-wild-3', kind: 'wild', exhausted: false },
+    ],
+    seat2: [{ id: 'tok-seat2-gold-1', kind: 'gold', exhausted: true }],
+  };
+}
+
+function unitSeeds() {
+  return {
+    seat1: [
+      {
+        id: 'unit-seed-seat1-0',
+        cardId: 'eng-welsh-infantry',
+        square: { x: 4, y: 5 },
+        exhausted: false,
+        damage: 0,
+        attackMode: 'melee',
+        upgrades: [],
+      },
+    ],
+    seat2: [
+      {
+        id: 'unit-seed-seat2-0',
+        cardId: 'byz-tagmata',
+        square: { x: 3, y: 5 },
+        exhausted: true,
+        damage: 1,
+        attackMode: 'melee',
+        upgrades: [],
+      },
+    ],
+  };
+}
+
 async function seed(
   env: Env,
   code: string,
@@ -230,6 +268,59 @@ describe('POST /admin/games/:code/seed — happy path', () => {
     expect(stored?.state.players[2]?.deck).toEqual(body['opponentDeckOrder']);
     expect(stored?.state.players[2]?.hand).toEqual(body['opponentHand']);
     // Did NOT advance the game (moveLog still empty, phase preserved).
+    expect(stored?.state.moveLog).toEqual([]);
+  });
+
+  it('optionally seeds seat resources', async () => {
+    const { env, kv } = buildEnv();
+    const code = await setupJoinedGame(env);
+    const body = { ...seedBody(), resources: resourceSeeds() };
+
+    const res = await seed(env, code, { 'X-Admin-Secret': ADMIN_SECRET }, body);
+
+    expect(res.status).toBe(200);
+    const stored = kv.peek<StoredGame>(gameKey(code));
+    expect(stored?.state.players[1]?.resources).toEqual(body.resources.seat1);
+    expect(stored?.state.players[2]?.resources).toEqual(body.resources.seat2);
+    expect(stored?.state.units).toEqual([]);
+    expect(stored?.state.moveLog).toEqual([]);
+  });
+
+  it('optionally seeds deployed units with owner inferred from the seat bucket', async () => {
+    const { env, kv } = buildEnv();
+    const code = await setupJoinedGame(env);
+    const body = { ...seedBody(), units: unitSeeds() };
+
+    const res = await seed(env, code, { 'X-Admin-Secret': ADMIN_SECRET }, body);
+
+    expect(res.status).toBe(200);
+    const stored = kv.peek<StoredGame>(gameKey(code));
+    expect(stored?.state.units).toEqual([
+      { ...body.units.seat1[0], owner: 1 },
+      { ...body.units.seat2[0], owner: 2 },
+    ]);
+    expect(stored?.state.moveLog).toEqual([]);
+  });
+
+  it('optionally seeds resources and deployed units together', async () => {
+    const { env, kv } = buildEnv();
+    const code = await setupJoinedGame(env);
+    const body = {
+      ...seedBody(),
+      resources: resourceSeeds(),
+      units: unitSeeds(),
+    };
+
+    const res = await seed(env, code, { 'X-Admin-Secret': ADMIN_SECRET }, body);
+
+    expect(res.status).toBe(200);
+    const stored = kv.peek<StoredGame>(gameKey(code));
+    expect(stored?.state.players[1]?.resources).toEqual(body.resources.seat1);
+    expect(stored?.state.players[2]?.resources).toEqual(body.resources.seat2);
+    expect(stored?.state.units).toEqual([
+      { ...body.units.seat1[0], owner: 1 },
+      { ...body.units.seat2[0], owner: 2 },
+    ]);
     expect(stored?.state.moveLog).toEqual([]);
   });
 

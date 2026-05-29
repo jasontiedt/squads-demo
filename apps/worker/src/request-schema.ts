@@ -5,7 +5,7 @@
 // 400s instead of opaque crashes.
 
 import { z } from 'zod';
-import { Action, Civ, Seat } from '@eoe/schema';
+import { Action, Civ, ResourceToken, Seat, UnitInstance } from '@eoe/schema';
 
 /** POST /games — creator picks display name + civ. */
 export const CreateGameBody = z
@@ -49,12 +49,34 @@ export type PostActionBody = z.infer<typeof PostActionBody>;
  * route; invariant enforced there is that the game has not yet had any
  * action applied (state.moveLog must be empty).
  */
+export const ResourceTokenSeed = ResourceToken;
+export type ResourceTokenSeed = z.infer<typeof ResourceTokenSeed>;
+
+export const UnitInstanceSeed = UnitInstance.omit({ owner: true });
+export type UnitInstanceSeed = z.infer<typeof UnitInstanceSeed>;
+
+const AdminSeedSeatResources = z
+  .object({
+    seat1: z.array(ResourceTokenSeed).optional(),
+    seat2: z.array(ResourceTokenSeed).optional(),
+  })
+  .strict();
+
+const AdminSeedSeatUnits = z
+  .object({
+    seat1: z.array(UnitInstanceSeed).optional(),
+    seat2: z.array(UnitInstanceSeed).optional(),
+  })
+  .strict();
+
 export const AdminSeedBody = z
   .object({
     deckOrder: z.array(z.string().min(1)),
     opponentDeckOrder: z.array(z.string().min(1)),
     hand: z.array(z.string().min(1)),
     opponentHand: z.array(z.string().min(1)),
+    resources: AdminSeedSeatResources.optional(),
+    units: AdminSeedSeatUnits.optional(),
   })
   .strict();
 export type AdminSeedBody = z.infer<typeof AdminSeedBody>;

@@ -3,10 +3,12 @@ import type {
   CardId,
   Effect,
   GameState,
+  HealCapitalEffect,
   Seat,
   UnitInstance,
 } from '@eoe/schema';
 
+import { CAPITAL_DEFAULT_HP } from '../constants.js';
 import { drawCard } from '../draw.js';
 import { err, ok, type Result } from '../result.js';
 import { applyAttachKeyword } from './attachKeyword.js';
@@ -24,8 +26,8 @@ import { applyClassWidePassive } from './classWidePassive.js';
 //   • `draw` — fully implemented (delegates to `drawCard`).
 //   • `buff-unit-stat` — fully implemented (appends to UnitInstance
 //     `temporaryBuffs`; supports all 3 target shapes).
-//   • `damage`, `heal-capital`, `gain-temporary-resource` — stubbed,
-//     return `err('not_implemented', ...)`. Implementations follow in
+//   • `damage`, `gain-temporary-resource` — stubbed, return
+//     `err('not_implemented', ...)`. Implementations follow in
 //     future issues once damage / capital-heal / temp-resource grants
 //     have their own design notes.
 //
@@ -68,10 +70,7 @@ export function dispatchEffect(
         `damage effect is not yet implemented (scope-cut from #85; effects/dispatch.ts MVP ships draw + buff-unit-stat only)`,
       );
     case 'heal-capital':
-      return err(
-        'not_implemented',
-        `heal-capital effect is not yet implemented (scope-cut from #85)`,
-      );
+      return applyHealCapital(state, effect, ctx);
     case 'gain-temporary-resource':
       return err(
         'not_implemented',
@@ -88,6 +87,33 @@ export function dispatchEffect(
       );
     }
   }
+}
+
+// ─────────────────────────── heal-capital ────────────────────────────
+
+function applyHealCapital(
+  state: GameState,
+  effect: HealCapitalEffect,
+  ctx: EffectContext,
+): Result<GameState> {
+  const player = state.players[ctx.actorSeat];
+  if (player === undefined) {
+    return err(
+      'target_not_found',
+      `heal-capital target seat ${ctx.actorSeat} has no player record`,
+    );
+  }
+
+  return ok({
+    ...state,
+    players: {
+      ...state.players,
+      [ctx.actorSeat]: {
+        ...player,
+        capitalHp: Math.min(CAPITAL_DEFAULT_HP, player.capitalHp + effect.amount),
+      },
+    },
+  });
 }
 
 // ─────────────────────────── draw ────────────────────────────────────
