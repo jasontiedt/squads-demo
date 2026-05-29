@@ -1,6 +1,7 @@
 import type { Action, GameState, Seat } from '@eoe/schema';
 
 import { attack } from './attack.js';
+import { buildBarracks } from './buildBarracks.js';
 import { buildCamp } from './buildCamp.js';
 import { refreshCampTokens } from './campResources.js';
 import { deployUnit } from './deployUnit.js';
@@ -91,11 +92,7 @@ function rotateSeat(state: GameState): { next: Seat; wrapped: boolean } {
 
 // ─── Main entry point ───
 
-export function applyAction(
-  state: GameState,
-  action: Action,
-  actorId: Seat,
-): Result<GameState> {
+export function applyAction(state: GameState, action: Action, actorId: Seat): Result<GameState> {
   // 1) Active-seat / opponent-seat gate.
   const isReaction = isOpponentTurnAction(action.type);
   if (isReaction) {
@@ -117,10 +114,7 @@ export function applyAction(
   // 2) Phase gate. Reactions skip the phase check — they're legal in
   //    any phase as long as the actor is the non-active seat.
   if (!isReaction && !isPhaseLegal(action.type, state.phase)) {
-    return err(
-      'wrong_phase',
-      `${action.type} is not legal during the ${state.phase} phase`,
-    );
+    return err('wrong_phase', `${action.type} is not legal during the ${state.phase} phase`);
   }
 
   // 3) Dispatch. Only EndPhase / EndTurn have real effect logic in #6;
@@ -132,10 +126,7 @@ export function applyAction(
         // Should be unreachable thanks to the gate (EndPhase is illegal
         // from `end`), but we keep this defensive branch so a bug in
         // the table surfaces as a clear error rather than a crash.
-        return err(
-          'wrong_phase',
-          `Cannot EndPhase from ${state.phase}; use EndTurn instead`,
-        );
+        return err('wrong_phase', `Cannot EndPhase from ${state.phase}; use EndTurn instead`);
       }
       return ok({ ...state, phase: next });
     }
@@ -214,19 +205,13 @@ export function applyAction(
       // has zero units AND zero capital HP), units-eliminated wins
       // and we return here. Pinned in winCondition.test.ts.
       if (advanced.units.length > 2) {
-        const occupiedSeats = SEATS_IN_ORDER.filter(
-          (s) => advanced.players[s] !== undefined,
-        );
-        const wipedOut = occupiedSeats.find(
-          (s) => !advanced.units.some((u) => u.owner === s),
-        );
+        const occupiedSeats = SEATS_IN_ORDER.filter((s) => advanced.players[s] !== undefined);
+        const wipedOut = occupiedSeats.find((s) => !advanced.units.some((u) => u.owner === s));
         if (wipedOut !== undefined) {
           // Winner = first occupied seat that still has units. In 2-
           // player this is unambiguous; in 3-4 player we pick the
           // first survivor by seat order (good enough for MVP-3).
-          const winner = occupiedSeats.find(
-            (s) => advanced.units.some((u) => u.owner === s),
-          );
+          const winner = occupiedSeats.find((s) => advanced.units.some((u) => u.owner === s));
           if (winner !== undefined) {
             return ok({ ...advanced, phase: 'ended', winner });
           }
@@ -247,12 +232,8 @@ export function applyAction(
       // 4-player corner case: if seat 3's capital hits 0 but seats
       // 1, 2, 4 are still alive, the game does NOT end — we need
       // exactly one survivor. Pinned in winCondition.test.ts.
-      const occupied = SEATS_IN_ORDER.filter(
-        (s) => advanced.players[s] !== undefined,
-      );
-      const aliveSeats = occupied.filter(
-        (s) => (advanced.players[s]?.capitalHp ?? 0) > 0,
-      );
+      const occupied = SEATS_IN_ORDER.filter((s) => advanced.players[s] !== undefined);
+      const aliveSeats = occupied.filter((s) => (advanced.players[s]?.capitalHp ?? 0) > 0);
       // Only end when at least one capital has died AND exactly one
       // seat survives. Without a dead capital, this turn is normal.
       if (aliveSeats.length === 1 && aliveSeats.length < occupied.length) {
@@ -358,17 +339,19 @@ export function applyAction(
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues.
     case 'Resupply':
-    return resupply(state, action, actorId);
+      return resupply(state, action, actorId);
 
     case 'BuildCamp':
       return buildCamp(state, action, actorId);
 
     case 'BuildBarracks':
+      return buildBarracks(state, action, actorId);
+
     case 'RelocateBuilding':
     case 'SwitchAttackMode':
     case 'UnitAbility':
     case 'DiscardEvent':
-    return err(
+      return err(
         'not_implemented',
         `${action.type} passed phase/seat gating but its effect handler is not yet implemented`,
       );

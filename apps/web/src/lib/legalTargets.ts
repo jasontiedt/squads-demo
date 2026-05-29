@@ -11,7 +11,7 @@
 //   - terrain + occupancy + range for Move
 //   - range + mode + friendly-fire for Attack
 //   - face-down tile lookup for Scout
-//   - capital-only square for Deploy (MVP-3 rules-engine constraint)
+//   - rules-engine-backed Capital/Barracks deploy squares for Deploy
 //
 // We do NOT reproduce the full "this card exists in catalog" /
 // "attacker.attackMode matches action.mode" guards — those rule out
@@ -20,14 +20,8 @@
 // surfaces.
 
 import { loadCivMeta } from '@eoe/assets-meta';
-import type {
-  Card,
-  Civ,
-  Coord,
-  Seat,
-  TerrainType,
-  UnitInstance,
-} from '@eoe/schema';
+import { legalDeploySquares } from '@eoe/rules';
+import type { Card, Civ, Coord, Seat, TerrainType, UnitInstance } from '@eoe/schema';
 import type { PublicGameState } from '../api/client.js';
 
 // ─────────────────────────── Helpers ────────────────────────────────
@@ -58,9 +52,7 @@ export const adjacentCoords = (c: Coord): Coord[] => {
 };
 
 /** Index of `(square → terrain | null)` for revealed face-up tiles. */
-const indexTerrain = (
-  state: PublicGameState,
-): ReadonlyMap<string, TerrainType> => {
+const indexTerrain = (state: PublicGameState): ReadonlyMap<string, TerrainType> => {
   const out = new Map<string, TerrainType>();
   for (const tile of state.map.tiles) {
     if (tile.faceDown) continue;
@@ -72,9 +64,7 @@ const indexTerrain = (
 };
 
 /** Index of `(square → tile.faceDown)` for ALL tiles (face-down included). */
-const indexFaceDownSquares = (
-  state: PublicGameState,
-): ReadonlySet<string> => {
+const indexFaceDownSquares = (state: PublicGameState): ReadonlySet<string> => {
   const out = new Set<string>();
   for (const tile of state.map.tiles) {
     if (!tile.faceDown) continue;
@@ -228,30 +218,13 @@ export const computeScoutTargets = (
 // ─────────────────────────── Deploy ─────────────────────────────────
 
 /**
- * Squares where the actor can deploy a unit from their hand. MVP-3
- * rules-engine constraint (`packages/rules/src/deployUnit.ts`) pins
- * this to the actor's `capitalSquare` only. Spec #70 mentions
- * "adjacent to own Capital" — that's the future shape (when Barracks
- * lift), but for MVP-4 we match what the rules engine will accept:
- * the capital square itself.
+ * Squares where the actor can deploy a unit from their hand.
  *
- * Returns coord keys (consistent with the move/scout helpers).
+ * Thin adapter over the rules-engine query so the web does not carry a
+ * second copy of the Barracks/Capital deploy-zone logic.
  */
-export const computeDeployTargets = (
-  state: PublicGameState,
-  seat: Seat,
-): ReadonlySet<string> => {
-  const out = new Set<string>();
-  const player = state.players[seat];
-  if (player === undefined) return out;
-  const cap = player.capitalSquare;
-  // Capital tile must be revealed for the rules engine to accept; mirror
-  // that check so the picker doesn't offer a guaranteed-rejected square.
-  const terrain = indexTerrain(state);
-  if (!terrain.has(coordKey(cap))) return out;
-  out.add(coordKey(cap));
-  return out;
-};
+export const computeDeployTargets = (state: PublicGameState, seat: Seat): ReadonlySet<string> =>
+  new Set(legalDeploySquares(state, seat).map(coordKey));
 
 // ─────────────────────────── Attack-mode detection ──────────────────
 
