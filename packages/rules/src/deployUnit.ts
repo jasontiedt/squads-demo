@@ -2,12 +2,13 @@ import { loadCivMeta } from '@eoe/assets-meta';
 import {
   type Action,
   type GameState,
-  type ResourceToken,
   type Seat,
   type UnitInstance,
   UnitInstanceId,
 } from '@eoe/schema';
 
+import { exhaustForCost } from './exhaustForCost.js';
+import { legalDeploySquares } from './queries.js';
 import { err, ok, type Result } from './result.js';
 
 // ─────────────────────────── deployUnit ──────────────────────────────
@@ -25,8 +26,8 @@ import { err, ok, type Result } from './result.js';
 //   - all other state preserved by reference (no deep clone)
 //
 // MVP scope (per the issue):
-//   - Deploy ONLY onto the actor's `player.capitalSquare`. No Barracks,
-//     no adjacent-zone deploy yet.
+//   - Deploy onto the actor's revealed `player.capitalSquare`, or onto a
+//     revealed square Chebyshev-adjacent to an owned ready Barracks.
 //   - Cost paid from `player.resources` (`ResourceToken[]`) by
 //     exhausting unexhausted tokens. We do NOT remove tokens — Camps
 //     regenerate them on Start of Turn (rulebook §"Start of Turn").
@@ -68,10 +69,7 @@ export function deployUnit(
   // 1) Hand membership.
   const handIdx = player.hand.indexOf(action.cardId);
   if (handIdx < 0) {
-    return err(
-      'card_not_in_hand',
-      `card ${action.cardId} is not in seat ${actorId}'s hand`,
-    );
+    return err('card_not_in_hand', `card ${action.cardId} is not in seat ${actorId}'s hand`);
   }
 
   // 2) Catalog lookup. `loadCivMeta` returns parsed `Card` records for
@@ -87,36 +85,18 @@ export function deployUnit(
 
   // 3) Kind check.
   if (card.kind !== 'unit') {
-    return err(
-      'card_not_unit',
-      `card ${action.cardId} has kind '${card.kind}', not 'unit'`,
-    );
+    return err('card_not_unit', `card ${action.cardId} has kind '${card.kind}', not 'unit'`);
   }
 
-  // 4) MVP Capital-only. `Coord` is structural — compare components.
-  if (
-    action.square.x !== player.capitalSquare.x ||
-    action.square.y !== player.capitalSquare.y
-  ) {
-    return err(
-      'invalid_deploy_square',
-      `MVP: DeployUnit must target the Capital square (${player.capitalSquare.x},${player.capitalSquare.y}); got (${action.square.x},${action.square.y})`,
-    );
-  }
-
-  // 4b) Issue #53: target tile must be revealed (faceDown:false).
+  // 4) Issue #53: target tile must be revealed (faceDown:false).
   //     We locate the tile containing the target square by scanning
   //     `state.map.tiles`. A square belongs to exactly one tile, so
   //     the first match wins. If no tile contains the target square,
-  //     the placement zone is undefined and we reject. The Capital
-  //     square check above already pinned the placement zone to the
-  //     actor's capital for MVP-3; this check additionally enforces
-  //     that the tile under it is revealed.
+  //     the placement zone is undefined and we reject. We do this
+  //     before zone-membership validation so the established "face-down"
+  //     error path remains visible to callers/tests.
   const targetTile = state.map.tiles.find((t) =>
-    t.squares.some(
-      (s) =>
-        s.coord.x === action.square.x && s.coord.y === action.square.y,
-    ),
+    t.squares.some((s) => s.coord.x === action.square.x && s.coord.y === action.square.y),
   );
   if (targetTile === undefined) {
     return err(
@@ -131,6 +111,19 @@ export function deployUnit(
     );
   }
 
+  // 4b) Legal deploy zone: Capital square OR a revealed square
+  //     Chebyshev-adjacent to an owned, ready Barracks.
+  if (
+    !legalDeploySquares(state, actorId).some(
+      (square) => square.x === action.square.x && square.y === action.square.y,
+    )
+  ) {
+    return err(
+      'invalid_deploy_square',
+      `DeployUnit must target the Capital square or a revealed square adjacent to a ready Barracks; got (${action.square.x},${action.square.y})`,
+    );
+  }
+
   // 5) Capital stacking: MVP allows. See needs-confirmation test.
   //    No occupancy check here.
 
@@ -139,10 +132,7 @@ export function deployUnit(
   if (!payment.ok) return payment;
 
   // 7) Build the new unit instance. Positional id — deterministic.
-  const seatUnitCount = state.units.reduce(
-    (acc, u) => (u.owner === actorId ? acc + 1 : acc),
-    0,
-  );
+  const seatUnitCount = state.units.reduce((acc, u) => (u.owner === actorId ? acc + 1 : acc), 0);
   const idRaw = `unit-${state.turn}-${actorId}-${seatUnitCount}`;
   // `.parse` here is cheap (single-string validation) and gives us the
   // branded `UnitInstanceId` without a cast.
@@ -164,10 +154,7 @@ export function deployUnit(
 
   // 8) Move card hand → discard. Remove first occurrence only — hand
   //    may legally contain duplicates.
-  const newHand = [
-    ...player.hand.slice(0, handIdx),
-    ...player.hand.slice(handIdx + 1),
-  ];
+  const newHand = [...player.hand.slice(0, handIdx), ...player.hand.slice(handIdx + 1)];
   const newDiscard = [...player.discard, action.cardId];
 
   // 9) Assemble new state. Reuse references for everything we did
@@ -185,73 +172,4 @@ export function deployUnit(
     players: { ...state.players, [actorId]: newPlayer },
     units: [...state.units, newUnit],
   });
-}
-
-// ─────────────────────────── Cost payment ────────────────────────────
-//
-// Walks the cost record and exhausts unexhausted tokens to cover it.
-// Non-wild kinds are paid first (they're more constrained), then wild
-// is paid from any remaining unexhausted token. This greedy order
-// avoids a degenerate case where wild "uses up" a token that the
-// non-wild cost actually needed.
-//
-// Returns a NEW `ResourceToken[]` with `exhausted` flipped on each
-// paying token. Input is never mutated.
-
-function exhaustForCost(
-  tokens: ReadonlyArray<ResourceToken>,
-  cost: Record<string, number | undefined>,
-): Result<ResourceToken[]> {
-  // Working state: per-index exhausted flags. We rebuild the token
-  // array at the end. Cloning each token up-front keeps the function
-  // free of any aliasing with the input.
-  const exhausted: boolean[] = tokens.map((t) => t.exhausted);
-
-  const findUnexhausted = (kind: string | null): number => {
-    for (let i = 0; i < tokens.length; i++) {
-      if (exhausted[i] === true) continue;
-      const tok = tokens[i];
-      if (tok === undefined) continue;
-      if (kind === null || tok.kind === kind) return i;
-    }
-    return -1;
-  };
-
-  // Pay specific-kind costs first.
-  for (const entry of Object.entries(cost)) {
-    const [kind, rawCount] = entry;
-    if (kind === 'wild') continue;
-    const count = rawCount ?? 0;
-    if (count <= 0) continue;
-    for (let n = 0; n < count; n++) {
-      const idx = findUnexhausted(kind);
-      if (idx < 0) {
-        return err(
-          'insufficient_resources',
-          `insufficient ${kind} tokens to pay cost (need ${count})`,
-        );
-      }
-      exhausted[idx] = true;
-    }
-  }
-
-  // Pay wild from any remaining unexhausted token.
-  const wildNeeded = cost['wild'] ?? 0;
-  for (let n = 0; n < wildNeeded; n++) {
-    const idx = findUnexhausted(null);
-    if (idx < 0) {
-      return err(
-        'insufficient_resources',
-        `insufficient wild tokens to pay cost (need ${wildNeeded})`,
-      );
-    }
-    exhausted[idx] = true;
-  }
-
-  // Stitch results — keep token order so determinism holds.
-  const updated: ResourceToken[] = tokens.map((t, i) => ({
-    ...t,
-    exhausted: exhausted[i] ?? t.exhausted,
-  }));
-  return ok(updated);
 }
