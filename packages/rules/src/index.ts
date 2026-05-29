@@ -27,6 +27,7 @@ export { passReaction } from './passReaction.js';
 export { payCost } from './payCost.js';
 export { playAction } from './playAction.js';
 export { playReaction } from './playReaction.js';
+export { RESUPPLY_DISCARD_COUNT, resupply } from './resupply.js';
 export { playTactic } from './playTactic.js';
 export { playTechnology } from './playTechnology.js';
 export { playUpgrade } from './playUpgrade.js';
@@ -43,4 +44,3 @@ export { scout } from './scout.js';
 export { err, ok, type Result, type RuleError, type RuleErrorCode } from './result.js';
 export { mulberry32, seedFor } from './rng.js';
 export { shuffleWith } from './shuffle.js';
-

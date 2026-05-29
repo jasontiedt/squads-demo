@@ -14,6 +14,7 @@ import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
 import { err, ok, type Result } from './result.js';
+import { resupply } from './resupply.js';
 import { scout } from './scout.js';
 
 // ─────────────────────────── applyAction ─────────────────────────────
@@ -307,9 +308,12 @@ export function applyAction(
     case 'SwitchAttackMode':
     case 'UnitAbility':
     case 'Resupply':
+    return resupply(state, action, actorId);
+
+    case 'UnitAbility':
     case 'RecruitDraw':
     case 'DiscardEvent':
-      return err(
+    return err(
         'not_implemented',
         `${action.type} passed phase/seat gating but its effect handler is not yet implemented`,
       );
