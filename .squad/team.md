@@ -21,7 +21,7 @@
 | Ralph | Work Monitor | [charter](agents/ralph/charter.md) | active |
 | @copilot | Coding Agent | [instructions](../.github/copilot-instructions.md) | active |
 
-<!-- copilot-auto-assign: false -->
+<!-- copilot-auto-assign: true -->
 
 ## Coding Agent — Capabilities
 
