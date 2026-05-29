@@ -1,4 +1,13 @@
-import type { Action, CardId, GameState, Player, ResourceToken, ResourceTokenId, UnitInstanceId } from '@eoe/schema';
+import type {
+  Action,
+  CardId,
+  GameState,
+  Player,
+  ResourceToken,
+  ResourceTokenId,
+  Seat,
+  UnitInstanceId,
+} from '@eoe/schema';
 import { describe, expect, it } from 'vitest';
 
 import { applyAction } from '../applyAction.js';
@@ -30,7 +39,7 @@ interface ResupplyStateOpts {
   deck?: ReadonlyArray<string>;
   discard?: ReadonlyArray<string>;
   phase?: GameState['phase'];
-  activePlayer?: 1 | 2;
+  activePlayer?: Seat;
 }
 
 function resupplyState(opts: ResupplyStateOpts = {}): GameState {

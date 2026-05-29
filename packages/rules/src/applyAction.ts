@@ -302,14 +302,13 @@ export function applyAction(
     // Every other action passed the phase + seat gate but has no
     // effect implementation yet. These stubs are lifted one-by-one in
     // subsequent issues.
+    case 'Resupply':
+    return resupply(state, action, actorId);
+
     case 'BuildCamp':
     case 'BuildBarracks':
     case 'RelocateBuilding':
     case 'SwitchAttackMode':
-    case 'UnitAbility':
-    case 'Resupply':
-    return resupply(state, action, actorId);
-
     case 'UnitAbility':
     case 'RecruitDraw':
     case 'DiscardEvent':
