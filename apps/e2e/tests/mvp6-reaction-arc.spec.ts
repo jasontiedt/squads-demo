@@ -8,16 +8,14 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
  * Arc:
  *  1. Host (English) creates a game; Guest (Byzantines) joins.
  *  2. Both seats are deterministically seeded via the admin-seed
- *     endpoint shipped in S7-A (#110): a Welsh-Infantry unit + an
- *     Imperial-Shield reaction in opening hands.
- *  3. Host advances through start → mobilization → deployment, then
- *     deploys Welsh Infantry onto a deploy-legal square.
- *  4. Host ends turn.
- *  5. Guest cycles their turn (no card play needed for the arc).
- *  6. Host attacks the Guest's capital with the deployed unit.
- *  7. Guest sees the ReactionWindowModal (data-testid present).
- *  8. Guest plays Imperial Shield (heal-capital self, amount 2).
- *  9. Assert: Guest's capital HP > the post-attack baseline, proving
+ *     endpoint: seat 1 gets 3 Wild resources plus a Welsh-Infantry
+ *     already on the board; seat 2 gets Imperial Shield in hand.
+ *  3. Host advances to deployment, then ends turn.
+ *  4. Guest cycles their turn (no card play needed for the arc).
+ *  5. Host attacks the Guest's capital with the seeded unit.
+ *  6. Guest sees the ReactionWindowModal (data-testid present).
+ *  7. Guest plays Imperial Shield (heal-capital self, amount 2).
+ *  8. Assert: Guest's capital HP > the post-attack baseline, proving
  *     the reaction mitigated damage.
  *
  * No setTimeout/sleep — every wait is `expect.poll` against
@@ -36,7 +34,7 @@ const HOST_DECK = [
   'eng-watchman',
   'eng-billman',
 ];
-const HOST_HAND = ['eng-welsh-infantry'];
+const HOST_HAND = ['eng-watchman'];
 
 // Byzantines deck — Imperial Shield first.
 const GUEST_DECK = [
@@ -47,6 +45,24 @@ const GUEST_DECK = [
   'byz-strategos',
 ];
 const GUEST_HAND = ['byz-imperial-shield'];
+
+const HOST_RESOURCES = [
+  { id: 'tok-seed-host-wild-1', kind: 'wild', exhausted: false },
+  { id: 'tok-seed-host-wild-2', kind: 'wild', exhausted: false },
+  { id: 'tok-seed-host-wild-3', kind: 'wild', exhausted: false },
+];
+
+const HOST_UNITS = [
+  {
+    id: 'seed-host-welsh-0',
+    cardId: 'eng-welsh-infantry',
+    square: { x: 4, y: 5 },
+    exhausted: false,
+    damage: 0,
+    attackMode: 'melee',
+    upgrades: [],
+  },
+];
 
 interface Player {
   context: BrowserContext;
@@ -129,22 +145,7 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
   let guest: Player;
   let gameCode: string;
 
-  // @needs-confirmation — BLOCKER (see .squad/decisions/inbox/cassian-mvp6-e2e-blocker.md):
-  //
-  // The full reaction arc requires DEPLOYING a unit, which requires a
-  // non-empty `player.resources` token list. Per `initialState.ts`, every
-  // player starts with `resources: []`, and the only in-game source of
-  // resources is `BuildCamp` — which currently returns `not_implemented`
-  // in `applyAction.ts`. Therefore NO deploy can ever succeed in e2e
-  // regardless of card cost.
-  //
-  // Unblocking requires EITHER:
-  //   (a) `BuildCamp` effect handler implemented in the rules engine, OR
-  //   (b) `admin-seed` extended to optionally seed `resources` + units.
-  //
-  // Both are out of scope for #103. This spec is preserved as the
-  // executable scaffolding for the arc — un-skip once (a) or (b) lands.
-  test.skip('host creates, guest joins, admin-seeds deterministic decks, reaction mitigates damage', async ({
+  test('host creates, guest joins, admin-seeds deterministic decks, reaction mitigates damage', async ({
     browser,
   }) => {
     // ─────────── Host creates ───────────
@@ -191,6 +192,12 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
         opponentDeckOrder: GUEST_DECK,
         hand: HOST_HAND,
         opponentHand: GUEST_HAND,
+        resources: {
+          seat1: HOST_RESOURCES,
+        },
+        units: {
+          seat1: HOST_UNITS,
+        },
       }),
     });
     expect(seedRes.status).toBe(200);
@@ -201,24 +208,12 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
     await waitForVersion(hostPage, seedBody.version);
     await waitForVersion(guestPage, seedBody.version);
 
-    // Host's hand should now show the Welsh Infantry card.
-    await expect(hostPage.locator('[data-testid="card-eng-welsh-infantry"]')).toBeVisible();
+    await expect(hostPage.locator('[data-testid="card-eng-watchman"]')).toBeVisible();
     await expect(guestPage.locator('[data-testid="card-byz-imperial-shield"]')).toBeVisible();
+    await expect(hostPage.locator('[data-testid="unit-seed-host-welsh-0"]')).toBeVisible();
 
-    // ─────────── Host: advance to deployment, deploy unit ───────────
+    // ─────────── Host: advance to deployment, then end turn ───────────
     await advanceToPhase(hostPage, 'deployment');
-    await hostPage.locator('[data-testid="card-eng-welsh-infantry"]').click();
-    // Pick the first deploy-legal target cell (legal overlay rect has pointer-events:none).
-    const legalCell = hostPage.locator('[data-target-legal="true"]').first();
-    await expect(legalCell).toBeVisible();
-    await legalCell.click();
-
-    // Wait for a unit to appear on the board for seat 1.
-    await expect(hostPage.locator('[data-testid^="unit-"]').first()).toBeVisible({
-      timeout: POLL_BUDGET_MS,
-    });
-
-    // End host turn.
     await endTurn(hostPage);
     await waitForActivePlayer(hostPage, 2);
     await waitForActivePlayer(guestPage, 2);
