@@ -89,7 +89,7 @@ export function dispatchEffect(
   }
 }
 
-// ─────────────────────────── draw ────────────────────────────────────
+// ─────────────────────────── heal-capital ────────────────────────────
 
 function applyHealCapital(
   state: GameState,

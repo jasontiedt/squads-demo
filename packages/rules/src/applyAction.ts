@@ -285,9 +285,10 @@ export function applyAction(
     case 'Attack': {
       const attacked = attack(state, action, actorId);
       if (!attacked.ok) return attacked;
-      const eligibleSeat = ([1, 2, 3, 4] as const).find(
-        (seat) => seat !== actorId && attacked.value.players[seat] !== undefined,
-      );
+      const eligibleSeat =
+        action.targetUnitId !== undefined
+          ? state.units.find((unit) => unit.id === action.targetUnitId)?.owner
+          : state.buildings.find((building) => building.id === action.targetBuildingId)?.owner;
       if (eligibleSeat === undefined) return attacked;
       return ok(
         openReactionWindow(
