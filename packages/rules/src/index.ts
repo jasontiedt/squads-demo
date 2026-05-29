@@ -12,7 +12,12 @@ export {
     STARTING_HAND_SIZE,
 } from './constants.js';
 export { deployUnit } from './deployUnit.js';
-export { drawAndDiscardCleanup, drawCard, type DrawResult } from './draw.js';
+export {
+    applyHandCap,
+    drawAndDiscardCleanup,
+    drawCard,
+    type DrawResult,
+} from './draw.js';
 export { eventTick } from './eventTick.js';
 export { addJoiner, buildCreatorState } from './initialState.js';
 export { chebyshev, move } from './move.js';
@@ -31,6 +36,7 @@ export { RESUPPLY_DISCARD_COUNT, resupply } from './resupply.js';
 export { playTactic } from './playTactic.js';
 export { playTechnology } from './playTechnology.js';
 export { playUpgrade } from './playUpgrade.js';
+export { recruitDraw } from './recruitDraw.js';
 export { effectiveStats, type EffectiveStats } from './effectiveStats.js';
 export { playEvent } from './playEvent.js';
 export {

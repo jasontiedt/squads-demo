@@ -119,6 +119,9 @@ export type RuleErrorCode =
   //                         not match the open window's trigger.
   //   `not_a_reaction`    — hand card resolved to a non-reaction card
   //                         kind (parallels `not_an_action_card`).
+  // RecruitDraw (MVP-7 S5) — attempted draw when the deck cannot satisfy
+  // the requested count. Engine does not reshuffle from discard.
+  | 'deck_empty'
   | 'no_window_open'
   | 'not_eligible_seat'
   | 'trigger_mismatch'

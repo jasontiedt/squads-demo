@@ -16,6 +16,7 @@ import { openReactionWindow } from './reactionWindow.js';
 import { playTactic } from './playTactic.js';
 import { playTechnology } from './playTechnology.js';
 import { playUpgrade } from './playUpgrade.js';
+import { recruitDraw } from './recruitDraw.js';
 import { err, ok, type Result } from './result.js';
 import { resupply } from './resupply.js';
 import { scout } from './scout.js';
@@ -343,6 +344,11 @@ export function applyAction(
     case 'PlayReaction':
       return playReaction(state, action, actorId);
 
+    // MVP-7 S5: RecruitDraw — draw payload.count cards, then enforce
+    // hand-cap 7 with positional overflow discard.
+    case 'RecruitDraw':
+      return recruitDraw(state, action, actorId);
+
     // Issue #101 (MVP-6 S5): PassReaction — explicit pass on the open
     // reaction window. Closes the window; no cost, no effect.
     case 'PassReaction':
@@ -361,7 +367,6 @@ export function applyAction(
     case 'RelocateBuilding':
     case 'SwitchAttackMode':
     case 'UnitAbility':
-    case 'RecruitDraw':
     case 'DiscardEvent':
     return err(
         'not_implemented',

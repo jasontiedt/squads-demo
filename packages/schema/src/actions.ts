@@ -186,6 +186,9 @@ export type ResupplyAction = z.infer<typeof ResupplyAction>;
 export const RecruitDrawAction = z
   .object({
     type: z.literal('RecruitDraw'),
+    payload: z.object({
+      count: z.number().int().min(1),
+    }).strict(),
   })
   .strict();
 export type RecruitDrawAction = z.infer<typeof RecruitDrawAction>;

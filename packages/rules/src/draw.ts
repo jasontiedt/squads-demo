@@ -60,6 +60,22 @@ export function drawCard(state: GameState, seat: Seat): DrawResult {
   };
 }
 
+export function applyHandCap(state: GameState, seat: Seat): GameState {
+  const player = state.players[seat];
+  if (player === undefined) return state;
+  if (player.hand.length <= HAND_CAP) return state;
+
+  // @needs-confirmation: positional discard from end of hand.
+  const kept = player.hand.slice(0, HAND_CAP);
+  const overflow = player.hand.slice(HAND_CAP);
+  const trimmed: Player = {
+    ...player,
+    hand: kept,
+    discard: [...player.discard, ...overflow],
+  };
+  return { ...state, players: { ...state.players, [seat]: trimmed } };
+}
+
 /**
  * End-of-turn cleanup for `state.activePlayer` — the seat that just
  * finished its turn. Three steps in order:
@@ -94,17 +110,5 @@ export function drawAndDiscardCleanup(state: GameState): GameState {
     working = next.state;
   }
 
-  const after = working.players[seat];
-  if (after === undefined) return working;
-  if (after.hand.length <= HAND_CAP) return working;
-
-  // @needs-confirmation: positional discard from end of hand.
-  const kept = after.hand.slice(0, HAND_CAP);
-  const overflow = after.hand.slice(HAND_CAP);
-  const trimmed: Player = {
-    ...after,
-    hand: kept,
-    discard: [...after.discard, ...overflow],
-  };
-  return { ...working, players: { ...working.players, [seat]: trimmed } };
+  return applyHandCap(working, seat);
 }
