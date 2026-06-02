@@ -29,10 +29,8 @@
 //                            either fixture drift or a malformed action.
 //   'card_not_unit'        — cardId resolved to a non-unit card kind
 //                            (technology / tactic / action / etc.).
-//   'invalid_deploy_square' — MVP Capital-only deploy: `action.square`
-//                            is not equal to the player's `capitalSquare`.
-//                            Will be loosened once Barracks/zone deploys
-//                            (#TBD) land.
+//   'invalid_deploy_square' — deploy target is outside the legal Capital /
+//                            ready-Barracks zone, off-map, or face-down.
 //   'insufficient_resources' — not enough unexhausted tokens of the
 //                            required kind(s) to satisfy the card cost.
 //

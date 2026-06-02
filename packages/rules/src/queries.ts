@@ -14,15 +14,16 @@
 // `readonly` arrays so callers can't mutate engine state through them.
 // `state` is treated as immutable input — never mutated.
 
-import type {
-  Coord,
-  GameState,
-  Seat,
-  TileId,
-  UnitInstance,
-} from '@eoe/schema';
+import type { Coord, GameState, Seat, TileId, UnitInstance } from '@eoe/schema';
 
 import type { CapitalInstance } from '@eoe/schema';
+
+const BARRACKS_DEPLOY_HP = 1;
+const coordKey = (square: Coord): string => `${square.x},${square.y}`;
+
+type DeployStateLike = Pick<GameState, 'map' | 'buildings'> & {
+  readonly players: Partial<Record<Seat, { readonly capitalSquare: Coord } | undefined>>;
+};
 
 // ─────────────────────────── unitsFor ───────────────────────────────
 
@@ -33,10 +34,7 @@ import type { CapitalInstance } from '@eoe/schema';
  *
  * Returns a `readonly` slice — callers MUST treat results as immutable.
  */
-export function unitsFor(
-  state: GameState,
-  seat: Seat,
-): readonly UnitInstance[] {
+export function unitsFor(state: GameState, seat: Seat): readonly UnitInstance[] {
   return state.units.filter((u) => u.owner === seat);
 }
 
@@ -50,10 +48,7 @@ export function unitsFor(
  * this is fixed and cheap. Used by `unitsOnTile` and by the initial-
  * state factory to seed `CapitalInstance.tileId`.
  */
-export function tileOfSquare(
-  state: GameState,
-  square: Coord,
-): TileId | undefined {
+export function tileOfSquare(state: Pick<GameState, 'map'>, square: Coord): TileId | undefined {
   for (const tile of state.map.tiles) {
     for (const s of tile.squares) {
       if (s.coord.x === square.x && s.coord.y === square.y) {
@@ -76,10 +71,7 @@ export function tileOfSquare(
  * happen for parsed states — every unit sits on a board square covered
  * by a tile) are silently excluded. Returns a `readonly` slice.
  */
-export function unitsOnTile(
-  state: GameState,
-  tileId: TileId,
-): readonly UnitInstance[] {
+export function unitsOnTile(state: GameState, tileId: TileId): readonly UnitInstance[] {
   return state.units.filter((u) => tileOfSquare(state, u.square) === tileId);
 }
 
@@ -94,11 +86,58 @@ export function unitsOnTile(
  * `BuildingInstance` down to `CapitalInstance` for callers — `tileId`,
  * `siegeState`, etc. are visible without re-narrowing.
  */
-export function capitalOf(
-  state: GameState,
-  seat: Seat,
-): CapitalInstance | undefined {
+export function capitalOf(state: GameState, seat: Seat): CapitalInstance | undefined {
   return state.buildings.find(
     (b): b is CapitalInstance => b.type === 'capital' && b.owner === seat,
   );
+}
+
+// ─────────────────────────── legalDeploySquares ──────────────────────
+
+/**
+ * All revealed squares where `seat` may deploy a unit: the capital
+ * square itself plus any Chebyshev-adjacent square to an owned Barracks
+ * whose cooldown marker (`damage`) is still below its ready threshold.
+ */
+export function legalDeploySquares(state: DeployStateLike, seat: Seat): readonly Coord[] {
+  const player = state.players[seat];
+  if (player === undefined) return [];
+
+  const seen = new Set<string>();
+  const out: Coord[] = [];
+
+  const pushIfRevealed = (square: Coord): void => {
+    const tileId = tileOfSquare(state, square);
+    if (tileId === undefined) return;
+    const tile = state.map.tiles.find((entry) => entry.id === tileId);
+    if (tile === undefined || tile.faceDown) return;
+    const key = coordKey(square);
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ x: square.x, y: square.y });
+  };
+
+  pushIfRevealed(player.capitalSquare);
+
+  for (const building of state.buildings) {
+    if (
+      building.type !== 'barracks' ||
+      building.owner !== seat ||
+      building.damage >= BARRACKS_DEPLOY_HP
+    ) {
+      continue;
+    }
+
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (dx === 0 && dy === 0) continue;
+        pushIfRevealed({
+          x: building.square.x + dx,
+          y: building.square.y + dy,
+        });
+      }
+    }
+  }
+
+  return out;
 }

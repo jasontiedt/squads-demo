@@ -144,6 +144,29 @@ describe('DeployUnit — happy path', () => {
     expect(result.value.units).not.toBe(state.units);
     expect(result.value.players).not.toBe(state.players);
   });
+
+  it('deploys onto a face-up square adjacent to an owned ready barracks', () => {
+    const base = deployState();
+    const state: GameState = {
+      ...base,
+      buildings: [
+        ...base.buildings,
+        {
+          id: 'b-barracks-1' as GameState['buildings'][number]['id'],
+          type: 'barracks',
+          owner: 1,
+          square: { x: 0, y: 1 },
+          damage: 0,
+        },
+      ],
+    };
+
+    const result = applyAction(state, deployEngUnit({ x: 1, y: 1 }), SEAT_1);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.units.at(-1)?.square).toEqual({ x: 1, y: 1 });
+  });
 });
 
 // ─── Determinism ─────────────────────────────────────────────────────
@@ -194,11 +217,7 @@ describe('DeployUnit — gate failures', () => {
     const state: GameState = { ...deployState(), phase: 'mobilization' };
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('wrong_phase');
   });
@@ -207,11 +226,7 @@ describe('DeployUnit — gate failures', () => {
     const state = deployState();
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_2,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_2);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('not_your_turn');
   });
@@ -224,11 +239,7 @@ describe('DeployUnit — effect failures', () => {
     const state = deployState({ hand: [] });
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('card_not_in_hand');
   });
@@ -265,11 +276,7 @@ describe('DeployUnit — effect failures', () => {
   it('invalid_deploy_square: rejects when target square is not the actor capital (MVP)', () => {
     const state = deployState();
     // baseState seats English at (0,0) — pick anywhere else.
-    const result = applyAction(
-      state,
-      deployEngUnit({ x: 5, y: 5 }),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit({ x: 5, y: 5 }), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('invalid_deploy_square');
   });
@@ -283,24 +290,40 @@ describe('DeployUnit — effect failures', () => {
       map: {
         ...base.map,
         tiles: base.map.tiles.map((t) =>
-          t.squares.some((s) => s.coord.x === 0 && s.coord.y === 0)
-            ? { ...t, faceDown: true }
-            : t,
+          t.squares.some((s) => s.coord.x === 0 && s.coord.y === 0) ? { ...t, faceDown: true } : t,
         ),
       },
     };
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('invalid_deploy_square');
       expect(result.error.message).toMatch(/face-down/);
     }
+  });
+
+  it('invalid_deploy_square: rejects adjacent-barracks deploys when the barracks is on cooldown', () => {
+    const base = deployState();
+    const state: GameState = {
+      ...base,
+      buildings: [
+        ...base.buildings,
+        {
+          id: 'b-barracks-cooldown' as GameState['buildings'][number]['id'],
+          type: 'barracks',
+          owner: 1,
+          square: { x: 0, y: 1 },
+          damage: 1,
+        },
+      ],
+    };
+
+    const result = applyAction(state, deployEngUnit({ x: 1, y: 1 }), SEAT_1);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('invalid_deploy_square');
   });
 
   it('insufficient_resources: rejects when no unexhausted token covers the cost', () => {
@@ -310,11 +333,7 @@ describe('DeployUnit — effect failures', () => {
     });
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('insufficient_resources');
   });
@@ -323,11 +342,7 @@ describe('DeployUnit — effect failures', () => {
     const state = deployState({ resources: [] });
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('insufficient_resources');
   });
@@ -371,11 +386,7 @@ describe('DeployUnit — needs-confirmation', () => {
     const state = deployState();
     const player = state.players[1];
     if (player === undefined) throw new Error('fixture broken');
-    const result = applyAction(
-      state,
-      deployEngUnit(player.capitalSquare),
-      SEAT_1,
-    );
+    const result = applyAction(state, deployEngUnit(player.capitalSquare), SEAT_1);
     if (!result.ok) throw new Error('deploy should succeed');
     expect(result.value.units[0]?.exhausted).toBe(true);
   });
