@@ -129,6 +129,7 @@ function indexFaceDownSquares(
 
 const CAPITAL_HP_BAR_WIDTH = CELL * 0.7;
 const CAPITAL_HP_BAR_HEIGHT = 8;
+const BUILDING_MARKER_SIZE = CELL * 0.34;
 
 type HpTier = 'green' | 'yellow' | 'red' | 'gray';
 
@@ -204,6 +205,103 @@ const CapitalHpGauge = ({
         {clamped}/{max}
       </text>
     </g>
+  );
+};
+
+interface BuildingMarkerGlyphProps {
+  building: BuildingInstance;
+  stroke: string;
+  fill: string;
+}
+
+const BuildingMarkerGlyph = ({
+  building,
+  stroke,
+  fill,
+}: BuildingMarkerGlyphProps): JSX.Element => {
+  if (building.type === 'capital') {
+    const size = CELL * 0.45;
+    return (
+      <>
+        <rect
+          x={-size / 2}
+          y={-size / 2}
+          width={size}
+          height={size}
+          rx={4}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={3}
+        />
+        <rect
+          x={-size * 0.16}
+          y={-size * 0.16}
+          width={size * 0.32}
+          height={size * 0.32}
+          fill={stroke}
+          opacity={0.35}
+          pointerEvents="none"
+        />
+      </>
+    );
+  }
+
+  if (building.type === 'camp') {
+    const size = BUILDING_MARKER_SIZE;
+    return (
+      <>
+        <path
+          d={`M 0 ${-size / 2} L ${-size / 2} ${size / 2} L ${size / 2} ${size / 2} Z`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={3}
+          strokeLinejoin="round"
+        />
+        <line
+          x1={0}
+          y1={-size * 0.2}
+          x2={0}
+          y2={size / 2}
+          stroke={stroke}
+          strokeWidth={2}
+          strokeLinecap="round"
+          pointerEvents="none"
+        />
+      </>
+    );
+  }
+
+  const size = BUILDING_MARKER_SIZE;
+  return (
+    <>
+      <path
+        d={`M 0 ${-size / 2} L ${size / 2} 0 L 0 ${size / 2} L ${-size / 2} 0 Z`}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={3}
+        strokeLinejoin="round"
+      />
+      <line
+        x1={0}
+        y1={-size * 0.22}
+        x2={0}
+        y2={size * 0.22}
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        pointerEvents="none"
+      />
+      <line
+        x1={-size * 0.22}
+        y1={0}
+        x2={size * 0.22}
+        y2={0}
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        pointerEvents="none"
+      />
+    </>
   );
 };
 
@@ -366,38 +464,50 @@ export const Board = ({
           const cx = px(b.square.x) + CELL / 2;
           const cy = px(b.square.y) + CELL / 2;
           const color = SEAT_COLOR[b.owner];
-          const size = b.type === 'capital' ? CELL * 0.45 : CELL * 0.3;
           const isLegalTarget = legalTargetBuildingIds?.has(b.id) ?? false;
           const clickable = onBuildingClick !== undefined;
+          const stroke = isLegalTarget ? ATTACK_STROKE : color;
+          const fill = isLegalTarget ? ATTACK_OVERLAY : '#171b22';
           return (
-            <g key={`building-${b.id}`}>
-              <rect
-                data-testid={`building-${b.id}`}
-                data-building-type={b.type}
-                data-target-legal={isLegalTarget ? 'true' : 'false'}
-                x={cx - size / 2}
-                y={cy - size / 2}
-                width={size}
-                height={size}
-                fill={isLegalTarget ? ATTACK_OVERLAY : 'none'}
-                stroke={isLegalTarget ? ATTACK_STROKE : color}
-                strokeWidth={3}
-                rx={4}
-                style={clickable ? { cursor: 'pointer' } : undefined}
-                onClick={
-                  clickable
-                    ? (e) => {
-                        e.stopPropagation();
-                        onBuildingClick(b);
-                      }
-                    : undefined
-                }
+            <g
+              key={`building-${b.id}`}
+              data-testid={`building-${b.id}`}
+              data-building-type={b.type}
+              data-square-x={b.square.x}
+              data-square-y={b.square.y}
+              data-target-legal={isLegalTarget ? 'true' : 'false'}
+              transform={`translate(${cx} ${cy})`}
+              style={clickable ? { cursor: 'pointer' } : undefined}
+              onClick={
+                clickable
+                  ? (e) => {
+                      e.stopPropagation();
+                      onBuildingClick(b);
+                    }
+                  : undefined
+              }
+            >
+              {isLegalTarget && (
+                <circle
+                  r={CELL * 0.34}
+                  fill={ATTACK_OVERLAY}
+                  stroke={ATTACK_STROKE}
+                  strokeWidth={3}
+                  strokeDasharray="4 3"
+                  pointerEvents="none"
+                />
+              )}
+              <BuildingMarkerGlyph
+                building={b}
+                stroke={stroke}
+                fill={fill}
               />
+              <title>{`Seat ${b.owner} ${b.type} at ${b.square.x},${b.square.y}`}</title>
               {b.type === 'capital' && (
                 <CapitalHpGauge
                   seat={b.owner}
-                  cx={cx}
-                  cy={cy + size / 2 + 4}
+                  cx={0}
+                  cy={CELL * 0.45 / 2 + 4}
                   capitalHp={state.players[b.owner]?.capitalHp ?? 0}
                 />
               )}

@@ -116,13 +116,15 @@ describe('<Board />', () => {
   });
 
   it('renders buildings with seat-coloured markers and type metadata', () => {
-    const capital: BuildingInstance = {
+    const capital = {
       id: 'b-cap-1' as BuildingInstance['id'],
       type: 'capital',
       owner: 1,
       square: { x: 0, y: 0 },
       damage: 0,
-    };
+      tileId: 't-00',
+      siegeState: 'open',
+    } as unknown as BuildingInstance;
     render(<Board state={stateWithMap({ buildings: [capital] })} />);
     const marker = screen.getByTestId('building-b-cap-1');
     expect(marker).toBeDefined();
