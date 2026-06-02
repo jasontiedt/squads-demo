@@ -477,7 +477,11 @@ export const Board = ({
               data-square-y={b.square.y}
               data-target-legal={isLegalTarget ? 'true' : 'false'}
               transform={`translate(${cx} ${cy})`}
-              style={clickable ? { cursor: 'pointer' } : undefined}
+              style={
+                clickable
+                  ? { cursor: 'pointer' }
+                  : { pointerEvents: 'none' }
+              }
               onClick={
                 clickable
                   ? (e) => {
