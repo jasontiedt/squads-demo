@@ -200,6 +200,9 @@ test.describe('MVP-6 reaction arc (two-browser)', () => {
         },
         units: {
           seat1: HOST_UNITS,
+          // Explicitly clear seat-2 starting builder (MVP-7 S8) so it doesn't
+          // visually collide with HOST_UNITS at (4,5).
+          seat2: [],
         },
       }),
     });
