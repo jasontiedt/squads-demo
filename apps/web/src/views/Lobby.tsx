@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import type { Action, CardId, Civ, Coord, UnitInstance } from '@eoe/schema';
+import type { Action, CardId, Civ, Coord, TerrainType, UnitInstance } from '@eoe/schema';
 import { loadCivMeta } from '@eoe/assets-meta';
 import { useSession, selectMembership } from '../store/session.js';
 import { useGameApi } from '../api/context.js';
@@ -104,6 +104,22 @@ const selectionReducer = (
       if (s.kind !== 'unit-selected') return s;
       return { ...s, mode: ev.mode };
   }
+};
+
+const isBuilderUnit = (unit: UnitInstance): boolean => unit.id.endsWith('-builder');
+
+const terrainAtSquare = (
+  state: PublicGameState,
+  square: Coord,
+): TerrainType | null => {
+  for (const tile of state.map.tiles) {
+    for (const entry of tile.squares) {
+      if (entry.coord.x === square.x && entry.coord.y === square.y) {
+        return entry.terrain;
+      }
+    }
+  }
+  return null;
 };
 
 export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
@@ -290,6 +306,19 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
     !buttonsDisabled &&
     state !== null &&
     (state.phase === 'mobilization' || state.phase === 'deployment');
+  const buildCampBuilder =
+    state !== null && yourTurn && state.phase === 'mobilization'
+      ? state.units.find(
+          (unit) =>
+            unit.owner === membership.seat &&
+            !unit.exhausted &&
+            isBuilderUnit(unit),
+        )
+      : undefined;
+  const buildCampTerrain =
+    state !== null && buildCampBuilder !== undefined
+      ? terrainAtSquare(state, buildCampBuilder.square)
+      : null;
 
   // ─── Legal-target computation (Issue #70) ──────────────────────
   //
@@ -739,6 +768,26 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
       )}
 
       <section className="actions" aria-label="Your actions">
+        {buildCampBuilder !== undefined && buildCampTerrain !== null && (
+          <button
+            type="button"
+            data-testid="action-build-camp"
+            disabled={actionInFlight}
+            onClick={() =>
+              void dispatchAction({
+                type: 'BuildCamp',
+                builderUnitId: buildCampBuilder.id,
+                square: {
+                  x: buildCampBuilder.square.x,
+                  y: buildCampBuilder.square.y,
+                },
+                terrain: buildCampTerrain,
+              })
+            }
+          >
+            Build Camp
+          </button>
+        )}
         <button
           type="button"
           data-testid="end-phase-btn"

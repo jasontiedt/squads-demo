@@ -12,9 +12,22 @@ import {
 } from '../api/client.js';
 import { Lobby } from '../views/Lobby.js';
 import { useSession } from '../store/session.js';
-import type { PlayerToken, Seat } from '@eoe/schema';
+import type { PlayerToken, Seat, Tile, TileId, UnitInstance } from '@eoe/schema';
 
 const TOKEN = 'a'.repeat(40) as PlayerToken;
+
+const STARTING_TILE: Tile = {
+  id: 't-start-p1' as TileId,
+  kind: 'starting',
+  orientation: 0,
+  faceDown: false,
+  squares: [
+    { coord: { x: 0, y: 0 }, terrain: 'plain' },
+    { coord: { x: 1, y: 0 }, terrain: 'forest' },
+    { coord: { x: 0, y: 1 }, terrain: 'farmland' },
+    { coord: { x: 1, y: 1 }, terrain: 'plain' },
+  ],
+};
 
 const makePlayer = (seat: Seat, handCount: number): RedactedPlayer =>
   ({
@@ -39,6 +52,20 @@ const makeState = (
 ): PublicGameState => ({
   ...placeholderState(gameId),
   players: { 1: makePlayer(1, handCount) },
+  ...overrides,
+});
+
+const makeBuilder = (
+  overrides: Partial<UnitInstance> = {},
+): UnitInstance => ({
+  id: 'seed-p1-builder' as UnitInstance['id'],
+  cardId: 'eng-watchman' as UnitInstance['cardId'],
+  owner: 1,
+  square: { x: 0, y: 1 },
+  exhausted: false,
+  damage: 0,
+  attackMode: 'melee',
+  upgrades: [],
   ...overrides,
 });
 
@@ -257,6 +284,71 @@ describe('<Lobby />', () => {
     // Verify the placeholder is gone (it would have been a button
     // named "Play card" with a title attribute mentioning PlayCard).
     expect(screen.queryByRole('button', { name: /^play card$/i })).toBeNull();
+  });
+
+  it('shows Build Camp in mobilization for a ready seeded builder and posts BuildCamp', async () => {
+    const postAction = vi.fn().mockResolvedValueOnce({
+      state: makeState('STUB42', 3, { version: 1 }),
+      version: 1,
+    });
+    const api: GameApi = {
+      getGame: vi.fn().mockResolvedValue({
+        state: makeState('STUB42', 3, { version: 1 }),
+        seat: 1 as Seat,
+      }),
+      createGame: vi.fn(),
+      joinGame: vi.fn(),
+      postAction,
+    };
+
+    seedMembership(
+      'STUB42',
+      makeState('STUB42', 3, {
+        version: 0,
+        phase: 'mobilization',
+        units: [makeBuilder()],
+        map: { tiles: [STARTING_TILE] },
+      }),
+    );
+
+    render(
+      <GameApiProvider api={api}>
+        <Lobby gameCode="STUB42" />
+      </GameApiProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('action-build-camp'));
+
+    await waitFor(() => {
+      expect(postAction).toHaveBeenCalledTimes(1);
+    });
+    const [arg] = postAction.mock.calls[0] as [
+      Parameters<GameApi['postAction']>[0],
+    ];
+    expect(arg.action).toEqual({
+      type: 'BuildCamp',
+      builderUnitId: 'seed-p1-builder',
+      square: { x: 0, y: 1 },
+      terrain: 'farmland',
+    });
+    expect(arg.expectedVersion).toBe(0);
+  });
+
+  it('hides Build Camp outside mobilization', () => {
+    seedMembership(
+      'STUB42',
+      makeState('STUB42', 3, {
+        phase: 'deployment',
+        units: [makeBuilder()],
+        map: { tiles: [STARTING_TILE] },
+      }),
+    );
+    render(
+      <GameApiProvider api={new MockGameApi()}>
+        <Lobby gameCode="STUB42" />
+      </GameApiProvider>,
+    );
+    expect(screen.queryByTestId('action-build-camp')).toBeNull();
   });
 
   // ---- 409 retry ------------------------------------------------------
