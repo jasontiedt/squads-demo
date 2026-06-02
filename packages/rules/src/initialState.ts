@@ -93,7 +93,7 @@ const STARTING_BUILDER_SQUARE: Record<1 | 2, Coord> = {
   2: { x: 4, y: 5 },
 };
 
-function pickStartingBuilderCardId(civ: Civ): CardId {
+function pickStartingBuilderSeedCardId(civ: Civ): CardId {
   const catalog = loadCivMeta(civ);
   const scoutLike = catalog.find(
     (card) =>
@@ -199,7 +199,7 @@ function buildCapital(seat: 1 | 2): BuildingInstance {
 function buildStartingBuilder(seat: 1 | 2, civ: Civ): UnitInstance {
   return {
     id: `seed-p${seat}-builder` as UnitInstance['id'],
-    cardId: pickStartingBuilderCardId(civ),
+    cardId: pickStartingBuilderSeedCardId(civ),
     owner: seat,
     square: STARTING_BUILDER_SQUARE[seat],
     exhausted: false,

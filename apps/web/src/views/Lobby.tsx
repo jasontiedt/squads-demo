@@ -106,7 +106,7 @@ const selectionReducer = (
   }
 };
 
-const isBuilderUnit = (unit: UnitInstance): boolean => unit.id.endsWith('-builder');
+const seededBuilderId = (seat: number): string => `seed-p${seat}-builder`;
 
 const terrainAtSquare = (
   state: PublicGameState,
@@ -312,7 +312,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
           (unit) =>
             unit.owner === membership.seat &&
             !unit.exhausted &&
-            isBuilderUnit(unit),
+            unit.id === seededBuilderId(membership.seat),
         )
       : undefined;
   const buildCampTerrain =
