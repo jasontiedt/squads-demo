@@ -777,10 +777,7 @@ export const Lobby = ({ gameCode }: LobbyProps): JSX.Element => {
               void dispatchAction({
                 type: 'BuildCamp',
                 builderUnitId: buildCampBuilder.id,
-                square: {
-                  x: buildCampBuilder.square.x,
-                  y: buildCampBuilder.square.y,
-                },
+                square: buildCampBuilder.square,
                 terrain: buildCampTerrain,
               })
             }
