@@ -7,7 +7,9 @@
 //
 // Cost-paying lands in MVP-5; this is presentation-only.
 
-import type { Player, ResourceKind } from '@eoe/schema';
+import { useEffect, useRef, useState } from 'react';
+
+import type { Player, ResourceKind, ResourceToken } from '@eoe/schema';
 
 /** Wire shape — the redacted Player from the API. */
 type ResourceBankPlayer = Pick<Player, 'seat' | 'resources'>;
@@ -41,32 +43,17 @@ const RESOURCE_LABEL: Record<ResourceKind, string> = {
   wild: 'Wild',
 };
 
-interface ResourceTally {
-  total: number;
-  fresh: number;
-  exhausted: number;
-}
-
-const emptyTally = (): ResourceTally => ({
-  total: 0,
-  fresh: 0,
-  exhausted: 0,
-});
-
-const tallyResources = (
+const groupResources = (
   resources: ResourceBankPlayer['resources'],
-): Record<ResourceKind, ResourceTally> => {
-  const out: Record<ResourceKind, ResourceTally> = {
-    food: emptyTally(),
-    wood: emptyTally(),
-    gold: emptyTally(),
-    wild: emptyTally(),
+): Record<ResourceKind, ResourceToken[]> => {
+  const out: Record<ResourceKind, ResourceToken[]> = {
+    food: [],
+    wood: [],
+    gold: [],
+    wild: [],
   };
   for (const token of resources) {
-    const tally = out[token.kind];
-    tally.total += 1;
-    if (token.exhausted) tally.exhausted += 1;
-    else tally.fresh += 1;
+    out[token.kind].push(token);
   }
   return out;
 };
@@ -75,8 +62,37 @@ export const ResourceBank = ({
   player,
   label,
 }: ResourceBankProps): JSX.Element => {
-  const tallies = tallyResources(player.resources);
+  const resourcesByKind = groupResources(player.resources);
   const heading = label ?? `Seat ${player.seat}`;
+  const previousExhaustion = useRef<ReadonlyMap<string, boolean>>(new Map());
+  const [refreshedTokenIds, setRefreshedTokenIds] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
+
+  useEffect(() => {
+    const nextExhaustion = new Map<string, boolean>();
+    const refreshed = new Set<string>();
+
+    for (const token of player.resources) {
+      nextExhaustion.set(token.id, token.exhausted);
+      if (previousExhaustion.current.get(token.id) === true && !token.exhausted) {
+        refreshed.add(token.id);
+      }
+    }
+
+    previousExhaustion.current = nextExhaustion;
+    setRefreshedTokenIds(refreshed);
+
+    if (refreshed.size === 0) return undefined;
+
+    const clearRefresh = window.setTimeout(() => {
+      setRefreshedTokenIds(new Set());
+    }, 400);
+
+    return () => {
+      window.clearTimeout(clearRefresh);
+    };
+  }, [player.resources]);
 
   return (
     <div
@@ -86,28 +102,30 @@ export const ResourceBank = ({
       aria-label={`${heading} resource bank`}
     >
       <span className="resource-bank-heading">{heading}</span>
-      <ul className="resource-bank-chips" role="list">
+      <ul className="resource-bank-tokens" role="list">
         {RESOURCE_ORDER.map((kind) => {
-          const tally = tallies[kind];
-          const title = `${RESOURCE_LABEL[kind]} — ${tally.fresh} fresh, ${tally.exhausted} exhausted`;
-          return (
-            <li
-              key={kind}
-              data-testid={`resource-chip-${player.seat}-${kind}`}
-              data-kind={kind}
-              data-total={tally.total}
-              data-fresh={tally.fresh}
-              data-exhausted={tally.exhausted}
-              className={`resource-chip resource-chip-${kind}${tally.total === 0 ? ' resource-chip-empty' : ''}`}
-              title={title}
-            >
-              <span className="resource-chip-glyph" aria-hidden="true">
-                {RESOURCE_GLYPH[kind]}
-              </span>
-              <span className="resource-chip-count">{tally.total}</span>
-              <span className="visually-hidden">{title}</span>
-            </li>
-          );
+          const tokens = resourcesByKind[kind];
+          return tokens.map((token, idx) => {
+            const title = `${RESOURCE_LABEL[kind]} — ${token.exhausted ? 'exhausted' : 'ready'}`;
+            const isRefreshed = refreshedTokenIds.has(token.id);
+            return (
+              <li
+                key={token.id}
+                data-testid={`resource-${kind}-${idx}`}
+                data-resource-id={token.id}
+                data-seat={player.seat}
+                data-kind={kind}
+                data-exhausted={token.exhausted ? 'true' : 'false'}
+                className={`resource-token resource-token-${kind}${token.exhausted ? ' resource-token-exhausted' : ''}${isRefreshed ? ' resource-token-refreshed' : ''}`}
+                title={title}
+              >
+                <span className="resource-token-glyph" aria-hidden="true">
+                  {RESOURCE_GLYPH[kind]}
+                </span>
+                <span className="visually-hidden">{title}</span>
+              </li>
+            );
+          });
         })}
       </ul>
     </div>
