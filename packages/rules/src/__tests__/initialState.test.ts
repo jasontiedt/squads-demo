@@ -5,7 +5,7 @@
 //   • each player has exactly one capital BuildingInstance on their
 //     starting tile, with HP = CAPITAL_DEFAULT_HP and damage = 0
 //   • capital ids match the documented convention (bld-cap-p1/p2)
-//   • `units` starts empty
+//   • each seated player starts with one ready builder on a stable id
 //   • starting tiles are face-up (faceDown=false) so units can deploy
 //   • placement is deterministic: player 1 = tiles[0], player 2 = last
 //   • same `(gameCode, seed, civ)` inputs produce identical state
@@ -18,6 +18,7 @@ import {
   GameState,
   type Seed,
   type Tile,
+  type UnitInstance,
 } from '@eoe/schema';
 import { CAPITAL_DEFAULT_HP } from '../constants.js';
 import { addJoiner, buildCreatorState } from '../initialState.js';
@@ -33,6 +34,10 @@ function tileContains(tile: Tile, square: Coord): boolean {
 
 function capitalsOf(state: GameState): readonly BuildingInstance[] {
   return state.buildings.filter((b) => b.type === 'capital');
+}
+
+function buildersOf(state: GameState): readonly UnitInstance[] {
+  return state.units;
 }
 
 describe('buildCreatorState — seat-1-only initial state', () => {
@@ -58,9 +63,20 @@ describe('buildCreatorState — seat-1-only initial state', () => {
     expect(tileContains(firstTile, cap.square)).toBe(true);
   });
 
-  it('starts with empty units[]', () => {
+  it('starts with one ready seat-1 builder on a stable resource square id', () => {
     const state = buildCreatorState('GAME01', TEST_SEED, 'english');
-    expect(state.units).toEqual([]);
+    expect(buildersOf(state)).toEqual([
+      {
+        id: 'seed-p1-builder',
+        cardId: 'english-builder',
+        owner: 1,
+        square: { x: 0, y: 1 },
+        exhausted: false,
+        damage: 0,
+        attackMode: 'melee',
+        upgrades: [],
+      },
+    ]);
   });
 
   it('reveals (faceDown=false) the seat-1 starting tile', () => {
@@ -113,10 +129,31 @@ describe('addJoiner — fold seat 2 into an existing state', () => {
     expect(joined.players[2]).toBeDefined();
   });
 
-  it('keeps units[] empty after seat 2 joins', () => {
+  it('adds a ready seat-2 builder with a stable id when seat 2 joins', () => {
     const created = buildCreatorState('GAME02', TEST_SEED, 'english');
     const joined = addJoiner(created, 'byzantines');
-    expect(joined.units).toEqual([]);
+    expect(buildersOf(joined)).toEqual([
+      {
+        id: 'seed-p1-builder',
+        cardId: 'english-builder',
+        owner: 1,
+        square: { x: 0, y: 1 },
+        exhausted: false,
+        damage: 0,
+        attackMode: 'melee',
+        upgrades: [],
+      },
+      {
+        id: 'seed-p2-builder',
+        cardId: 'byzantines-builder',
+        owner: 2,
+        square: { x: 4, y: 5 },
+        exhausted: false,
+        damage: 0,
+        attackMode: 'melee',
+        upgrades: [],
+      },
+    ]);
   });
 
   it('reveals both starting tiles (faceDown=false)', () => {
