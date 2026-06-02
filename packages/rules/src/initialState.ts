@@ -30,6 +30,7 @@ import {
   type Seed,
   type Tile,
   type TileId,
+  type UnitInstance,
 } from '@eoe/schema';
 import {
   CAPITAL_DEFAULT_HP,
@@ -85,6 +86,27 @@ const CAPITAL_SQUARE: Record<1 | 2, Coord> = {
   1: { x: 0, y: 0 },
   2: { x: 5, y: 5 },
 };
+
+/** Starting builder spawn square per seat. Must be a revealed resource square. */
+const STARTING_BUILDER_SQUARE: Record<1 | 2, Coord> = {
+  1: { x: 0, y: 1 },
+  2: { x: 4, y: 5 },
+};
+
+function pickStartingBuilderCardId(civ: Civ): CardId {
+  const catalog = loadCivMeta(civ);
+  const scoutLike = catalog.find(
+    (card) =>
+      card.kind === 'unit' &&
+      card.keywords.some((keyword) => keyword === 'starting-scout' || keyword === 'scout'),
+  );
+  if (scoutLike !== undefined) return scoutLike.id;
+
+  const firstUnit = catalog.find((card) => card.kind === 'unit');
+  if (firstUnit !== undefined) return firstUnit.id;
+
+  return `${civ}-builder` as CardId;
+}
 
 // ─────────────────────────── Deck + hand ────────────────────────────
 
@@ -174,6 +196,19 @@ function buildCapital(seat: 1 | 2): BuildingInstance {
   };
 }
 
+function buildStartingBuilder(seat: 1 | 2, civ: Civ): UnitInstance {
+  return {
+    id: `seed-p${seat}-builder` as UnitInstance['id'],
+    cardId: pickStartingBuilderCardId(civ),
+    owner: seat,
+    square: STARTING_BUILDER_SQUARE[seat],
+    exhausted: false,
+    damage: 0,
+    attackMode: 'melee',
+    upgrades: [],
+  };
+}
+
 // ─────────────────────────── Public factory ─────────────────────────
 
 /**
@@ -194,7 +229,7 @@ export function buildCreatorState(
     activePlayer: 1,
     turn: 1,
     players: { 1: buildPlayer(1, civ, seed) },
-    units: [],
+    units: [buildStartingBuilder(1, civ)],
     buildings: [buildCapital(1)],
     map: { tiles: [seat1StartingTile()] },
     moveLog: [],
@@ -214,6 +249,7 @@ export function addJoiner(state: GameState, civ: Civ): GameState {
     ...state,
     version: state.version + 1,
     players: { ...state.players, 2: seat2 },
+    units: [...state.units, buildStartingBuilder(2, civ)],
     buildings: [...state.buildings, buildCapital(2)],
     map: { ...state.map, tiles: [...state.map.tiles, seat2StartingTile()] },
   };
