@@ -256,7 +256,7 @@ describe('POST /games/:code/join — second player', () => {
     expect(stored?.state.players[2]?.capitalSquare).toEqual({ x: 5, y: 5 });
   });
 
-  it('persists both capitals with #57 ids, default HP, and empty units[] (POST /games + join)', async () => {
+  it('persists both capitals with #57 ids, default HP, and starting builder per seat (POST /games + join)', async () => {
     const { env, kv } = buildEnv();
     const { payload: created } = await createGame(env, {
       playerName: 'Alice',
@@ -271,7 +271,11 @@ describe('POST /games/:code/join — second player', () => {
 
     expect(stored?.state.players[1]?.capitalHp).toBe(20);
     expect(stored?.state.players[2]?.capitalHp).toBe(20);
-    expect(stored?.state.units).toEqual([]);
+    // MVP-7 S8: each seat starts with a builder unit to bootstrap BuildCamp.
+    expect(stored?.state.units.map((u) => u.id).sort()).toEqual([
+      'seed-p1-builder',
+      'seed-p2-builder',
+    ]);
 
     // Both starting tiles are face-up so units can deploy onto them.
     expect(stored?.state.map.tiles.every((t) => t.faceDown === false)).toBe(true);

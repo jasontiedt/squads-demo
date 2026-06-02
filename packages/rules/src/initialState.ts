@@ -94,17 +94,9 @@ const STARTING_BUILDER_SQUARE: Record<1 | 2, Coord> = {
 };
 
 function pickStartingBuilderSeedCardId(civ: Civ): CardId {
-  const catalog = loadCivMeta(civ);
-  const scoutLike = catalog.find(
-    (card) =>
-      card.kind === 'unit' &&
-      card.keywords.some((keyword) => keyword === 'starting-scout' || keyword === 'scout'),
-  );
-  if (scoutLike !== undefined) return scoutLike.id;
-
-  const firstUnit = catalog.find((card) => card.kind === 'unit');
-  if (firstUnit !== undefined) return firstUnit.id;
-
+  // Use a dedicated synthetic builder cardId so the starting unit doesn't
+  // collide with real catalog cards (which would cause the GET hand-redaction
+  // check to leak seat hand contents through state.units[].cardId).
   return `${civ}-builder` as CardId;
 }
 

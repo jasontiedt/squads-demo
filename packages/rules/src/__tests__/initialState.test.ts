@@ -68,7 +68,7 @@ describe('buildCreatorState — seat-1-only initial state', () => {
     expect(buildersOf(state)).toEqual([
       {
         id: 'seed-p1-builder',
-        cardId: 'eng-watchman',
+        cardId: 'english-builder',
         owner: 1,
         square: { x: 0, y: 1 },
         exhausted: false,
@@ -135,7 +135,7 @@ describe('addJoiner — fold seat 2 into an existing state', () => {
     expect(buildersOf(joined)).toEqual([
       {
         id: 'seed-p1-builder',
-        cardId: 'eng-watchman',
+        cardId: 'english-builder',
         owner: 1,
         square: { x: 0, y: 1 },
         exhausted: false,
@@ -145,7 +145,7 @@ describe('addJoiner — fold seat 2 into an existing state', () => {
       },
       {
         id: 'seed-p2-builder',
-        cardId: 'byz-optimatoi',
+        cardId: 'byzantines-builder',
         owner: 2,
         square: { x: 4, y: 5 },
         exhausted: false,

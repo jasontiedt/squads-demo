@@ -282,7 +282,12 @@ describe('POST /admin/games/:code/seed — happy path', () => {
     const stored = kv.peek<StoredGame>(gameKey(code));
     expect(stored?.state.players[1]?.resources).toEqual(body.resources.seat1);
     expect(stored?.state.players[2]?.resources).toEqual(body.resources.seat2);
-    expect(stored?.state.units).toEqual([]);
+    // No units bucket supplied → admin-seed leaves the bootstrap starting
+    // builders in place (MVP-7 S8).
+    expect(stored?.state.units.map((u) => u.id).sort()).toEqual([
+      'seed-p1-builder',
+      'seed-p2-builder',
+    ]);
     expect(stored?.state.moveLog).toEqual([]);
   });
 
